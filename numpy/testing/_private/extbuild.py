@@ -8,13 +8,9 @@ import os
 import pathlib
 import sys
 import sysconfig
-
 __all__ = ['build_and_import_extension', 'compile_extension_module']
 
-
-def build_and_import_extension(
-        modname, functions, *, prologue="", build_dir=None,
-        include_dirs=[], more_init=""):
+def build_and_import_extension(modname, functions, *, prologue='', build_dir=None, include_dirs=[], more_init=''):
     """
     Build and imports a c-extension module `modname` from a list of function
     fragments `functions`.
@@ -41,45 +37,20 @@ def build_and_import_extension(
 
     Examples
     --------
-    >>> functions = [("test_bytes", "METH_O", \"\"\"
+    >>> functions = [("test_bytes", "METH_O", "
         if ( !PyBytesCheck(args)) {
             Py_RETURN_FALSE;
         }
         Py_RETURN_TRUE;
-    \"\"\")]
+    ")]
     >>> mod = build_and_import_extension("testme", functions)
     >>> assert not mod.test_bytes(u'abc')
     >>> assert mod.test_bytes(b'abc')
     """
-    from distutils.errors import CompileError
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.testing._private.extbuild.build_and_import_extension', "build_and_import_extension(modname, functions, prologue='', build_dir=None, include_dirs=[], more_init='')", {'_make_methods': _make_methods, 'pathlib': pathlib, '_make_source': _make_source, 'compile_extension_module': compile_extension_module, 'importlib': importlib, 'modname': modname, 'functions': functions, 'prologue': prologue, 'build_dir': build_dir, 'include_dirs': include_dirs, 'more_init': more_init}, 1)
 
-    body = prologue + _make_methods(functions, modname)
-    init = """PyObject *mod = PyModule_Create(&moduledef);
-           """
-    if not build_dir:
-        build_dir = pathlib.Path('.')
-    if more_init:
-        init += """#define INITERROR return NULL
-                """
-        init += more_init
-    init += "\nreturn mod;"
-    source_string = _make_source(modname, init, body)
-    try:
-        mod_so = compile_extension_module(
-            modname, build_dir, include_dirs, source_string)
-    except CompileError as e:
-        # shorten the exception chain
-        raise RuntimeError(f"could not compile in {build_dir}:") from e
-    import importlib.util
-    spec = importlib.util.spec_from_file_location(modname, mod_so)
-    foo = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(foo)
-    return foo
-
-
-def compile_extension_module(
-        name, builddir, include_dirs,
-        source_string, libraries=[], library_dirs=[]):
+def compile_extension_module(name, builddir, include_dirs, source_string, libraries=[], library_dirs=[]):
     """
     Build an extension module and return the filename of the resulting
     native code file.
@@ -98,27 +69,15 @@ def compile_extension_module(
     library_dirs: list
         Where to find the libraries, ``-L`` passed to the linker
     """
-    modname = name.split('.')[-1]
-    dirname = builddir / name
-    dirname.mkdir(exist_ok=True)
-    cfile = _convert_str_to_file(source_string, dirname)
-    include_dirs = include_dirs + [sysconfig.get_config_var('INCLUDEPY')]
-
-    return _c_compile(
-        cfile, outputfilename=dirname / modname,
-        include_dirs=include_dirs, libraries=[], library_dirs=[],
-        )
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.testing._private.extbuild.compile_extension_module', 'compile_extension_module(name, builddir, include_dirs, source_string, libraries=[], library_dirs=[])', {'_convert_str_to_file': _convert_str_to_file, 'sysconfig': sysconfig, '_c_compile': _c_compile, 'name': name, 'builddir': builddir, 'include_dirs': include_dirs, 'source_string': source_string, 'libraries': libraries, 'library_dirs': library_dirs}, 1)
 
 def _convert_str_to_file(source, dirname):
     """Helper function to create a file ``source.c`` in `dirname` that contains
     the string in `source`. Returns the file name
     """
-    filename = dirname / 'source.c'
-    with filename.open('w') as f:
-        f.write(str(source))
-    return filename
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.testing._private.extbuild._convert_str_to_file', '_convert_str_to_file(source, dirname)', {'source': source, 'dirname': dirname}, 1)
 
 def _make_methods(functions, modname):
     """ Turns the name, signature, code in functions into complete functions
@@ -126,126 +85,25 @@ def _make_methods(functions, modname):
     ``PyMethodDef`` structure and returns the resulting code fragment ready
     for compilation
     """
-    methods_table = []
-    codes = []
-    for funcname, flags, code in functions:
-        cfuncname = "%s_%s" % (modname, funcname)
-        if 'METH_KEYWORDS' in flags:
-            signature = '(PyObject *self, PyObject *args, PyObject *kwargs)'
-        else:
-            signature = '(PyObject *self, PyObject *args)'
-        methods_table.append(
-            "{\"%s\", (PyCFunction)%s, %s}," % (funcname, cfuncname, flags))
-        func_code = """
-        static PyObject* {cfuncname}{signature}
-        {{
-        {code}
-        }}
-        """.format(cfuncname=cfuncname, signature=signature, code=code)
-        codes.append(func_code)
-
-    body = "\n".join(codes) + """
-    static PyMethodDef methods[] = {
-    %(methods)s
-    { NULL }
-    };
-    static struct PyModuleDef moduledef = {
-        PyModuleDef_HEAD_INIT,
-        "%(modname)s",  /* m_name */
-        NULL,           /* m_doc */
-        -1,             /* m_size */
-        methods,        /* m_methods */
-    };
-    """ % dict(methods='\n'.join(methods_table), modname=modname)
-    return body
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.testing._private.extbuild._make_methods', '_make_methods(functions, modname)', {'functions': functions, 'modname': modname}, 1)
 
 def _make_source(name, init, body):
     """ Combines the code fragments into source code ready to be compiled
     """
-    code = """
-    #include <Python.h>
-
-    %(body)s
-
-    PyMODINIT_FUNC
-    PyInit_%(name)s(void) {
-    %(init)s
-    }
-    """ % dict(
-        name=name, init=init, body=body,
-    )
+    code = '\n    #include <Python.h>\n\n    %(body)s\n\n    PyMODINIT_FUNC\n    PyInit_%(name)s(void) {\n    %(init)s\n    }\n    ' % dict(name=name, init=init, body=body)
     return code
 
+def _c_compile(cfile, outputfilename, include_dirs=[], libraries=[], library_dirs=[]):
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.testing._private.extbuild._c_compile', '_c_compile(cfile, outputfilename, include_dirs=[], libraries=[], library_dirs=[])', {'sys': sys, 'os': os, 'get_so_suffix': get_so_suffix, 'build': build, 'cfile': cfile, 'outputfilename': outputfilename, 'include_dirs': include_dirs, 'libraries': libraries, 'library_dirs': library_dirs}, 1)
 
-def _c_compile(cfile, outputfilename, include_dirs=[], libraries=[],
-               library_dirs=[]):
-    if sys.platform == 'win32':
-        compile_extra = ["/we4013"]
-        link_extra = ["/LIBPATH:" + os.path.join(sys.base_prefix, 'libs')]
-    elif sys.platform.startswith('linux'):
-        compile_extra = [
-            "-O0", "-g", "-Werror=implicit-function-declaration", "-fPIC"]
-        link_extra = None
-    else:
-        compile_extra = link_extra = None
-        pass
-    if sys.platform == 'win32':
-        link_extra = link_extra + ['/DEBUG']  # generate .pdb file
-    if sys.platform == 'darwin':
-        # support Fink & Darwinports
-        for s in ('/sw/', '/opt/local/'):
-            if (s + 'include' not in include_dirs
-                    and os.path.exists(s + 'include')):
-                include_dirs.append(s + 'include')
-            if s + 'lib' not in library_dirs and os.path.exists(s + 'lib'):
-                library_dirs.append(s + 'lib')
-
-    outputfilename = outputfilename.with_suffix(get_so_suffix())
-    saved_environ = os.environ.copy()
-    try:
-        build(
-            cfile, outputfilename,
-            compile_extra, link_extra,
-            include_dirs, libraries, library_dirs)
-    finally:
-        # workaround for a distutils bugs where some env vars can
-        # become longer and longer every time it is used
-        for key, value in saved_environ.items():
-            if os.environ.get(key) != value:
-                os.environ[key] = value
-    return outputfilename
-
-
-def build(cfile, outputfilename, compile_extra, link_extra,
-          include_dirs, libraries, library_dirs):
-    "cd into the directory where the cfile is, use distutils to build"
-    from numpy.distutils.ccompiler import new_compiler
-
-    compiler = new_compiler(force=1, verbose=2)
-    compiler.customize('')
-    objects = []
-
-    old = os.getcwd()
-    os.chdir(cfile.parent)
-    try:
-        res = compiler.compile(
-            [str(cfile.name)],
-            include_dirs=include_dirs,
-            extra_preargs=compile_extra
-            )
-        objects += [str(cfile.parent / r) for r in res]
-    finally:
-        os.chdir(old)
-
-    compiler.link_shared_object(
-        objects, str(outputfilename),
-        libraries=libraries,
-        extra_preargs=link_extra,
-        library_dirs=library_dirs)
-
+def build(cfile, outputfilename, compile_extra, link_extra, include_dirs, libraries, library_dirs):
+    """cd into the directory where the cfile is, use distutils to build"""
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('numpy.testing._private.extbuild.build', 'build(cfile, outputfilename, compile_extra, link_extra, include_dirs, libraries, library_dirs)', {'os': os, 'cfile': cfile, 'outputfilename': outputfilename, 'compile_extra': compile_extra, 'link_extra': link_extra, 'include_dirs': include_dirs, 'libraries': libraries, 'library_dirs': library_dirs}, 0)
 
 def get_so_suffix():
-    ret = sysconfig.get_config_var('EXT_SUFFIX')
-    assert ret
-    return ret
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.testing._private.extbuild.get_so_suffix', 'get_so_suffix()', {'sysconfig': sysconfig}, 1)
+

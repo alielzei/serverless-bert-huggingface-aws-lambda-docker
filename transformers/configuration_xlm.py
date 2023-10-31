@@ -1,37 +1,9 @@
-# coding=utf-8
-# Copyright 2019-present, Facebook, Inc and the HuggingFace Inc. team.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """ XLM configuration """
 
 from .configuration_utils import PretrainedConfig
 from .utils import logging
-
-
 logger = logging.get_logger(__name__)
-
-XLM_PRETRAINED_CONFIG_ARCHIVE_MAP = {
-    "xlm-mlm-en-2048": "https://s3.amazonaws.com/models.huggingface.co/bert/xlm-mlm-en-2048-config.json",
-    "xlm-mlm-ende-1024": "https://s3.amazonaws.com/models.huggingface.co/bert/xlm-mlm-ende-1024-config.json",
-    "xlm-mlm-enfr-1024": "https://s3.amazonaws.com/models.huggingface.co/bert/xlm-mlm-enfr-1024-config.json",
-    "xlm-mlm-enro-1024": "https://s3.amazonaws.com/models.huggingface.co/bert/xlm-mlm-enro-1024-config.json",
-    "xlm-mlm-tlm-xnli15-1024": "https://s3.amazonaws.com/models.huggingface.co/bert/xlm-mlm-tlm-xnli15-1024-config.json",
-    "xlm-mlm-xnli15-1024": "https://s3.amazonaws.com/models.huggingface.co/bert/xlm-mlm-xnli15-1024-config.json",
-    "xlm-clm-enfr-1024": "https://s3.amazonaws.com/models.huggingface.co/bert/xlm-clm-enfr-1024-config.json",
-    "xlm-clm-ende-1024": "https://s3.amazonaws.com/models.huggingface.co/bert/xlm-clm-ende-1024-config.json",
-    "xlm-mlm-17-1280": "https://s3.amazonaws.com/models.huggingface.co/bert/xlm-mlm-17-1280-config.json",
-    "xlm-mlm-100-1280": "https://s3.amazonaws.com/models.huggingface.co/bert/xlm-mlm-100-1280-config.json",
-}
+XLM_PRETRAINED_CONFIG_ARCHIVE_MAP = {'xlm-mlm-en-2048': 'https://s3.amazonaws.com/models.huggingface.co/bert/xlm-mlm-en-2048-config.json', 'xlm-mlm-ende-1024': 'https://s3.amazonaws.com/models.huggingface.co/bert/xlm-mlm-ende-1024-config.json', 'xlm-mlm-enfr-1024': 'https://s3.amazonaws.com/models.huggingface.co/bert/xlm-mlm-enfr-1024-config.json', 'xlm-mlm-enro-1024': 'https://s3.amazonaws.com/models.huggingface.co/bert/xlm-mlm-enro-1024-config.json', 'xlm-mlm-tlm-xnli15-1024': 'https://s3.amazonaws.com/models.huggingface.co/bert/xlm-mlm-tlm-xnli15-1024-config.json', 'xlm-mlm-xnli15-1024': 'https://s3.amazonaws.com/models.huggingface.co/bert/xlm-mlm-xnli15-1024-config.json', 'xlm-clm-enfr-1024': 'https://s3.amazonaws.com/models.huggingface.co/bert/xlm-clm-enfr-1024-config.json', 'xlm-clm-ende-1024': 'https://s3.amazonaws.com/models.huggingface.co/bert/xlm-clm-ende-1024-config.json', 'xlm-mlm-17-1280': 'https://s3.amazonaws.com/models.huggingface.co/bert/xlm-mlm-17-1280-config.json', 'xlm-mlm-100-1280': 'https://s3.amazonaws.com/models.huggingface.co/bert/xlm-mlm-100-1280-config.json'}
 
 
 class XLMConfig(PretrainedConfig):
@@ -151,46 +123,9 @@ class XLMConfig(PretrainedConfig):
         >>> # Accessing the model configuration
         >>> configuration = model.config
     """
-
-    model_type = "xlm"
-
-    def __init__(
-        self,
-        vocab_size=30145,
-        emb_dim=2048,
-        n_layers=12,
-        n_heads=16,
-        dropout=0.1,
-        attention_dropout=0.1,
-        gelu_activation=True,
-        sinusoidal_embeddings=False,
-        causal=False,
-        asm=False,
-        n_langs=1,
-        use_lang_emb=True,
-        max_position_embeddings=512,
-        embed_init_std=2048 ** -0.5,
-        layer_norm_eps=1e-12,
-        init_std=0.02,
-        bos_index=0,
-        eos_index=1,
-        pad_index=2,
-        unk_index=3,
-        mask_index=5,
-        is_encoder=True,
-        summary_type="first",
-        summary_use_proj=True,
-        summary_activation=None,
-        summary_proj_to_labels=True,
-        summary_first_dropout=0.1,
-        start_n_top=5,
-        end_n_top=5,
-        mask_token_id=0,
-        lang_id=0,
-        pad_token_id=2,
-        bos_token_id=0,
-        **kwargs
-    ):
+    model_type = 'xlm'
+    
+    def __init__(self, vocab_size=30145, emb_dim=2048, n_layers=12, n_heads=16, dropout=0.1, attention_dropout=0.1, gelu_activation=True, sinusoidal_embeddings=False, causal=False, asm=False, n_langs=1, use_lang_emb=True, max_position_embeddings=512, embed_init_std=2048**(-0.5), layer_norm_eps=1e-12, init_std=0.02, bos_index=0, eos_index=1, pad_index=2, unk_index=3, mask_index=5, is_encoder=True, summary_type='first', summary_use_proj=True, summary_activation=None, summary_proj_to_labels=True, summary_first_dropout=0.1, start_n_top=5, end_n_top=5, mask_token_id=0, lang_id=0, pad_token_id=2, bos_token_id=0, **kwargs):
         """Constructs XLMConfig."""
         super().__init__(pad_token_id=pad_token_id, bos_token_id=bos_token_id, **kwargs)
         self.vocab_size = vocab_size
@@ -224,26 +159,27 @@ class XLMConfig(PretrainedConfig):
         self.end_n_top = end_n_top
         self.mask_token_id = mask_token_id
         self.lang_id = lang_id
-
-        if "n_words" in kwargs:
-            self.n_words = kwargs["n_words"]
-
+        if 'n_words' in kwargs:
+            self.n_words = kwargs['n_words']
+    
     @property
-    def n_words(self):  # For backward compatibility
+    def n_words(self):
         return self.vocab_size
-
+    
     @n_words.setter
-    def n_words(self, value):  # For backward compatibility
+    def n_words(self, value):
         self.vocab_size = value
-
+    
     @property
     def hidden_size(self):
         return self.emb_dim
-
+    
     @property
     def num_attention_heads(self):
         return self.n_heads
-
+    
     @property
     def num_hidden_layers(self):
         return self.n_layers
+
+

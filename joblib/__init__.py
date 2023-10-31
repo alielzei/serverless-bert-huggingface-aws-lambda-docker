@@ -90,42 +90,18 @@ Main features
 
 """
 
-# PEP0440 compatible formatted version, see:
-# https://www.python.org/dev/peps/pep-0440/
-#
-# Generic release markers:
-# X.Y
-# X.Y.Z # For bugfix releases
-#
-# Admissible pre-release markers:
-# X.YaN # Alpha release
-# X.YbN # Beta release
-# X.YrcN # Release Candidate
-# X.Y # Final release
-#
-# Dev branch marker is: 'X.Y.dev' or 'X.Y.devN' where N is an integer.
-# 'X.Y.dev0' is the canonical version of 'X.Y.dev'
-#
 __version__ = '1.3.2'
-
-
 import os
-
 from .memory import Memory
 from .memory import MemorizedResult
 from .memory import register_store_backend
 from .memory import expires_after
-
 from .logger import PrintTime
 from .logger import Logger
-
 from .hashing import hash
-
 from .numpy_pickle import dump
 from .numpy_pickle import load
-
 from .compressor import register_compressor
-
 from .parallel import Parallel
 from .parallel import delayed
 from .parallel import cpu_count
@@ -134,15 +110,6 @@ from .parallel import parallel_backend
 from .parallel import parallel_config
 from .parallel import effective_n_jobs
 from ._cloudpickle_wrapper import wrap_non_picklable_objects
+__all__ = ['Memory', 'MemorizedResult', 'PrintTime', 'Logger', 'hash', 'dump', 'load', 'Parallel', 'delayed', 'cpu_count', 'effective_n_jobs', 'register_parallel_backend', 'parallel_backend', 'expires_after', 'register_store_backend', 'register_compressor', 'wrap_non_picklable_objects', 'parallel_config']
+os.environ.setdefault('KMP_INIT_AT_FORK', 'FALSE')
 
-
-__all__ = ['Memory', 'MemorizedResult', 'PrintTime', 'Logger', 'hash', 'dump',
-           'load', 'Parallel', 'delayed', 'cpu_count', 'effective_n_jobs',
-           'register_parallel_backend', 'parallel_backend', 'expires_after',
-           'register_store_backend', 'register_compressor',
-           'wrap_non_picklable_objects', 'parallel_config']
-
-
-# Workaround issue discovered in intel-openmp 2019.5:
-# https://github.com/ContinuumIO/anaconda-issues/issues/11294
-os.environ.setdefault("KMP_INIT_AT_FORK", "FALSE")

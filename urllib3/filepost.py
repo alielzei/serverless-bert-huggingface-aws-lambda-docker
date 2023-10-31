@@ -1,26 +1,19 @@
 from __future__ import absolute_import
-
 import binascii
 import codecs
 import os
 from io import BytesIO
-
 from .fields import RequestField
 from .packages import six
 from .packages.six import b
-
-writer = codecs.lookup("utf-8")[3]
-
+writer = codecs.lookup('utf-8')[3]
 
 def choose_boundary():
     """
     Our embarrassingly-simple replacement for mimetools.choose_boundary.
     """
-    boundary = binascii.hexlify(os.urandom(16))
-    if not six.PY2:
-        boundary = boundary.decode("ascii")
-    return boundary
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('urllib3.filepost.choose_boundary', 'choose_boundary()', {'binascii': binascii, 'os': os, 'six': six}, 1)
 
 def iter_field_objects(fields):
     """
@@ -30,17 +23,8 @@ def iter_field_objects(fields):
     :class:`~urllib3.fields.RequestField`.
 
     """
-    if isinstance(fields, dict):
-        i = six.iteritems(fields)
-    else:
-        i = iter(fields)
-
-    for field in i:
-        if isinstance(field, RequestField):
-            yield field
-        else:
-            yield RequestField.from_tuples(*field)
-
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('urllib3.filepost.iter_field_objects', 'iter_field_objects(fields)', {'six': six, 'RequestField': RequestField, 'fields': fields}, 0)
 
 def iter_fields(fields):
     """
@@ -54,11 +38,8 @@ def iter_fields(fields):
 
     Supports list of (k, v) tuples and dicts.
     """
-    if isinstance(fields, dict):
-        return ((k, v) for k, v in six.iteritems(fields))
-
-    return ((k, v) for k, v in fields)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('urllib3.filepost.iter_fields', 'iter_fields(fields)', {'six': six, 'fields': fields}, 1)
 
 def encode_multipart_formdata(fields, boundary=None):
     """
@@ -71,28 +52,6 @@ def encode_multipart_formdata(fields, boundary=None):
         If not specified, then a random boundary will be generated using
         :func:`urllib3.filepost.choose_boundary`.
     """
-    body = BytesIO()
-    if boundary is None:
-        boundary = choose_boundary()
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('urllib3.filepost.encode_multipart_formdata', 'encode_multipart_formdata(fields, boundary=None)', {'BytesIO': BytesIO, 'choose_boundary': choose_boundary, 'iter_field_objects': iter_field_objects, 'b': b, 'writer': writer, 'six': six, 'fields': fields, 'boundary': boundary}, 2)
 
-    for field in iter_field_objects(fields):
-        body.write(b("--%s\r\n" % (boundary)))
-
-        writer(body).write(field.render_headers())
-        data = field.data
-
-        if isinstance(data, int):
-            data = str(data)  # Backwards compatibility
-
-        if isinstance(data, six.text_type):
-            writer(body).write(data)
-        else:
-            body.write(data)
-
-        body.write(b"\r\n")
-
-    body.write(b("--%s--\r\n" % (boundary)))
-
-    content_type = str("multipart/form-data; boundary=%s" % boundary)
-
-    return body.getvalue(), content_type

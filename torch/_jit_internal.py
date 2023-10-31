@@ -10,11 +10,7 @@ import warnings
 import torch
 from torch._six import builtins
 from torch._utils_internal import get_source_lines_and_file
-
-# Wrapper functions that can call either of 2 functions depending on a boolean
-# argument
-boolean_dispatched = weakref.WeakKeyDictionary()  # noqa: T484
-
+boolean_dispatched = weakref.WeakKeyDictionary()
 
 def createResolutionCallbackFromEnv(lookup_base):
     """
@@ -25,11 +21,8 @@ def createResolutionCallbackFromEnv(lookup_base):
     You should not use this directly, it should only be used from the other
     createResolutionCallbackFrom* functions.
     """
+    
     def env(qualified_name, module):
-        # We may need to resolve a qualified name, something like `torch.device`
-        # or `a.b.c.d`. We first look up `torch` or `a` in the function's closed
-        # over scope, then proceed to use the looked-up value to go down the
-        # chain.
         if '.' in qualified_name:
             parts = qualified_name.split('.')
             base = parts[0]
@@ -38,9 +31,7 @@ def createResolutionCallbackFromEnv(lookup_base):
             return env(remainding_pieces, module_value)
         else:
             return getattr(module, qualified_name)
-
     return lambda key: env(key, lookup_base)
-
 
 def createResolutionCallbackFromFrame(frames_up=0):
     """
@@ -74,121 +65,46 @@ def createResolutionCallbackFromFrame(frames_up=0):
     while i < frames_up + 1:
         frame = frame.f_back
         i += 1
-
     f_locals = frame.f_locals
     f_globals = frame.f_globals
-
+    
+    
     class env(object):
+        
         def __getattr__(self, key):
             if key in f_locals:
                 return f_locals[key]
             elif key in f_globals:
                 return f_globals[key]
-
+    
     return createResolutionCallbackFromEnv(env())
-
 
 def get_closure(fn):
     """
     Get a dictionary of closed over variables from a function
     """
-    captures = {}
-    captures.update(fn.__globals__)
-
-    for index, captured_name in enumerate(fn.__code__.co_freevars):
-        captures[captured_name] = fn.__closure__[index].cell_contents
-
-    return captures
-
-# [local resolution in python]
-# Depending on where a variable is defined, and where it is used, we may
-# or may not be able to recover its value when recursively compiling a
-# script function. Remember in the general case, a module or function is
-# first defined and then later scripted. This means we do not have a
-# chance to capture the active frames when the function is defined. Hence any
-# name resolution has to happen later on the created closure. The way
-# python captures type annotations restricts what we can recover. The
-# follow example illustrates the different cases:
-#
-#         class MyGlobalClass:
-#         ...
-#         def my_local_scope():
-#             @torch.jit.script
-#             class MyClass:
-#                 ...
-#             @torch.jit.script
-#             class MyClassUsedAsVar:
-#                 ...
-#             def eg(x: MyClass, y: MyGlobalClass):
-#                 a_local_capture : Foo
-#                 return MyClassUsedAsVar(x)
-#
-# MyGlobalClass is defined in the __globals__ dictionary of function
-# 'eg', so it is always recoverable. my_local_scope introduces a new local
-# variable scope in the function. Classes defined here are only visible as
-# local variables. For the case of MyClassUsedAsVar, it is captured
-# because it is used as a variable inside the body of the function, and we
-# can resolve it using the captures returned from `get_closure`. However,
-# the type annotations are not captured by the closure. In Python
-# 3.0--3.9, the _value_ of MyClass and MyGlobalClass will be available as
-# annotations on `eg``, but starting in Python 4.0, they will represented as
-# strings and no longer present. Furthermore, since the body of `eg` does
-# not reference those names, they do not appear in the list of closed over
-# variables. In Python 2.x, type annotations are in comments, leading to a
-# similar situation where their definitions are not available. We anticipate
-# that most users will not run into this issue because their modules and
-# functions will be defined at a global scope like MyGlobalClass. In cases
-# where they are not, it is possible to work around issues by declaring the
-# values global in the function.
-
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch._jit_internal.get_closure', 'get_closure(fn)', {'fn': fn}, 1)
 
 def createResolutionCallbackFromClosure(fn):
     """
     Create a resolutionCallback by introspecting the function instead of
     looking up the stack for the enclosing scope
     """
-    closure = get_closure(fn)
-
-    class closure_lookup(object):
-        # This is a class since `closure` is a dict and it's easier in
-        # `env_helper` if everything just works with `getattr` calls
-        def __getattr__(self, key):
-            if key in closure:
-                return closure[key]
-            elif hasattr(builtins, key):
-                return getattr(builtins, key)
-            return None
-
-    return createResolutionCallbackFromEnv(closure_lookup())
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch._jit_internal.createResolutionCallbackFromClosure', 'createResolutionCallbackFromClosure(fn)', {'get_closure': get_closure, 'builtins': builtins, 'createResolutionCallbackFromEnv': createResolutionCallbackFromEnv, 'fn': fn}, 1)
 
 def can_compile_class(cls):
-    # If any of the functions on a type don't have a code object, this type can't
-    # be compiled and is probably a builtin / bound from C
-    if is_ignored_fn(cls):
-        return False
-    names = cls.__dict__
-    fns = [getattr(cls, name) for name in names if inspect.isroutine(getattr(cls, name, None))]
-    has_code = [hasattr(fn, '__code__') for fn in fns]
-    return all(has_code)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch._jit_internal.can_compile_class', 'can_compile_class(cls)', {'is_ignored_fn': is_ignored_fn, 'inspect': inspect, 'cls': cls}, 1)
 
 def createResolutionCallbackForClassMethods(cls):
     """
     This looks at all the methods defined in a class and pulls their closed-over
     variables into a dictionary and uses that to resolve variables.
     """
-    # cls is a type here, so `ismethod` is false since the methods on the type
-    # aren't bound to anything, so Python treats them as regular functions
-    fns = [getattr(cls, name) for name in cls.__dict__ if inspect.isroutine(getattr(cls, name))]
-    captures = {}
-
-    for fn in fns:
-        captures.update(get_closure(fn))
-
-    return lambda key: captures.get(key, None)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch._jit_internal.createResolutionCallbackForClassMethods', 'createResolutionCallbackForClassMethods(cls)', {'inspect': inspect, 'get_closure': get_closure, 'cls': cls}, 1)
 
 def boolean_dispatch(arg_name, arg_index, default, if_true, if_false, module_name, func_name):
     """
@@ -196,43 +112,33 @@ def boolean_dispatch(arg_name, arg_index, default, if_true, if_false, module_nam
     In TorchScript, the boolean argument must be constant so that the correct
     function to use can be determined at compile time.
     """
+    
     def fn(*args, **kwargs):
         dispatch_flag = False
         if arg_name in kwargs:
             dispatch_flag = kwargs[arg_name]
         elif arg_index < len(args):
             dispatch_flag = args[arg_index]
-
         if dispatch_flag:
             return if_true(*args, **kwargs)
         else:
             return if_false(*args, **kwargs)
-
-    if if_true.__doc__ is None and if_false.__doc__ is not None:
+    if (if_true.__doc__ is None and if_false.__doc__ is not None):
         doc = if_false.__doc__
         if_true.__doc__ = doc
-    elif if_false.__doc__ is None and if_true.__doc__ is not None:
+    elif (if_false.__doc__ is None and if_true.__doc__ is not None):
         doc = if_true.__doc__
         if_false.__doc__ = doc
-    elif if_false.__doc__ is None and if_true.__doc__ is None:
-        # neither function has a docstring
+    elif (if_false.__doc__ is None and if_true.__doc__ is None):
         doc = None
     else:
-        raise RuntimeError("only one function can have a docstring")
+        raise RuntimeError('only one function can have a docstring')
     fn.__doc__ = doc
-
     if module_name is not None:
         fn.__module__ = module_name
     if func_name is not None:
         fn.__name__ = func_name
-
-    boolean_dispatched[fn] = {
-        "if_true": if_true,
-        "if_false": if_false,
-        "index": arg_index,
-        "default": default,
-        "arg_name": arg_name
-    }
+    boolean_dispatched[fn] = {'if_true': if_true, 'if_false': if_false, 'index': arg_index, 'default': default, 'arg_name': arg_name}
     return fn
 
 
@@ -241,12 +147,11 @@ class FunctionModifiers(object):
     Used to denote the behavior of a function in TorchScript. See export() and
     ignore() for details.
     """
-    UNUSED = "unused (ignored and replaced with raising of an exception)"
+    UNUSED = 'unused (ignored and replaced with raising of an exception)'
     IGNORE = "ignore (leave as a call to Python, cannot be torch.jit.save'd)"
-    EXPORT = "export (compile this function even if nothing calls it)"
-    DEFAULT = "default (compile if called from a exported function / forward)"
-    COPY_TO_SCRIPT_WRAPPER = \
-        "if this method is not scripted, copy the python method onto the scripted model"
+    EXPORT = 'export (compile this function even if nothing calls it)'
+    DEFAULT = 'default (compile if called from a exported function / forward)'
+    COPY_TO_SCRIPT_WRAPPER = 'if this method is not scripted, copy the python method onto the scripted model'
 
 
 def export(fn):
@@ -293,7 +198,6 @@ def export(fn):
     """
     fn._torchscript_modifier = FunctionModifiers.EXPORT
     return fn
-
 
 def unused(fn):
     """
@@ -396,81 +300,33 @@ def ignore(drop=False, **kwargs):
         import os
         os.remove('m.pt')
     """
-
-    if callable(drop):
-        # used without any args, so drop is actually a function
-        #   @torch.jit.ignore
-        #   def fn(...):
-        fn = drop
-        fn._torchscript_modifier = FunctionModifiers.IGNORE
-        return fn
-
-    if not isinstance(drop, bool):
-        raise RuntimeError("Argument to @torch.jit.ignore must be a bool or "
-                           "a function but got {}".format(drop))
-
-    # for backwards compat
-    drop_on_export = kwargs.pop("drop_on_export", None)
-    if drop_on_export:
-        warnings.warn("ignore(drop_on_export=True) has been deprecated. TorchScript will now drop the function "
-                      "call on compilation. Use torch.jit.unused now. {}", category=FutureWarning)
-
-        drop = drop_on_export
-    elif drop:
-        warnings.warn("ignore(True) has been deprecated. TorchScript will now drop the function "
-                      "call on compilation. Use torch.jit.unused now. {}", category=FutureWarning)
-
-    def decorator(fn):
-        if drop:
-            fn._torchscript_modifier = FunctionModifiers.UNUSED
-        else:
-            fn._torchscript_modifier = FunctionModifiers.IGNORE
-        return fn
-    return decorator
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch._jit_internal.ignore', 'ignore(drop=False, **kwargs)', {'FunctionModifiers': FunctionModifiers, 'warnings': warnings, 'drop': drop, 'kwargs': kwargs}, 1)
 
 def _copy_to_script_wrapper(fn):
     fn._torchscript_modifier = FunctionModifiers.COPY_TO_SCRIPT_WRAPPER
     return fn
 
 def module_has_exports(mod):
-    for name in dir(mod):
-        item = getattr(mod, name)
-        if callable(item):
-            if get_torchscript_modifier(item) is FunctionModifiers.EXPORT:
-                return True
-    return False
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch._jit_internal.module_has_exports', 'module_has_exports(mod)', {'get_torchscript_modifier': get_torchscript_modifier, 'FunctionModifiers': FunctionModifiers, 'mod': mod}, 1)
 
 def should_drop(fn):
-    attr = get_torchscript_modifier(fn)
-    if attr is None:
-        return False
-    return attr is FunctionModifiers.UNUSED
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch._jit_internal.should_drop', 'should_drop(fn)', {'get_torchscript_modifier': get_torchscript_modifier, 'FunctionModifiers': FunctionModifiers, 'fn': fn}, 1)
 
 def is_ignored_fn(fn):
     mod = get_torchscript_modifier(fn)
-    return mod is FunctionModifiers.UNUSED or mod is FunctionModifiers.IGNORE
+    return (mod is FunctionModifiers.UNUSED or mod is FunctionModifiers.IGNORE)
 
 def get_torchscript_modifier(fn):
-    if not callable(fn):
-        return None
-    if hasattr(fn, '__func__'):
-        fn = fn.__func__
-    return getattr(fn, '_torchscript_modifier', FunctionModifiers.DEFAULT)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch._jit_internal.get_torchscript_modifier', 'get_torchscript_modifier(fn)', {'FunctionModifiers': FunctionModifiers, 'fn': fn}, 1)
 
 def copy_torchscript_modifier(orig, new):
-    attr = get_torchscript_modifier(orig)
-    if attr is None:
-        return
-    new._torchscript_modifier = attr
-
-# overloading registration
-# overloads get registered in this file, and compiled in torch/jit/__init__.py
-# so that they can be imported in nn/functional.py without an import cycle
-
-# qualified_name => list[overload_functions]
-_overloaded_fns = {}  # noqa: T484
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch._jit_internal.copy_torchscript_modifier', 'copy_torchscript_modifier(orig, new)', {'get_torchscript_modifier': get_torchscript_modifier, 'orig': orig, 'new': new}, 1)
+_overloaded_fns = {}
 
 def _overload(func):
     qual_name = _qualified_name(func)
@@ -489,312 +345,215 @@ def _clear_fn_overloads(qual_name):
     del _overloaded_fns[qual_name]
 
 def get_class_name_lineno(method):
-    current_frame = inspect.currentframe()
-
-    # one for the get_class_name call, one for _overload_method call
-    for i in range(2):
-        current_frame = current_frame.f_back
-    class_name = current_frame.f_code.co_name
-    line_no = current_frame.f_code.co_firstlineno
-    return class_name, line_no
-
-# At the the point the decorator is applied to class methods the method
-# has no reference to its owning class. _qualified_name would not include
-# the class it is defined in, so any methods with the same name in the same file
-# would have the same _qualified_name, even if they were defined in different
-# classes. This problem only exists in python 2.
-# We get around this problem by looking at the stack frame and identifying
-# the class name, and throwing an error whenever overloads are used
-# when modules of the same name are in the same file
-
-# qualified_name => class name => list[overload_functions]
-_overloaded_methods = {}  # noqa: T484
-
-
-# (qualified_name, class name) => class_fileno
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch._jit_internal.get_class_name_lineno', 'get_class_name_lineno(method)', {'inspect': inspect, 'method': method}, 2)
+_overloaded_methods = {}
 _overloaded_method_class_fileno = {}
 
 def _overload_method(func):
-    qual_name = _qualified_name(func)
-    global _overloaded_methods
-    class_name_map = _overloaded_methods.get(qual_name, None)
-    if class_name_map is None:
-        class_name_map = {}
-        _overloaded_methods[qual_name] = class_name_map
-
-    class_name, line_no = get_class_name_lineno(func)
-    method_overloads = class_name_map.get(class_name, None)
-    if method_overloads is None:
-        method_overloads = []
-        class_name_map[class_name] = method_overloads
-        _overloaded_method_class_fileno[(qual_name, class_name)] = line_no
-    else:
-        existing_lineno = _overloaded_method_class_fileno[(qual_name, class_name)]
-        if existing_lineno != line_no:
-            raise RuntimeError("Cannot currently overload the same method name in two different"
-                               " classes with the same name in the same module")
-
-    method_overloads.append(func)
-    return func
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch._jit_internal._overload_method', '_overload_method(func)', {'_qualified_name': _qualified_name, '_overloaded_methods': _overloaded_methods, 'get_class_name_lineno': get_class_name_lineno, '_overloaded_method_class_fileno': _overloaded_method_class_fileno, 'func': func}, 1)
 
 def _get_overloaded_methods(method, mod_class):
-    # TODO: __name__ not set for submodules in recursive script
-    if not hasattr(method, "__name__"):
-        return None
-    qual_name = _qualified_name(method)
-    class_name_map = _overloaded_methods.get(qual_name, None)
-    if class_name_map is None:
-        return None
-    overloads = class_name_map.get(mod_class.__name__, None)
-    if overloads is None:
-        return None
-
-    method_line_no = get_source_lines_and_file(method)[1]
-    mod_class_fileno = get_source_lines_and_file(mod_class)[1]
-    mod_end_fileno = mod_class_fileno + len(get_source_lines_and_file(mod_class)[0])
-    if not (method_line_no >= mod_class_fileno and method_line_no <= mod_end_fileno):
-        raise Exception("Overloads are not useable when a module is redeclared within the same file: " + str(method))
-    return overloads
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch._jit_internal._get_overloaded_methods', '_get_overloaded_methods(method, mod_class)', {'_qualified_name': _qualified_name, '_overloaded_methods': _overloaded_methods, 'get_source_lines_and_file': get_source_lines_and_file, 'method': method, 'mod_class': mod_class}, 1)
 try:
     import typing
     from typing import Tuple, List, Dict, Optional, Any
-
+    
     def is_tuple(ann):
-        # For some reason Python 3.7 violates the Type[A, B].__origin__ == Type rule
-        if not hasattr(ann, '__module__'):
-            return False
-        return ann.__module__ == 'typing' and \
-            (getattr(ann, '__origin__', None) is typing.Tuple or
-             getattr(ann, '__origin__', None) is tuple)
-
+        import custom_funtemplate
+        return custom_funtemplate.rewrite_template('torch._jit_internal.is_tuple', 'is_tuple(ann)', {'typing': typing, 'ann': ann}, 1)
+    
     def is_list(ann):
-        if not hasattr(ann, '__module__'):
-            return False
-        return ann.__module__ == 'typing' and \
-            (getattr(ann, '__origin__', None) is typing.List or
-             getattr(ann, '__origin__', None) is list)
-
+        import custom_funtemplate
+        return custom_funtemplate.rewrite_template('torch._jit_internal.is_list', 'is_list(ann)', {'typing': typing, 'ann': ann}, 1)
+    
     def is_dict(ann):
-        if not hasattr(ann, '__module__'):
-            return False
-        return ann.__module__ == 'typing' and \
-            (getattr(ann, '__origin__', None) is typing.Dict or
-             getattr(ann, '__origin__', None) is dict)
-
+        import custom_funtemplate
+        return custom_funtemplate.rewrite_template('torch._jit_internal.is_dict', 'is_dict(ann)', {'typing': typing, 'ann': ann}, 1)
+    
     def is_optional(ann):
-        # Optional[T] is just shorthand for Union[T, None], so check for both
-        def safe_is_subclass(the_type, super_type):
-            # Don't throw if `the_type` isn't a class type (e.g. if it is
-            # another type annotation instance)
-            if not inspect.isclass(the_type):
-                return False
-            return issubclass(the_type, super_type)
-
-        if not hasattr(ann, '__module__'):
-            return False
-
-        union_optional = False
-        if ann.__module__ == 'typing' and \
-           (getattr(ann, '__origin__', None) is typing.Union):
-            args = getattr(ann, '__args__', ())
-            if len(args) == 2:
-                union_optional = (safe_is_subclass(args[1], type(None)) and not safe_is_subclass(args[0], type(None))) \
-                    or (safe_is_subclass(args[0], type(None)) and not safe_is_subclass(args[1], type(None)))
-
-        optional = ann.__module__ == 'typing' and \
-            (getattr(ann, '__origin__', None) is typing.Optional)
-
-        return optional or union_optional
-
+        import custom_funtemplate
+        return custom_funtemplate.rewrite_template('torch._jit_internal.is_optional', 'is_optional(ann)', {'inspect': inspect, 'typing': typing, 'ann': ann}, 1)
 except ImportError:
-    # A minimal polyfill for versions of Python that don't have typing.
-    # Note that this means that they also don't support the fancy annotation syntax, so
-    # those instances will only be used in our tiny `type: ` comment interpreter.
-
-    # The __getitem__ in typing is implemented using metaclasses, but I'm too lazy for that.
+    
+    
     class TupleCls(object):
+        
         def __getitem__(self, types):
             return TupleInstance(types)
-
+    
+    
+    
     class TupleInstance(object):
         __slots__ = ['__args__']
-
+        
         def __init__(self, types):
             self.__args__ = types
-
+    
+    
+    
     class ListInstance(object):
         __slots__ = ['__args__']
-
+        
         def __init__(self, types):
             self.__args__ = types
-
+    
+    
+    
     class ListCls(object):
+        
         def __getitem__(self, types):
             return TupleInstance(types)
-
+    
+    
+    
     class DictInstance(object):
         __slots__ = ['__args__']
-
+        
         def __init__(self, types):
             self.__args__ = types
-
+    
+    
+    
     class DictCls(object):
+        
         def __getitem__(self, types):
             return DictInstance(types)
-
+    
+    
+    
     class OptionalInstance(object):
         __slots__ = ['__args__']
-
+        
         def __init__(self, types):
             self.__args__ = types
-
+    
+    
+    
     class OptionalCls(object):
+        
         def __getitem__(self, types):
             return OptionalInstance(types)
-
+    
+    
+    
     class AnyCls(object):
         pass
-
-    Tuple = TupleCls()  # noqa: T484
-    List = ListCls()  # noqa: T484
-    Dict = DictCls()  # noqa: T484
-    Optional = DictCls()  # noqa: T484
-    Any = AnyCls()  # noqa: T484
-
+    
+    Tuple = TupleCls()
+    List = ListCls()
+    Dict = DictCls()
+    Optional = DictCls()
+    Any = AnyCls()
+    
     def is_tuple(ann):
         return isinstance(ann, TupleInstance)
-
+    
     def is_list(ann):
         return isinstance(ann, ListInstance)
-
+    
     def is_dict(ann):
         return isinstance(ann, DictInstance)
-
+    
     def is_optional(ann):
         return isinstance(ann, OptionalInstance)
-
-
 try:
     import typing_extensions
     from typing_extensions import Final
-
+    
     def is_final(ann):
-        return ann.__module__ == 'typing_extensions' and \
-            (getattr(ann, '__origin__', None) is typing_extensions.Final)
+        return (ann.__module__ == 'typing_extensions' and getattr(ann, '__origin__', None) is typing_extensions.Final)
 except ImportError:
-    # Same as above, this polyfill is only for `typing_extensions`
+    
+    
     class FinalInstance(object):
         __slots__ = ['__args__']
-
+        
         def __init__(self, types):
             self.__args__ = types
-
+    
+    
+    
     class FinalCls(object):
+        
         def __getitem__(self, types):
             return FinalInstance(types)
-
-    Final = FinalCls()  # noqa: T484
-
+    
+    Final = FinalCls()
+    
     def is_final(ann):
         return isinstance(ann, FinalInstance)
-
-
 try:
     from typing import TypeVar, Generic
-
     T = TypeVar('T')
-
+    
+    
     class RRef(Generic[T]):
         __slots__ = ['__args__']
-
+        
         def __init__(self, types):
             self.__args__ = types
-
+    
+    
     def is_rref(ann):
-        return getattr(ann, "__origin__", None) is RRef
-
+        return getattr(ann, '__origin__', None) is RRef
 except ImportError:
+    
+    
     class RRefInstance(object):
         __slots__ = ['__args__']
-
+        
         def __init__(self, types):
             self.__args__ = types
-
+    
+    
+    
     class RRefCls(object):
+        
         def __getitem__(self, types):
             return RRefInstance(types)
-
-    RRef = RRefCls()  # noqa: T484
-
+    
+    RRef = RRefCls()
+    
     def is_rref(ann):
         return isinstance(ann, RRefInstance)
 
 
-# allows BroadcastingList instance to be subscriptable
 class BroadcastingListCls(object):
+    
     def __getitem__(self, types):
         return
 
-# mypy doesn't support parameters on types, so we have to explicitly type each
-# list size
 BroadcastingList1 = BroadcastingListCls()
 for i in range(2, 7):
-    globals()["BroadcastingList{}".format(i)] = BroadcastingList1
+    globals()['BroadcastingList{}'.format(i)] = BroadcastingList1
 
-# Retrieves a fully-qualified name (module hierarchy + classname) for a given obj.
 def _qualified_name(obj):
-    # This special case allows us to override the qualified name on a type.
-    # It's currently used in conjunction with tracing, where we create a
-    # fake module to filter only supported attributes. However, since this
-    # new type is defined as a local class, we need a mechanism to override
-    # its qualname so it appears correctly in the TorchScript system. This,
-    # we set '_jit_override_qualname' with the original traced module's
-    # qualified name, which is picked up here
     if hasattr(obj, '_jit_override_qualname'):
         return obj._jit_override_qualname
-    # short-circuit in cases where the object already has a known qualified name
     if isinstance(obj, torch._C.ScriptFunction):
         return obj.qualified_name
-
     name = obj.__name__
     if name == '<lambda>':
-        name = '_lambda'  # make name a valid identifier
-
+        name = '_lambda'
     module_name = obj.__module__
-
-    # If the module is actually a torchbind module, then we should short circuit
-    if module_name == "torch._classes":
+    if module_name == 'torch._classes':
         return obj.qualified_name
-
-    # The Python docs are very clear that `__module__` can be None, but I can't
-    # figure out when it actually would be.
     if module_name is None:
-        raise RuntimeError("Could not get qualified name for class '{}': "
-                           "__module__ can't be None.".format(name))
-
-    # if getattr(sys.modules[module_name], name) is not obj:
-    #     raise RuntimeError("Could not get qualified name for class '{}': "
-    #                        "the attr {} on module {} is not the the class".format(name, name, module_name))
-
-    # __main__ is a builtin module, so rewrite it to "__torch__".
-    if module_name == "__main__":
-        module_name = "__torch__"
+        raise RuntimeError("Could not get qualified name for class '{}': __module__ can't be None.".format(name))
+    if module_name == '__main__':
+        module_name = '__torch__'
     else:
-        # Everything else gets a "__torch__" prefix to avoid name collisions
-        # with the names of user values.
-        module_name = "__torch__." + module_name
-
-    if "." in name:
-        raise RuntimeError("Could not get qualified name for class '{}': "
-                           "'{}' is not a valid identifier".format(name, name))
-
-    return module_name + "." + name
+        module_name = '__torch__.' + module_name
+    if '.' in name:
+        raise RuntimeError("Could not get qualified name for class '{}': '{}' is not a valid identifier".format(name, name))
+    return module_name + '.' + name
 
 
-# Thin wrapper around SourceRangeFactory to store extra metadata
-# about the function-to-be-compiled.
 class SourceContext(torch._C._jit_tree_views.SourceRangeFactory):
+    
     def __init__(self, source, filename, file_lineno, leading_whitespace_len, uses_true_division=True):
         super(SourceContext, self).__init__(source, filename, file_lineno, leading_whitespace_len)
         self.uses_true_division = uses_true_division
@@ -802,3 +561,4 @@ class SourceContext(torch._C._jit_tree_views.SourceRangeFactory):
 
 def fake_range():
     return SourceContext('', None, 0, 0).make_raw_range(0, 1)
+

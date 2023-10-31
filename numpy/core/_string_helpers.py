@@ -3,15 +3,12 @@ String-handling utilities to avoid locale-dependence.
 
 Used primarily to generate type name aliases.
 """
-# "import string" is costly to import!
-# Construct the translation tables directly
-#   "A" = chr(65), "a" = chr(97)
-_all_chars = [chr(_m) for _m in range(256)]
-_ascii_upper = _all_chars[65:65+26]
-_ascii_lower = _all_chars[97:97+26]
-LOWER_TABLE = "".join(_all_chars[:65] + _ascii_lower + _all_chars[65+26:])
-UPPER_TABLE = "".join(_all_chars[:97] + _ascii_upper + _all_chars[97+26:])
 
+_all_chars = [chr(_m) for _m in range(256)]
+_ascii_upper = _all_chars[65:65 + 26]
+_ascii_lower = _all_chars[97:97 + 26]
+LOWER_TABLE = ''.join(_all_chars[:65] + _ascii_lower + _all_chars[65 + 26:])
+UPPER_TABLE = ''.join(_all_chars[:97] + _ascii_upper + _all_chars[97 + 26:])
 
 def english_lower(s):
     """ Apply English case rules to convert ASCII strings to all lower case.
@@ -40,7 +37,6 @@ def english_lower(s):
     lowered = s.translate(LOWER_TABLE)
     return lowered
 
-
 def english_upper(s):
     """ Apply English case rules to convert ASCII strings to all upper case.
 
@@ -67,7 +63,6 @@ def english_upper(s):
     """
     uppered = s.translate(UPPER_TABLE)
     return uppered
-
 
 def english_capitalize(s):
     """ Apply English case rules to convert the first character of an ASCII
@@ -98,3 +93,4 @@ def english_capitalize(s):
         return english_upper(s[0]) + s[1:]
     else:
         return s
+

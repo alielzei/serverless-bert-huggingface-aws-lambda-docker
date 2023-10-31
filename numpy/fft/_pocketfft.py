@@ -27,97 +27,34 @@ n = n-dimensional transform
 behavior.)
 
 """
-__all__ = ['fft', 'ifft', 'rfft', 'irfft', 'hfft', 'ihfft', 'rfftn',
-           'irfftn', 'rfft2', 'irfft2', 'fft2', 'ifft2', 'fftn', 'ifftn']
 
+__all__ = ['fft', 'ifft', 'rfft', 'irfft', 'hfft', 'ihfft', 'rfftn', 'irfftn', 'rfft2', 'irfft2', 'fft2', 'ifft2', 'fftn', 'ifftn']
 import functools
-
 from numpy.core import asarray, zeros, swapaxes, conjugate, take, sqrt
 from . import _pocketfft_internal as pfi
 from numpy.core.multiarray import normalize_axis_index
 from numpy.core import overrides
+array_function_dispatch = functools.partial(overrides.array_function_dispatch, module='numpy.fft')
 
-
-array_function_dispatch = functools.partial(
-    overrides.array_function_dispatch, module='numpy.fft')
-
-
-# `inv_norm` is a float by which the result of the transform needs to be
-# divided. This replaces the original, more intuitive 'fct` parameter to avoid
-# divisions by zero (or alternatively additional checks) in the case of
-# zero-length axes during its computation.
 def _raw_fft(a, n, axis, is_real, is_forward, inv_norm):
-    axis = normalize_axis_index(axis, a.ndim)
-    if n is None:
-        n = a.shape[axis]
-
-    fct = 1/inv_norm
-
-    if a.shape[axis] != n:
-        s = list(a.shape)
-        index = [slice(None)]*len(s)
-        if s[axis] > n:
-            index[axis] = slice(0, n)
-            a = a[tuple(index)]
-        else:
-            index[axis] = slice(0, s[axis])
-            s[axis] = n
-            z = zeros(s, a.dtype.char)
-            z[tuple(index)] = a
-            a = z
-
-    if axis == a.ndim-1:
-        r = pfi.execute(a, is_real, is_forward, fct)
-    else:
-        a = swapaxes(a, axis, -1)
-        r = pfi.execute(a, is_real, is_forward, fct)
-        r = swapaxes(r, axis, -1)
-    return r
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.fft._pocketfft._raw_fft', '_raw_fft(a, n, axis, is_real, is_forward, inv_norm)', {'normalize_axis_index': normalize_axis_index, 'zeros': zeros, 'pfi': pfi, 'swapaxes': swapaxes, 'a': a, 'n': n, 'axis': axis, 'is_real': is_real, 'is_forward': is_forward, 'inv_norm': inv_norm}, 1)
 
 def _get_forward_norm(n, norm):
-    if n < 1:
-        raise ValueError(f"Invalid number of FFT data points ({n}) specified.")
-
-    if norm is None or norm == "backward":
-        return 1
-    elif norm == "ortho":
-        return sqrt(n)
-    elif norm == "forward":
-        return n
-    raise ValueError(f'Invalid norm value {norm}; should be "backward",'
-                     '"ortho" or "forward".')
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.fft._pocketfft._get_forward_norm', '_get_forward_norm(n, norm)', {'sqrt': sqrt, 'n': n, 'norm': norm}, 1)
 
 def _get_backward_norm(n, norm):
-    if n < 1:
-        raise ValueError(f"Invalid number of FFT data points ({n}) specified.")
-
-    if norm is None or norm == "backward":
-        return n
-    elif norm == "ortho":
-        return sqrt(n)
-    elif norm == "forward":
-        return 1
-    raise ValueError(f'Invalid norm value {norm}; should be "backward", '
-                     '"ortho" or "forward".')
-
-
-_SWAP_DIRECTION_MAP = {"backward": "forward", None: "forward",
-                       "ortho": "ortho", "forward": "backward"}
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.fft._pocketfft._get_backward_norm', '_get_backward_norm(n, norm)', {'sqrt': sqrt, 'n': n, 'norm': norm}, 1)
+_SWAP_DIRECTION_MAP = {'backward': 'forward', None: 'forward', 'ortho': 'ortho', 'forward': 'backward'}
 
 def _swap_direction(norm):
-    try:
-        return _SWAP_DIRECTION_MAP[norm]
-    except KeyError:
-        raise ValueError(f'Invalid norm value {norm}; should be "backward", '
-                         '"ortho" or "forward".') from None
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.fft._pocketfft._swap_direction', '_swap_direction(norm)', {'_SWAP_DIRECTION_MAP': _SWAP_DIRECTION_MAP, 'norm': norm}, 1)
 
 def _fft_dispatcher(a, n=None, axis=None, norm=None):
-    return (a,)
-
+    return (a, )
 
 @array_function_dispatch(_fft_dispatcher)
 def fft(a, n=None, axis=-1, norm=None):
@@ -208,13 +145,8 @@ def fft(a, n=None, axis=-1, norm=None):
     >>> plt.show()
 
     """
-    a = asarray(a)
-    if n is None:
-        n = a.shape[axis]
-    inv_norm = _get_forward_norm(n, norm)
-    output = _raw_fft(a, n, axis, False, True, inv_norm)
-    return output
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.fft._pocketfft.fft', 'fft(a, n=None, axis=-1, norm=None)', {'asarray': asarray, '_get_forward_norm': _get_forward_norm, '_raw_fft': _raw_fft, 'array_function_dispatch': array_function_dispatch, '_fft_dispatcher': _fft_dispatcher, 'a': a, 'n': n, 'axis': axis, 'norm': norm}, 1)
 
 @array_function_dispatch(_fft_dispatcher)
 def ifft(a, n=None, axis=-1, norm=None):
@@ -309,13 +241,8 @@ def ifft(a, n=None, axis=-1, norm=None):
     >>> plt.show()
 
     """
-    a = asarray(a)
-    if n is None:
-        n = a.shape[axis]
-    inv_norm = _get_backward_norm(n, norm)
-    output = _raw_fft(a, n, axis, False, False, inv_norm)
-    return output
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.fft._pocketfft.ifft', 'ifft(a, n=None, axis=-1, norm=None)', {'asarray': asarray, '_get_backward_norm': _get_backward_norm, '_raw_fft': _raw_fft, 'array_function_dispatch': array_function_dispatch, '_fft_dispatcher': _fft_dispatcher, 'a': a, 'n': n, 'axis': axis, 'norm': norm}, 1)
 
 @array_function_dispatch(_fft_dispatcher)
 def rfft(a, n=None, axis=-1, norm=None):
@@ -402,13 +329,8 @@ def rfft(a, n=None, axis=-1, norm=None):
     exploited to compute only the non-negative frequency terms.
 
     """
-    a = asarray(a)
-    if n is None:
-        n = a.shape[axis]
-    inv_norm = _get_forward_norm(n, norm)
-    output = _raw_fft(a, n, axis, True, True, inv_norm)
-    return output
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.fft._pocketfft.rfft', 'rfft(a, n=None, axis=-1, norm=None)', {'asarray': asarray, '_get_forward_norm': _get_forward_norm, '_raw_fft': _raw_fft, 'array_function_dispatch': array_function_dispatch, '_fft_dispatcher': _fft_dispatcher, 'a': a, 'n': n, 'axis': axis, 'norm': norm}, 1)
 
 @array_function_dispatch(_fft_dispatcher)
 def irfft(a, n=None, axis=-1, norm=None):
@@ -506,13 +428,8 @@ def irfft(a, n=None, axis=-1, norm=None):
     specified, and the output array is purely real.
 
     """
-    a = asarray(a)
-    if n is None:
-        n = (a.shape[axis] - 1) * 2
-    inv_norm = _get_backward_norm(n, norm)
-    output = _raw_fft(a, n, axis, True, False, inv_norm)
-    return output
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.fft._pocketfft.irfft', 'irfft(a, n=None, axis=-1, norm=None)', {'asarray': asarray, '_get_backward_norm': _get_backward_norm, '_raw_fft': _raw_fft, 'array_function_dispatch': array_function_dispatch, '_fft_dispatcher': _fft_dispatcher, 'a': a, 'n': n, 'axis': axis, 'norm': norm}, 1)
 
 @array_function_dispatch(_fft_dispatcher)
 def hfft(a, n=None, axis=-1, norm=None):
@@ -604,13 +521,8 @@ def hfft(a, n=None, axis=-1, norm=None):
            [ 2., -2.]])
 
     """
-    a = asarray(a)
-    if n is None:
-        n = (a.shape[axis] - 1) * 2
-    new_norm = _swap_direction(norm)
-    output = irfft(conjugate(a), n, axis, norm=new_norm)
-    return output
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.fft._pocketfft.hfft', 'hfft(a, n=None, axis=-1, norm=None)', {'asarray': asarray, '_swap_direction': _swap_direction, 'irfft': irfft, 'array_function_dispatch': array_function_dispatch, '_fft_dispatcher': _fft_dispatcher, 'a': a, 'n': n, 'axis': axis, 'norm': norm}, 1)
 
 @array_function_dispatch(_fft_dispatcher)
 def ihfft(a, n=None, axis=-1, norm=None):
@@ -671,46 +583,19 @@ def ihfft(a, n=None, axis=-1, norm=None):
     array([ 1.-0.j,  2.-0.j,  3.-0.j,  4.-0.j]) # may vary
 
     """
-    a = asarray(a)
-    if n is None:
-        n = a.shape[axis]
-    new_norm = _swap_direction(norm)
-    output = conjugate(rfft(a, n, axis, norm=new_norm))
-    return output
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.fft._pocketfft.ihfft', 'ihfft(a, n=None, axis=-1, norm=None)', {'asarray': asarray, '_swap_direction': _swap_direction, 'rfft': rfft, 'array_function_dispatch': array_function_dispatch, '_fft_dispatcher': _fft_dispatcher, 'a': a, 'n': n, 'axis': axis, 'norm': norm}, 1)
 
 def _cook_nd_args(a, s=None, axes=None, invreal=0):
-    if s is None:
-        shapeless = 1
-        if axes is None:
-            s = list(a.shape)
-        else:
-            s = take(a.shape, axes)
-    else:
-        shapeless = 0
-    s = list(s)
-    if axes is None:
-        axes = list(range(-len(s), 0))
-    if len(s) != len(axes):
-        raise ValueError("Shape and axes have different lengths.")
-    if invreal and shapeless:
-        s[-1] = (a.shape[axes[-1]] - 1) * 2
-    return s, axes
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.fft._pocketfft._cook_nd_args', '_cook_nd_args(a, s=None, axes=None, invreal=0)', {'take': take, 'a': a, 's': s, 'axes': axes, 'invreal': invreal}, 2)
 
 def _raw_fftnd(a, s=None, axes=None, function=fft, norm=None):
-    a = asarray(a)
-    s, axes = _cook_nd_args(a, s, axes)
-    itl = list(range(len(axes)))
-    itl.reverse()
-    for ii in itl:
-        a = function(a, n=s[ii], axis=axes[ii], norm=norm)
-    return a
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.fft._pocketfft._raw_fftnd', '_raw_fftnd(a, s=None, axes=None, function=fft, norm=None)', {'asarray': asarray, '_cook_nd_args': _cook_nd_args, 'a': a, 's': s, 'axes': axes, 'function': function, 'norm': norm, 'fft': fft}, 1)
 
 def _fftn_dispatcher(a, s=None, axes=None, norm=None):
-    return (a,)
-
+    return (a, )
 
 @array_function_dispatch(_fftn_dispatcher)
 def fftn(a, s=None, axes=None, norm=None):
@@ -814,7 +699,6 @@ def fftn(a, s=None, axes=None, norm=None):
     """
     return _raw_fftnd(a, s, axes, fft, norm)
 
-
 @array_function_dispatch(_fftn_dispatcher)
 def ifftn(a, s=None, axes=None, norm=None):
     """
@@ -917,7 +801,6 @@ def ifftn(a, s=None, axes=None, norm=None):
     """
     return _raw_fftnd(a, s, axes, ifft, norm)
 
-
 @array_function_dispatch(_fftn_dispatcher)
 def fft2(a, s=None, axes=(-2, -1), norm=None):
     """
@@ -1013,7 +896,6 @@ def fft2(a, s=None, axes=(-2, -1), norm=None):
     """
     return _raw_fftnd(a, s, axes, fft, norm)
 
-
 @array_function_dispatch(_fftn_dispatcher)
 def ifft2(a, s=None, axes=(-2, -1), norm=None):
     """
@@ -1106,7 +988,6 @@ def ifft2(a, s=None, axes=(-2, -1), norm=None):
     """
     return _raw_fftnd(a, s, axes, ifft, norm)
 
-
 @array_function_dispatch(_fftn_dispatcher)
 def rfftn(a, s=None, axes=None, norm=None):
     """
@@ -1197,13 +1078,8 @@ def rfftn(a, s=None, axes=None, norm=None):
             [0.+0.j,  0.+0.j]]])
 
     """
-    a = asarray(a)
-    s, axes = _cook_nd_args(a, s, axes)
-    a = rfft(a, s[-1], axes[-1], norm)
-    for ii in range(len(axes)-1):
-        a = fft(a, s[ii], axes[ii], norm)
-    return a
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.fft._pocketfft.rfftn', 'rfftn(a, s=None, axes=None, norm=None)', {'asarray': asarray, '_cook_nd_args': _cook_nd_args, 'rfft': rfft, 'fft': fft, 'array_function_dispatch': array_function_dispatch, '_fftn_dispatcher': _fftn_dispatcher, 'a': a, 's': s, 'axes': axes, 'norm': norm}, 1)
 
 @array_function_dispatch(_fftn_dispatcher)
 def rfft2(a, s=None, axes=(-2, -1), norm=None):
@@ -1255,7 +1131,6 @@ def rfft2(a, s=None, axes=(-2, -1), norm=None):
            [-12.5-17.20477401j,   0.  +0.j        ,   0.  +0.j        ]])
     """
     return rfftn(a, s, axes, norm)
-
 
 @array_function_dispatch(_fftn_dispatcher)
 def irfftn(a, s=None, axes=None, norm=None):
@@ -1359,13 +1234,8 @@ def irfftn(a, s=None, axes=None, norm=None):
             [1.,  1.]]])
 
     """
-    a = asarray(a)
-    s, axes = _cook_nd_args(a, s, axes, invreal=1)
-    for ii in range(len(axes)-1):
-        a = ifft(a, s[ii], axes[ii], norm)
-    a = irfft(a, s[-1], axes[-1], norm)
-    return a
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.fft._pocketfft.irfftn', 'irfftn(a, s=None, axes=None, norm=None)', {'asarray': asarray, '_cook_nd_args': _cook_nd_args, 'ifft': ifft, 'irfft': irfft, 'array_function_dispatch': array_function_dispatch, '_fftn_dispatcher': _fftn_dispatcher, 'a': a, 's': s, 'axes': axes, 'norm': norm}, 1)
 
 @array_function_dispatch(_fftn_dispatcher)
 def irfft2(a, s=None, axes=(-2, -1), norm=None):
@@ -1422,3 +1292,4 @@ def irfft2(a, s=None, axes=(-2, -1), norm=None):
            [4., 4., 4., 4., 4.]])
     """
     return irfftn(a, s, axes, norm)
+

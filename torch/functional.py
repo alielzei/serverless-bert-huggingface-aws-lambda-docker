@@ -5,33 +5,12 @@ from ._overrides import has_torch_function, handle_torch_function
 from ._jit_internal import boolean_dispatch, List
 from ._jit_internal import _overload as overload
 from torch._six import PY2
-
 Tensor = torch.Tensor
 from torch import _VF
-
-__all__ = [
-    'align_tensors',
-    'broadcast_tensors',
-    'cartesian_prod',
-    'cdist',
-    'chain_matmul',
-    'einsum',
-    'lu',
-    'lu_unpack',
-    'norm',
-    'meshgrid',
-    'pca_lowrank',
-    'split',
-    'stft',
-    'svd_lowrank',
-    'tensordot',
-    'unique',
-    'unique_consecutive',
-]
-
+__all__ = ['align_tensors', 'broadcast_tensors', 'cartesian_prod', 'cdist', 'chain_matmul', 'einsum', 'lu', 'lu_unpack', 'norm', 'meshgrid', 'pca_lowrank', 'split', 'stft', 'svd_lowrank', 'tensordot', 'unique', 'unique_consecutive']
 
 def broadcast_tensors(*tensors):
-    r"""broadcast_tensors(*tensors) -> List of Tensors
+    """broadcast_tensors(*tensors) -> List of Tensors
 
     Broadcasts the given tensors according to :ref:`broadcasting-semantics`.
 
@@ -56,14 +35,11 @@ def broadcast_tensors(*tensors):
         tensor([[0, 1, 2],
                 [0, 1, 2]])
     """
-    if not torch.jit.is_scripting():
-        if any(type(t) is not Tensor for t in tensors) and has_torch_function(tensors):
-            return handle_torch_function(broadcast_tensors, tensors, *tensors)
-    return _VF.broadcast_tensors(tensors)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.functional.broadcast_tensors', 'broadcast_tensors(*tensors)', {'torch': torch, 'Tensor': Tensor, 'has_torch_function': has_torch_function, 'handle_torch_function': handle_torch_function, 'broadcast_tensors': broadcast_tensors, '_VF': _VF, 'tensors': tensors}, 1)
 
 def split(tensor, split_size_or_sections, dim=0):
-    r"""Splits the tensor into chunks. Each chunk is a view of the original tensor.
+    """Splits the tensor into chunks. Each chunk is a view of the original tensor.
 
     If :attr:`split_size_or_sections` is an integer type, then :attr:`tensor` will
     be split into equally sized chunks (if possible). Last chunk will be smaller if
@@ -81,38 +57,20 @@ def split(tensor, split_size_or_sections, dim=0):
         dim (int): dimension along which to split the tensor.
     """
     if not torch.jit.is_scripting():
-        if type(tensor) is not Tensor and has_torch_function((tensor,)):
-            return handle_torch_function(split, (tensor,), tensor, split_size_or_sections,
-                                         dim=dim)
-    # Overwriting reason:
-    # This dispatches to two ATen functions depending on the type of
-    # split_size_or_sections. The branching code is in tensor.py, which we
-    # call here.
+        if (type(tensor) is not Tensor and has_torch_function((tensor, ))):
+            return handle_torch_function(split, (tensor, ), tensor, split_size_or_sections, dim=dim)
     return tensor.split(split_size_or_sections, dim)
 
-# equivalent to itertools.product(indices)
 def _indices_product(indices):
-    # type: (List[int]) -> (List[List[int]])
-    empty_list = torch.jit.annotate(List[int], [])
-    result = [empty_list]
-    for idx in indices:
-        result_temp = torch.jit.annotate(List[List[int]], [])
-        for res in result:
-            for i in range(idx):
-                result_temp.append(res + [i])
-        result = result_temp
-    return result
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.functional._indices_product', '_indices_product(indices)', {'torch': torch, 'List': List, 'indices': indices}, 1)
 
 def _index_tensor_with_indices_list(tensor, indices):
-    # type: (Tensor, List[int]) -> Tensor
-    out = tensor
-    for index in indices:
-        out = out[index]
-    return out
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.functional._index_tensor_with_indices_list', '_index_tensor_with_indices_list(tensor, indices)', {'tensor': tensor, 'indices': indices}, 1)
 
 def lu_unpack(LU_data, LU_pivots, unpack_data=True, unpack_pivots=True):
-    # type: (Tensor, Tensor, bool, bool) ->  (Tuple[Optional[Tensor], Optional[Tensor], Optional[Tensor]])
-    r"""Unpacks the data and pivots from a LU factorization of a tensor.
+    """Unpacks the data and pivots from a LU factorization of a tensor.
 
     Returns a tuple of tensors as ``(the pivots, the L tensor, the U tensor)``.
 
@@ -161,63 +119,11 @@ def lu_unpack(LU_data, LU_pivots, unpack_data=True, unpack_pivots=True):
         >>> torch.norm(A_ - A)
         tensor(2.9802e-08)
     """
-    if not torch.jit.is_scripting():
-        tens_ops = (LU_data, LU_pivots)
-        if any([type(t) is not Tensor for t in tens_ops]) and has_torch_function(tens_ops):
-            return handle_torch_function(
-                lu_unpack, tens_ops, LU_data, LU_pivots, unpack_data=unpack_data,
-                unpack_pivots=unpack_pivots)
-    shape = LU_data.shape
-    # In generalized LU factorization, the following shape relations hold:
-    #   A.shape[-2:] == (m, n)
-    #   P.shape[-2:] == (m, m)
-    #   L.shape[-2:] == (m, k)
-    #   U.shape[-2:] == (k, n)
-    # where k = min(m, n)
-    m, n = shape[-2:]
-    k = min(m, n)
-    if unpack_data:
-        U = LU_data.triu()
-        if m != k:
-            U = U.narrow(-2, 0, k)
-        L = LU_data.tril()
-        if k != n:
-            L = L.narrow(-1, 0, k)
-        L.diagonal(dim1=-2, dim2=-1).fill_(1)
-    else:
-        L = U = None
-
-    if unpack_pivots:
-        LU_pivots_zero_idx = LU_pivots - 1
-        if LU_data.dim() > 2:
-            P = torch.eye(m, device=LU_data.device, dtype=LU_data.dtype) \
-                     .expand(shape[:-1] + (m,)) \
-                     .clone(memory_format=torch.contiguous_format)
-
-            # TODO: rewrite when TorchScript supports product and map as
-            # product(*map(lambda x: list(range(x)), shape[:-2])) when issue 33781 is fixed
-            indices = _indices_product(shape[:-2])
-            for idx in indices:
-                final_order = [i for i in range(m)]  # noqa: C416 TODO: rewrite as list(range(m))
-                for k, j in enumerate(_index_tensor_with_indices_list(LU_pivots_zero_idx, idx)):
-                    final_order[k], final_order[j] = final_order[j], final_order[k]
-                # TODO: remove _index_tensor_with_indices_list when TorchScript supports indexing Tensor with list
-                p_idx = _index_tensor_with_indices_list(P, idx)
-                p_idx.copy_(p_idx.index_select(1, torch.as_tensor(final_order, device=LU_pivots.device)))
-        else:
-            P = torch.eye(m, device=LU_data.device, dtype=LU_data.dtype)
-            final_order = [i for i in range(m)]  # noqa: C416 TODO: rewrite as list(range(m))
-            for k, j, in enumerate(LU_pivots_zero_idx):
-                final_order[k], final_order[j] = final_order[j], final_order[k]
-            P = P.index_select(1, torch.as_tensor(final_order, device=LU_pivots.device))
-    else:
-        P = None
-
-    return P, L, U
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.functional.lu_unpack', 'lu_unpack(LU_data, LU_pivots, unpack_data=True, unpack_pivots=True)', {'torch': torch, 'Tensor': Tensor, 'has_torch_function': has_torch_function, 'handle_torch_function': handle_torch_function, 'lu_unpack': lu_unpack, '_indices_product': _indices_product, '_index_tensor_with_indices_list': _index_tensor_with_indices_list, 'LU_data': LU_data, 'LU_pivots': LU_pivots, 'unpack_data': unpack_data, 'unpack_pivots': unpack_pivots}, 1)
 
 def einsum(equation, *operands):
-    r"""einsum(equation, *operands) -> Tensor
+    """einsum(equation, *operands) -> Tensor
 
 This function provides a way of computing multilinear expressions (i.e. sums of products) using the
 Einstein summation convention.
@@ -283,17 +189,11 @@ Examples::
     >>> torch.einsum('...ij->...ji', A).shape # batch permute
     torch.Size([2, 3, 5, 4])
 """
-    if not torch.jit.is_scripting():
-        if any(type(t) is not Tensor for t in operands) and has_torch_function(operands):
-            return handle_torch_function(einsum, operands, *operands)
-    if len(operands) == 1 and isinstance(operands[0], (list, tuple)):
-        # the old interface of passing the operands as one list argument
-        operands = operands[0]
-    return _VF.einsum(equation, operands)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.functional.einsum', 'einsum(equation, *operands)', {'torch': torch, 'Tensor': Tensor, 'has_torch_function': has_torch_function, 'handle_torch_function': handle_torch_function, 'einsum': einsum, '_VF': _VF, 'equation': equation, 'operands': operands}, 1)
 
 def meshgrid(*tensors):
-    r"""Take :math:`N` tensors, each of which can be either scalar or 1-dimensional
+    """Take :math:`N` tensors, each of which can be either scalar or 1-dimensional
 vector, and create :math:`N` N-dimensional grids, where the :math:`i` :sup:`th` grid is defined by
 expanding the :math:`i` :sup:`th` input over dimensions defined by other inputs.
 
@@ -322,29 +222,25 @@ expanding the :math:`i` :sup:`th` input over dimensions defined by other inputs.
                 [4, 5, 6]])
     """
     if not torch.jit.is_scripting():
-        if any(type(t) is not Tensor for t in tensors) and has_torch_function(tensors):
+        if (any((type(t) is not Tensor for t in tensors)) and has_torch_function(tensors)):
             return handle_torch_function(meshgrid, tensors, *tensors)
-    if len(tensors) == 1 and isinstance(tensors[0], (list, tuple)):
-        # the old interface of passing the operands as one list argument
+    if (len(tensors) == 1 and isinstance(tensors[0], (list, tuple))):
         tensors = tensors[0]
     return _VF.meshgrid(tensors)
 
-
-def stft(input, n_fft, hop_length=None, win_length=None, window=None,
-         center=True, pad_mode='reflect', normalized=False, onesided=True):
-    # type: (Tensor, int, Optional[int], Optional[int], Optional[Tensor], bool, str, bool, bool) -> Tensor
-    r"""Short-time Fourier transform (STFT).
+def stft(input, n_fft, hop_length=None, win_length=None, window=None, center=True, pad_mode='reflect', normalized=False, onesided=True):
+    """Short-time Fourier transform (STFT).
 
     Ignoring the optional batch dimension, this method computes the following
     expression:
 
     .. math::
-        X[m, \omega] = \sum_{k = 0}^{\text{win\_length-1}}%
-                            \text{window}[k]\ \text{input}[m \times \text{hop\_length} + k]\ %
-                            \exp\left(- j \frac{2 \pi \cdot \omega k}{\text{win\_length}}\right),
+        X[m, \omega] = \sum_{k = 0}^{	ext{win\_length-1}}%
+                            	ext{window}[k]\ 	ext{input}[m 	imes 	ext{hop\_length} + k]\ %
+                            \exp\left(- j rac{2 \pi \cdot \omega k}{	ext{win\_length}}ight),
 
     where :math:`m` is the index of the sliding window, and :math:`\omega` is
-    the frequency that :math:`0 \leq \omega < \text{n\_fft}`. When
+    the frequency that :math:`0 \leq \omega < 	ext{n\_fft}`. When
     :attr:`onesided` is the default value ``True``,
 
     * :attr:`input` must be either a 1-D time sequence or a 2-D batch of time
@@ -359,28 +255,28 @@ def stft(input, n_fft, hop_length=None, win_length=None, window=None,
     * :attr:`window` can be a 1-D tensor of size :attr:`win_length`, e.g., from
       :meth:`torch.hann_window`. If :attr:`window` is ``None`` (default), it is
       treated as if having :math:`1` everywhere in the window. If
-      :math:`\text{win\_length} < \text{n\_fft}`, :attr:`window` will be padded on
+      :math:`	ext{win\_length} < 	ext{n\_fft}`, :attr:`window` will be padded on
       both sides to length :attr:`n_fft` before being applied.
 
     * If :attr:`center` is ``True`` (default), :attr:`input` will be padded on
       both sides so that the :math:`t`-th frame is centered at time
-      :math:`t \times \text{hop\_length}`. Otherwise, the :math:`t`-th frame
-      begins at time  :math:`t \times \text{hop\_length}`.
+      :math:`t 	imes 	ext{hop\_length}`. Otherwise, the :math:`t`-th frame
+      begins at time  :math:`t 	imes 	ext{hop\_length}`.
 
     * :attr:`pad_mode` determines the padding method used on :attr:`input` when
       :attr:`center` is ``True``. See :meth:`torch.nn.functional.pad` for
       all available options. Default is ``"reflect"``.
 
     * If :attr:`onesided` is ``True`` (default), only values for :math:`\omega`
-      in :math:`\left[0, 1, 2, \dots, \left\lfloor \frac{\text{n\_fft}}{2} \right\rfloor + 1\right]`
+      in :math:`\left[0, 1, 2, \dots, \left\lfloor rac{	ext{n\_fft}}{2} ightfloor + 1ight]`
       are returned because the real-to-complex Fourier transform satisfies the
-      conjugate symmetry, i.e., :math:`X[m, \omega] = X[m, \text{n\_fft} - \omega]^*`.
+      conjugate symmetry, i.e., :math:`X[m, \omega] = X[m, 	ext{n\_fft} - \omega]^*`.
 
     * If :attr:`normalized` is ``True`` (default is ``False``), the function
-      returns the normalized STFT results, i.e., multiplied by :math:`(\text{frame\_length})^{-0.5}`.
+      returns the normalized STFT results, i.e., multiplied by :math:`(	ext{frame\_length})^{-0.5}`.
 
     Returns the real and the imaginary parts together as one tensor of size
-    :math:`(* \times N \times T \times 2)`, where :math:`*` is the optional
+    :math:`(* 	imes N 	imes T 	imes 2)`, where :math:`*` is the optional
     batch size of :attr:`input`, :math:`N` is the number of frequencies where
     STFT is applied, :math:`T` is the total number of frames used, and each pair
     in the last dimension represents a complex number as the real part and the
@@ -400,7 +296,7 @@ def stft(input, n_fft, hop_length=None, win_length=None, window=None,
         window (Tensor, optional): the optional window function.
             Default: ``None`` (treated as window of all :math:`1` s)
         center (bool, optional): whether to pad :attr:`input` on both sides so
-            that the :math:`t`-th frame is centered at time :math:`t \times \text{hop\_length}`.
+            that the :math:`t`-th frame is centered at time :math:`t 	imes 	ext{hop\_length}`.
             Default: ``True``
         pad_mode (string, optional): controls the padding method used when
             :attr:`center` is ``True``. Default: ``"reflect"``
@@ -414,13 +310,8 @@ def stft(input, n_fft, hop_length=None, win_length=None, window=None,
 
     """
     if not torch.jit.is_scripting():
-        if type(input) is not Tensor and has_torch_function((input,)):
-            return handle_torch_function(
-                stft, (input,), input, n_fft, hop_length=hop_length, win_length=win_length,
-                window=window, center=center, pad_mode=pad_mode, normalized=normalized,
-                onesided=onesided)
-    # TODO: after having proper ways to map Python strings to ATen Enum, move
-    #       this and F.pad to ATen.
+        if (type(input) is not Tensor and has_torch_function((input, ))):
+            return handle_torch_function(stft, (input, ), input, n_fft, hop_length=hop_length, win_length=win_length, window=window, center=center, pad_mode=pad_mode, normalized=normalized, onesided=onesided)
     if center:
         signal_dim = input.dim()
         extended_shape = [1] * (3 - signal_dim) + list(input.size())
@@ -428,13 +319,10 @@ def stft(input, n_fft, hop_length=None, win_length=None, window=None,
         input = F.pad(input.view(extended_shape), (pad, pad), pad_mode)
         input = input.view(input.shape[-signal_dim:])
     return _VF.stft(input, n_fft, hop_length, win_length, window, normalized, onesided)
-
-
 del torch.unique_dim
 
-
 def unique(input, sorted=True, return_inverse=False, return_counts=False, dim=None):
-    r"""Returns the unique elements of the input tensor.
+    """Returns the unique elements of the input tensor.
 
     .. note:: This function is different from :func:`torch.unique_consecutive` in the sense that
         this function also eliminates non-consecutive duplicate values.
@@ -493,37 +381,23 @@ def unique(input, sorted=True, return_inverse=False, return_counts=False, dim=No
 
     """
     if not torch.jit.is_scripting():
-        if type(input) is not Tensor and has_torch_function((input,)):
-            return handle_torch_function(
-                unique, (input,), input, sorted=sorted, return_inverse=return_inverse,
-                return_counts=return_counts, dim=dim)
+        if (type(input) is not Tensor and has_torch_function((input, ))):
+            return handle_torch_function(unique, (input, ), input, sorted=sorted, return_inverse=return_inverse, return_counts=return_counts, dim=dim)
     if dim is not None:
-        output, inverse_indices, counts = _VF.unique_dim(
-            input,
-            dim,
-            sorted=sorted,
-            return_inverse=return_inverse,
-            return_counts=return_counts,
-        )
+        (output, inverse_indices, counts) = _VF.unique_dim(input, dim, sorted=sorted, return_inverse=return_inverse, return_counts=return_counts)
     else:
-        output, inverse_indices, counts = torch._unique2(
-            input,
-            sorted=sorted,
-            return_inverse=return_inverse,
-            return_counts=return_counts,
-        )
-    if return_inverse and return_counts:
-        return output, inverse_indices, counts
+        (output, inverse_indices, counts) = torch._unique2(input, sorted=sorted, return_inverse=return_inverse, return_counts=return_counts)
+    if (return_inverse and return_counts):
+        return (output, inverse_indices, counts)
     elif return_inverse:
-        return output, inverse_indices
+        return (output, inverse_indices)
     elif return_counts:
-        return output, counts
+        return (output, counts)
     else:
         return output
 
-
 def unique_consecutive(input, return_inverse=False, return_counts=False, dim=None):
-    r"""Eliminates all but the first element from every consecutive group of equivalent elements.
+    """Eliminates all but the first element from every consecutive group of equivalent elements.
 
     .. note:: This function is different from :func:`torch.unique` in the sense that this function
         only eliminates consecutive duplicate values. This semantics is similar to `std::unique`
@@ -573,23 +447,19 @@ def unique_consecutive(input, return_inverse=False, return_counts=False, dim=Non
         tensor([2, 2, 1, 2, 1])
     """
     if not torch.jit.is_scripting():
-        if type(input) is not Tensor and has_torch_function((input,)):
-            return handle_torch_function(
-                unique_consecutive, (input,), input, return_inverse=return_inverse,
-                return_counts=return_counts, dim=dim)
-    output, inverse_indices, counts = _VF.unique_consecutive(
-        input, return_inverse=return_inverse, return_counts=return_counts, dim=dim)
-    if return_inverse and return_counts:
-        return output, inverse_indices, counts
+        if (type(input) is not Tensor and has_torch_function((input, ))):
+            return handle_torch_function(unique_consecutive, (input, ), input, return_inverse=return_inverse, return_counts=return_counts, dim=dim)
+    (output, inverse_indices, counts) = _VF.unique_consecutive(input, return_inverse=return_inverse, return_counts=return_counts, dim=dim)
+    if (return_inverse and return_counts):
+        return (output, inverse_indices, counts)
     if return_inverse:
-        return output, inverse_indices
+        return (output, inverse_indices)
     if return_counts:
-        return output, counts
+        return (output, counts)
     return output
 
-
 def tensordot(a, b, dims=2):
-    r"""Returns a contraction of a and b over multiple dimensions.
+    """Returns a contraction of a and b over multiple dimensions.
 
     :attr:`tensordot` implements a generalized matrix product.
 
@@ -606,7 +476,7 @@ def tensordot(a, b, dims=2):
 
     .. math::
         r_{i_0,...,i_{m-d}, i_d,...,i_n}
-          = \sum_{k_0,...,k_{d-1}} a_{i_0,...,i_{m-d},k_0,...,k_{d-1}} \times b_{k_0,...,k_{d-1}, i_d,...,i_n}.
+          = \sum_{k_0,...,k_{d-1}} a_{i_0,...,i_{m-d},k_0,...,k_{d-1}} 	imes b_{k_0,...,k_{d-1}, i_d,...,i_n}.
 
     When called with :attr:`dims` of the list form, the given dimensions will be contracted
     in place of the last :math:`d` of :attr:`a` and the first :math:`d` of :math:`b`. The sizes
@@ -633,20 +503,18 @@ def tensordot(a, b, dims=2):
 
     """
     if not torch.jit.is_scripting():
-        if (type(a) is not Tensor or type(b) is not Tensor) and has_torch_function((a, b)):
+        if (((type(a) is not Tensor or type(b) is not Tensor)) and has_torch_function((a, b))):
             return handle_torch_function(tensordot, (a, b), a, b, dims=dims)
-    if isinstance(dims, (list, tuple)) or \
-       (isinstance(dims, torch.Tensor) and dims.numel() > 1):
-        dims_a, dims_b = dims
+    if (isinstance(dims, (list, tuple)) or (isinstance(dims, torch.Tensor) and dims.numel() > 1)):
+        (dims_a, dims_b) = dims
     else:
         if isinstance(dims, torch.Tensor):
             dims = dims.item()
         if dims < 0:
-            raise RuntimeError("tensordot expects dims >= 0, but got dims={}".format(dims))
+            raise RuntimeError('tensordot expects dims >= 0, but got dims={}'.format(dims))
         dims_a = list(range(-dims, 0))
         dims_b = list(range(dims))
     return _VF.tensordot(a, b, dims_a, dims_b)
-
 
 def cartesian_prod(*tensors):
     """Do cartesian product of the given sequence of tensors. The behavior is similar to
@@ -676,19 +544,15 @@ def cartesian_prod(*tensors):
                 [3, 4],
                 [3, 5]])
     """
-    if not torch.jit.is_scripting():
-        if any(type(t) is not Tensor for t in tensors) and has_torch_function(tensors):
-            return handle_torch_function(cartesian_prod, tensors, *tensors)
-    return _VF.cartesian_prod(tensors)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.functional.cartesian_prod', 'cartesian_prod(*tensors)', {'torch': torch, 'Tensor': Tensor, 'has_torch_function': has_torch_function, 'handle_torch_function': handle_torch_function, 'cartesian_prod': cartesian_prod, '_VF': _VF, 'tensors': tensors}, 1)
 
-
-def cdist(x1, x2, p=2., compute_mode='use_mm_for_euclid_dist_if_necessary'):
-    # type: (Tensor, Tensor, float, str) -> (Tensor)
-    r"""Computes batched the p-norm distance between each pair of the two collections of row vectors.
+def cdist(x1, x2, p=2.0, compute_mode='use_mm_for_euclid_dist_if_necessary'):
+    """Computes batched the p-norm distance between each pair of the two collections of row vectors.
 
     Args:
-        x1 (Tensor): input tensor of shape :math:`B \times P \times M`.
-        x2 (Tensor): input tensor of shape :math:`B \times R \times M`.
+        x1 (Tensor): input tensor of shape :math:`B 	imes P 	imes M`.
+        x2 (Tensor): input tensor of shape :math:`B 	imes R 	imes M`.
         p: p value for the p-norm distance to calculate between each vector pair
             :math:`\in [0, \infty]`.
         compute_mode:
@@ -700,8 +564,8 @@ def cdist(x1, x2, p=2., compute_mode='use_mm_for_euclid_dist_if_necessary'):
             euclidean distance (p = 2)
             Default: use_mm_for_euclid_dist_if_necessary.
 
-    If x1 has shape :math:`B \times P \times M` and x2 has shape :math:`B \times R \times M` then the
-    output will have shape :math:`B \times P \times R`.
+    If x1 has shape :math:`B 	imes P 	imes M` and x2 has shape :math:`B 	imes R 	imes M` then the
+    output will have shape :math:`B 	imes P 	imes R`.
 
     This function is equivalent to `scipy.spatial.distance.cdist(input,'minkowski', p=p)`
     if :math:`p \in (0, \infty)`. When :math:`p = 0` it is equivalent to
@@ -724,42 +588,27 @@ def cdist(x1, x2, p=2., compute_mode='use_mm_for_euclid_dist_if_necessary'):
                 [2.7138, 3.8322],
                 [2.2830, 0.3791]])
     """
-    if not torch.jit.is_scripting():
-        if (type(x1) is not Tensor or type(x2) is not Tensor) and has_torch_function((x1, x2)):
-            return handle_torch_function(
-                cdist, (x1, x2), x1, x2, p=p, compute_mode=compute_mode)
-    if compute_mode == 'use_mm_for_euclid_dist_if_necessary':
-        return _VF.cdist(x1, x2, p, None)
-    elif compute_mode == 'use_mm_for_euclid_dist':
-        return _VF.cdist(x1, x2, p, 1)
-    elif compute_mode == 'donot_use_mm_for_euclid_dist':
-        return _VF.cdist(x1, x2, p, 2)
-    else:
-        raise ValueError("{} is not a valid value for compute_mode".format(compute_mode))
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.functional.cdist', "cdist(x1, x2, p=2.0, compute_mode='use_mm_for_euclid_dist_if_necessary')", {'torch': torch, 'Tensor': Tensor, 'has_torch_function': has_torch_function, 'handle_torch_function': handle_torch_function, 'cdist': cdist, '_VF': _VF, 'x1': x1, 'x2': x2, 'p': p, 'compute_mode': compute_mode}, 1)
 
-# TODO: type dim as BroadcastingList when https://github.com/pytorch/pytorch/issues/33782 is fixed
-@overload  # noqa: 749
-def norm(input, p="fro", dim=None, keepdim=False, out=None, dtype=None):  # noqa: 749
-    # type: (Tensor, str, Optional[List[int]], bool, Optional[Tensor], Optional[int]) -> Tensor
+@overload
+def norm(input, p='fro', dim=None, keepdim=False, out=None, dtype=None):
     pass
 
-@overload  # noqa: 749
-def norm(input, p="fro", dim=None, keepdim=False, out=None, dtype=None):  # noqa: 749
-    # type: (Tensor, Optional[number], Optional[List[int]], bool, Optional[Tensor], Optional[int]) -> Tensor
+@overload
+def norm(input, p='fro', dim=None, keepdim=False, out=None, dtype=None):
     pass
 
-@overload  # noqa: 749
-def norm(input, p="fro", dim=None, keepdim=False, out=None, dtype=None):  # noqa: 749
-    # type: (Tensor, Optional[number], Optional[int], bool, Optional[Tensor], Optional[int]) -> Tensor
+@overload
+def norm(input, p='fro', dim=None, keepdim=False, out=None, dtype=None):
     pass
 
-@overload  # noqa: 749
-def norm(input, p="fro", dim=None, keepdim=False, out=None, dtype=None):  # noqa: 749
-    # type: (Tensor, str, Optional[int], bool, Optional[Tensor], Optional[int]) -> Tensor
+@overload
+def norm(input, p='fro', dim=None, keepdim=False, out=None, dtype=None):
     pass
 
-def norm(input, p="fro", dim=None, keepdim=False, out=None, dtype=None):  # noqa: 749
-    r"""Returns the matrix norm or vector norm of a given tensor.
+def norm(input, p='fro', dim=None, keepdim=False, out=None, dtype=None):
+    """Returns the matrix norm or vector norm of a given tensor.
 
     Args:
         input (Tensor): the input tensor
@@ -819,27 +668,17 @@ def norm(input, p="fro", dim=None, keepdim=False, out=None, dtype=None):  # noqa
         (tensor(3.7417), tensor(11.2250))
     """
     if not torch.jit.is_scripting():
-        if type(input) is not Tensor and has_torch_function((input,)):
-            return handle_torch_function(
-                norm, (input,), input, p=p, dim=dim, keepdim=keepdim, out=out, dtype=dtype)
-        # py2 considers isinstance(unicodestr, str) == False
-        if PY2 and isinstance(p, unicode):
+        if (type(input) is not Tensor and has_torch_function((input, ))):
+            return handle_torch_function(norm, (input, ), input, p=p, dim=dim, keepdim=keepdim, out=out, dtype=dtype)
+        if (PY2 and isinstance(p, unicode)):
             p = str(p)
-
     ndim = input.dim()
-
-
-    # catch default case
-    if dim is None and out is None and dtype is None and p is not None:
+    if (dim is None and out is None and dtype is None and p is not None):
         if isinstance(p, str):
-            if p == "fro":
+            if p == 'fro':
                 return _VF.frobenius_norm(input)
         if not isinstance(p, str):
             return _VF.norm(input, p)
-
-    # TODO: when https://github.com/pytorch/pytorch/issues/33782 is fixed
-    # remove the overloads where dim is an int and replace with BraodcastingList1
-    # and remove next four lines, replace _dim with dim
     if dim is not None:
         if isinstance(dim, int):
             _dim = [dim]
@@ -847,49 +686,44 @@ def norm(input, p="fro", dim=None, keepdim=False, out=None, dtype=None):  # noqa
             _dim = dim
     else:
         _dim = None
-
     if isinstance(p, str):
-        if p == "fro":
+        if p == 'fro':
             if dtype is not None:
-                raise ValueError("dtype argument is not supported in frobenius norm")
-
+                raise ValueError('dtype argument is not supported in frobenius norm')
             if _dim is None:
-                _dim = [i for i in range(ndim)]  # noqa: C416 TODO: rewrite as list(range(m))
+                _dim = [i for i in range(ndim)]
             if out is None:
                 return _VF.frobenius_norm(input, _dim, keepdim=keepdim)
             else:
                 return _VF.frobenius_norm(input, _dim, keepdim=keepdim, out=out)
-        elif p == "nuc":
+        elif p == 'nuc':
             if dtype is not None:
-                raise ValueError("dtype argument is not supported in nuclear norm")
+                raise ValueError('dtype argument is not supported in nuclear norm')
             if _dim is None:
                 if out is None:
                     return _VF.nuclear_norm(input, keepdim=keepdim)
                 else:
                     return _VF.nuclear_norm(input, keepdim=keepdim, out=out)
+            elif out is None:
+                return _VF.nuclear_norm(input, _dim, keepdim=keepdim)
             else:
-                if out is None:
-                    return _VF.nuclear_norm(input, _dim, keepdim=keepdim)
-                else:
-                    return _VF.nuclear_norm(input, _dim, keepdim=keepdim, out=out)
+                return _VF.nuclear_norm(input, _dim, keepdim=keepdim, out=out)
         raise RuntimeError("only valid string values are 'fro' and 'nuc', found {}".format(p))
     else:
         if _dim is None:
-            _dim = [i for i in range(ndim)]  # noqa: C416 TODO: rewrite as list(range(m))
-
+            _dim = [i for i in range(ndim)]
         if out is None:
             if dtype is None:
                 return _VF.norm(input, p, _dim, keepdim=keepdim)
             else:
                 return _VF.norm(input, p, _dim, keepdim=keepdim, dtype=dtype)
+        elif dtype is None:
+            return _VF.norm(input, p, _dim, keepdim=keepdim, out=out)
         else:
-            if dtype is None:
-                return _VF.norm(input, p, _dim, keepdim=keepdim, out=out)
-            else:
-                return _VF.norm(input, p, _dim, keepdim=keepdim, dtype=dtype, out=out)
+            return _VF.norm(input, p, _dim, keepdim=keepdim, dtype=dtype, out=out)
 
 def chain_matmul(*matrices):
-    r"""Returns the matrix product of the :math:`N` 2-D tensors. This product is efficiently computed
+    """Returns the matrix product of the :math:`N` 2-D tensors. This product is efficiently computed
     using the matrix chain order algorithm which selects the order in which incurs the lowest cost in terms
     of arithmetic operations (`[CLRS]`_). Note that since this is a function to compute the product, :math:`N`
     needs to be greater than or equal to 2; if equal to 2 then a trivial matrix-matrix product is returned.
@@ -901,8 +735,8 @@ def chain_matmul(*matrices):
 
 
     Returns:
-        Tensor: if the :math:`i^{th}` tensor was of dimensions :math:`p_{i} \times p_{i + 1}`, then the product
-        would be of dimensions :math:`p_{1} \times p_{N + 1}`.
+        Tensor: if the :math:`i^{th}` tensor was of dimensions :math:`p_{i} 	imes p_{i + 1}`, then the product
+        would be of dimensions :math:`p_{1} 	imes p_{N + 1}`.
 
     Example::
 
@@ -917,15 +751,11 @@ def chain_matmul(*matrices):
 
     .. _`[CLRS]`: https://mitpress.mit.edu/books/introduction-algorithms-third-edition
     """
-    if not torch.jit.is_scripting():
-        if any(type(t) is not Tensor for t in matrices) and has_torch_function(matrices):
-            return handle_torch_function(chain_matmul, matrices, *matrices)
-    return _VF.chain_matmul(matrices)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.functional.chain_matmul', 'chain_matmul(*matrices)', {'torch': torch, 'Tensor': Tensor, 'has_torch_function': has_torch_function, 'handle_torch_function': handle_torch_function, 'chain_matmul': chain_matmul, '_VF': _VF, 'matrices': matrices}, 1)
 
 def _lu_impl(A, pivot=True, get_infos=False, out=None):
-    # type: (Tensor, bool, bool, Any) -> Tuple[Tensor, Tensor, Tensor] 
-    r"""Computes the LU factorization of a matrix or batches of matrices
+    """Computes the LU factorization of a matrix or batches of matrices
     :attr:`A`. Returns a tuple containing the LU factorization and
     pivots of :attr:`A`.  Pivoting is done if :attr:`pivot` is set to
     ``True``.
@@ -991,61 +821,22 @@ def _lu_impl(A, pivot=True, get_infos=False, out=None):
         ...   print('LU factorization succeeded for all samples!')
         LU factorization succeeded for all samples!
     """
-    # If get_infos is True, then we don't need to check for errors and vice versa
-    return torch._lu_with_info(A, pivot=pivot, check_errors=(not get_infos))
+    return torch._lu_with_info(A, pivot=pivot, check_errors=not get_infos)
 
 def _check_list_size(out_len, get_infos, out):
-    # type: (int, bool, List[Tensor]) -> None   
-    get_infos_int = 1 if get_infos else 0
-    if out_len - get_infos_int != 2:
-        raise TypeError("expected tuple of {} elements but got {}"
-                        .format(2 + int(get_infos), len(out_len)))
-    if not isinstance(out, (tuple, list)):
-        raise TypeError("argument 'out' must be tuple of Tensors, not {}"
-                        .format(type(out).__name__))
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('torch.functional._check_list_size', '_check_list_size(out_len, get_infos, out)', {'out_len': out_len, 'get_infos': get_infos, 'out': out}, 0)
 
 def _lu_with_infos(A, pivot=True, get_infos=False, out=None):
-    # type: (Tensor, bool, bool, Optional[Tuple[Tensor, Tensor, Tensor]]) -> Tuple[Tensor, Tensor, Tensor]
-    if not torch.jit.is_scripting():
-        if type(A) is not Tensor and has_torch_function((A,)):
-            return handle_torch_function(
-                lu, (A,), A, pivot=pivot, get_infos=get_infos, out=out)
-    result = _lu_impl(A, pivot, get_infos, out)
-    if out is not None:
-        _check_list_size(len(out), get_infos, out)
-        for i in range(len(out)):
-            out[i].resize_as_(result[i]).copy_(result[i])
-        return out
-    else:
-        return result  # A_LU, pivots, infos
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.functional._lu_with_infos', '_lu_with_infos(A, pivot=True, get_infos=False, out=None)', {'torch': torch, 'Tensor': Tensor, 'has_torch_function': has_torch_function, 'handle_torch_function': handle_torch_function, 'lu': lu, '_lu_impl': _lu_impl, '_check_list_size': _check_list_size, 'A': A, 'pivot': pivot, 'get_infos': get_infos, 'out': out}, 1)
 
 def _lu_no_infos(A, pivot=True, get_infos=False, out=None):
-    # type: (Tensor, bool, bool, Optional[Tuple[Tensor, Tensor]]) -> Tuple[Tensor, Tensor] 
-    # need to check for torch_function here so that we exit if 
-    if not torch.jit.is_scripting():
-        if type(A) is not Tensor and has_torch_function((A,)):
-            return handle_torch_function(
-                lu, (A,), A, pivot=pivot, get_infos=get_infos, out=out)
-    result = _lu_impl(A, pivot, get_infos, out)
-    if out is not None:
-        _check_list_size(len(out), get_infos, out)
-        for i in range(len(out)):
-            out[i].resize_as_(result[i]).copy_(result[i])
-        return out
-    else:
-        return result[0], result[1]  # A_LU, pivots
-
-# The return type of lu depends on `get_infos`, so in order to resolve the output type
-# of lu in TorchScript we need to statically know the value of `get_infos` 
-lu = boolean_dispatch(
-    arg_name='get_infos',
-    arg_index=2,
-    default=False,
-    if_true=_lu_with_infos,
-    if_false=_lu_no_infos,
-    module_name=__name__,
-    func_name='lu')
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.functional._lu_no_infos', '_lu_no_infos(A, pivot=True, get_infos=False, out=None)', {'torch': torch, 'Tensor': Tensor, 'has_torch_function': has_torch_function, 'handle_torch_function': handle_torch_function, 'lu': lu, '_lu_impl': _lu_impl, '_check_list_size': _check_list_size, 'A': A, 'pivot': pivot, 'get_infos': get_infos, 'out': out}, 1)
+lu = boolean_dispatch(arg_name='get_infos', arg_index=2, default=False, if_true=_lu_with_infos, if_false=_lu_no_infos, module_name=__name__, func_name='lu')
 lu.__doc__ = _lu_impl.__doc__
 
 def align_tensors(*tensors):
     raise RuntimeError('`align_tensors` not yet implemented.')
+

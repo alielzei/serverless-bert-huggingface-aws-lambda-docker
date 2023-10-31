@@ -1,23 +1,17 @@
-# Copyright (C) 2001-2006 Python Software Foundation
-# Author: Keith Dart
-# Contact: email-sig@python.org
-
 """Class representing application/* type MIME documents."""
+
 from __future__ import unicode_literals
 from __future__ import division
 from __future__ import absolute_import
-
 from future.backports.email import encoders
 from future.backports.email.mime.nonmultipart import MIMENonMultipart
-
-__all__ = ["MIMEApplication"]
+__all__ = ['MIMEApplication']
 
 
 class MIMEApplication(MIMENonMultipart):
     """Class for generating application/* MIME documents."""
-
-    def __init__(self, _data, _subtype='octet-stream',
-                 _encoder=encoders.encode_base64, **_params):
+    
+    def __init__(self, _data, _subtype='octet-stream', _encoder=encoders.encode_base64, **_params):
         """Create an application/* type MIME document.
 
         _data is a string containing the raw application data.
@@ -37,3 +31,5 @@ class MIMEApplication(MIMENonMultipart):
         MIMENonMultipart.__init__(self, 'application', _subtype, **_params)
         self.set_payload(_data)
         _encoder(self)
+
+

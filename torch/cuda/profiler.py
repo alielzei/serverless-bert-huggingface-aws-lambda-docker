@@ -1,48 +1,20 @@
 import tempfile
 import contextlib
 from . import cudart, check_error
-
-
-DEFAULT_FLAGS = [
-    "gpustarttimestamp",
-    "gpuendtimestamp",
-    "gridsize3d",
-    "threadblocksize",
-    "streamid",
-    "enableonstart 0",
-    "conckerneltrace",
-]
-
+DEFAULT_FLAGS = ['gpustarttimestamp', 'gpuendtimestamp', 'gridsize3d', 'threadblocksize', 'streamid', 'enableonstart 0', 'conckerneltrace']
 
 def init(output_file, flags=None, output_mode='key_value'):
-    if not hasattr(rt, 'cudaOutputMode'):
-        raise AssertionError("HIP does not support profiler initialization!")
-    rt = cudart()
-    flags = DEFAULT_FLAGS if flags is None else flags
-    if output_mode == 'key_value':
-        output_mode_enum = rt.cudaOutputMode.KeyValuePair
-    elif output_mode == 'csv':
-        output_mode_enum = rt.cudaOutputMode.CSV
-    else:
-        raise RuntimeError("supported CUDA profiler output modes are: key_value and csv")
-    with tempfile.NamedTemporaryFile(delete=True) as f:
-        f.write(b'\n'.join(map(lambda f: f.encode('ascii'), flags)))
-        f.flush()
-        check_error(rt.cudaProfilerInitialize(f.name, output_file, output_mode_enum))
-
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('torch.cuda.profiler.init', "init(output_file, flags=None, output_mode='key_value')", {'cudart': cudart, 'DEFAULT_FLAGS': DEFAULT_FLAGS, 'tempfile': tempfile, 'check_error': check_error, 'output_file': output_file, 'flags': flags, 'output_mode': output_mode}, 0)
 
 def start():
     check_error(cudart().cudaProfilerStart())
 
-
 def stop():
     check_error(cudart().cudaProfilerStop())
 
-
 @contextlib.contextmanager
 def profile():
-    try:
-        start()
-        yield
-    finally:
-        stop()
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('torch.cuda.profiler.profile', 'profile()', {'start': start, 'stop': stop, 'contextlib': contextlib}, 0)
+

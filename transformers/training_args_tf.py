@@ -1,14 +1,10 @@
 import warnings
 from dataclasses import dataclass, field
 from typing import Tuple
-
 from .file_utils import cached_property, is_tf_available, tf_required
 from .training_args import TrainingArguments
 from .utils import logging
-
-
 logger = logging.get_logger(__name__)
-
 if is_tf_available():
     import tensorflow as tf
 
@@ -106,36 +102,22 @@ class TFTrainingArguments(TrainingArguments):
         xla (:obj:`bool`, `optional`):
             Whether to activate the XLA compilation or not.
     """
-
-    tpu_name: str = field(
-        default=None,
-        metadata={"help": "Name of TPU"},
-    )
-
-    poly_power: float = field(
-        default=1.0,
-        metadata={"help": "Power for the Polynomial decay LR scheduler."},
-    )
-
-    xla: bool = field(default=False, metadata={"help": "Whether to activate the XLA compilation or not"})
-
+    tpu_name: str = field(default=None, metadata={'help': 'Name of TPU'})
+    poly_power: float = field(default=1.0, metadata={'help': 'Power for the Polynomial decay LR scheduler.'})
+    xla: bool = field(default=False, metadata={'help': 'Whether to activate the XLA compilation or not'})
+    
     @cached_property
     @tf_required
-    def _setup_strategy(self) -> Tuple["tf.distribute.Strategy", int]:
-        logger.info("Tensorflow: setting up strategy")
-
+    def _setup_strategy(self) -> Tuple[('tf.distribute.Strategy', int)]:
+        logger.info('Tensorflow: setting up strategy')
         if self.xla:
             tf.config.optimizer.set_jit(True)
-
-        gpus = tf.config.list_physical_devices("GPU")
-
-        # Set to float16 at first
+        gpus = tf.config.list_physical_devices('GPU')
         if self.fp16:
-            policy = tf.keras.mixed_precision.experimental.Policy("mixed_float16")
+            policy = tf.keras.mixed_precision.experimental.Policy('mixed_float16')
             tf.keras.mixed_precision.experimental.set_policy(policy)
-
         if self.no_cuda:
-            strategy = tf.distribute.OneDeviceStrategy(device="/cpu:0")
+            strategy = tf.distribute.OneDeviceStrategy(device='/cpu:0')
         else:
             try:
                 if self.tpu_name:
@@ -144,38 +126,31 @@ class TFTrainingArguments(TrainingArguments):
                     tpu = tf.distribute.cluster_resolver.TPUClusterResolver()
             except ValueError:
                 tpu = None
-
             if tpu:
-                # Set to bfloat16 in case of TPU
                 if self.fp16:
-                    policy = tf.keras.mixed_precision.experimental.Policy("mixed_bfloat16")
+                    policy = tf.keras.mixed_precision.experimental.Policy('mixed_bfloat16')
                     tf.keras.mixed_precision.experimental.set_policy(policy)
-
                 tf.config.experimental_connect_to_cluster(tpu)
                 tf.tpu.experimental.initialize_tpu_system(tpu)
-
                 strategy = tf.distribute.experimental.TPUStrategy(tpu)
-
             elif len(gpus) == 0:
-                strategy = tf.distribute.OneDeviceStrategy(device="/cpu:0")
+                strategy = tf.distribute.OneDeviceStrategy(device='/cpu:0')
             elif len(gpus) == 1:
-                strategy = tf.distribute.OneDeviceStrategy(device="/gpu:0")
+                strategy = tf.distribute.OneDeviceStrategy(device='/gpu:0')
             elif len(gpus) > 1:
-                # If you only want to use a specific subset of GPUs use `CUDA_VISIBLE_DEVICES=0`
                 strategy = tf.distribute.MirroredStrategy()
             else:
-                raise ValueError("Cannot find the proper strategy please check your environment properties.")
-
+                raise ValueError('Cannot find the proper strategy please check your environment properties.')
         return strategy
-
+    
     @property
     @tf_required
-    def strategy(self) -> "tf.distribute.Strategy":
+    def strategy(self) -> 'tf.distribute.Strategy':
         """
         The strategy used for distributed training.
         """
         return self._setup_strategy
-
+    
     @property
     @tf_required
     def n_replicas(self) -> int:
@@ -183,41 +158,34 @@ class TFTrainingArguments(TrainingArguments):
         The number of replicas (CPUs, GPUs or TPU cores) used in this training.
         """
         return self._setup_strategy.num_replicas_in_sync
-
+    
     @property
     def train_batch_size(self) -> int:
         """
         The actual batch size for training (may differ from :obj:`per_gpu_train_batch_size` in distributed training).
         """
         if self.per_gpu_train_batch_size:
-            logger.warning(
-                "Using deprecated `--per_gpu_train_batch_size` argument which will be removed in a future "
-                "version. Using `--per_device_train_batch_size` is preferred."
-            )
-        per_device_batch_size = self.per_gpu_train_batch_size or self.per_device_train_batch_size
+            logger.warning('Using deprecated `--per_gpu_train_batch_size` argument which will be removed in a future version. Using `--per_device_train_batch_size` is preferred.')
+        per_device_batch_size = (self.per_gpu_train_batch_size or self.per_device_train_batch_size)
         return per_device_batch_size * self.n_replicas
-
+    
     @property
     def eval_batch_size(self) -> int:
         """
         The actual batch size for evaluation (may differ from :obj:`per_gpu_eval_batch_size` in distributed training).
         """
         if self.per_gpu_eval_batch_size:
-            logger.warning(
-                "Using deprecated `--per_gpu_eval_batch_size` argument which will be removed in a future "
-                "version. Using `--per_device_eval_batch_size` is preferred."
-            )
-        per_device_batch_size = self.per_gpu_eval_batch_size or self.per_device_eval_batch_size
+            logger.warning('Using deprecated `--per_gpu_eval_batch_size` argument which will be removed in a future version. Using `--per_device_eval_batch_size` is preferred.')
+        per_device_batch_size = (self.per_gpu_eval_batch_size or self.per_device_eval_batch_size)
         return per_device_batch_size * self.n_replicas
-
+    
     @property
     @tf_required
     def n_gpu(self) -> int:
         """
         The number of replicas (CPUs, GPUs or TPU cores) used in this training.
         """
-        warnings.warn(
-            "The n_gpu argument is deprecated and will be removed in a future version, use n_replicas instead.",
-            FutureWarning,
-        )
+        warnings.warn('The n_gpu argument is deprecated and will be removed in a future version, use n_replicas instead.', FutureWarning)
         return self._setup_strategy.num_replicas_in_sync
+
+

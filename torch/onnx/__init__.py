@@ -1,16 +1,10 @@
 import torch._C as _C
-
 TensorProtoDataType = _C._onnx.TensorProtoDataType
 OperatorExportTypes = _C._onnx.OperatorExportTypes
 PYTORCH_ONNX_CAFFE2_BUNDLE = _C._onnx.PYTORCH_ONNX_CAFFE2_BUNDLE
-
-ONNX_ARCHIVE_MODEL_PROTO_NAME = "__MODEL_PROTO"
-
-# TODO: Update these variables when there
-# is a new ir_version and producer_version
-# and use these values in the exporter
+ONNX_ARCHIVE_MODEL_PROTO_NAME = '__MODEL_PROTO'
 ir_version = _C._onnx.IR_VERSION
-producer_name = "pytorch"
+producer_name = 'pytorch'
 producer_version = _C._onnx.PRODUCER_VERSION
 
 
@@ -22,18 +16,11 @@ class ExportTypes:
 
 
 def _export(*args, **kwargs):
-    from torch.onnx import utils
-    result = utils._export(*args, **kwargs)
-    return result
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.onnx.__init__._export', '_export(*args, **kwargs)', {'args': args, 'kwargs': kwargs}, 1)
 
-
-def export(model, args, f, export_params=True, verbose=False, training=False,
-           input_names=None, output_names=None, aten=False, export_raw_ir=False,
-           operator_export_type=None, opset_version=None, _retain_param_name=True,
-           do_constant_folding=True, example_outputs=None, strip_doc_string=True,
-           dynamic_axes=None, keep_initializers_as_inputs=None, custom_opsets=None,
-           enable_onnx_checker=True, use_external_data_format=False):
-    r"""
+def export(model, args, f, export_params=True, verbose=False, training=False, input_names=None, output_names=None, aten=False, export_raw_ir=False, operator_export_type=None, opset_version=None, _retain_param_name=True, do_constant_folding=True, example_outputs=None, strip_doc_string=True, dynamic_axes=None, keep_initializers_as_inputs=None, custom_opsets=None, enable_onnx_checker=True, use_external_data_format=False):
+    """
     Export a model into ONNX format.  This exporter runs your model
     once in order to get a trace of its execution to be exported;
     at the moment, it supports a limited set of dynamic models (e.g., RNNs.)
@@ -158,63 +145,48 @@ def export(model, args, f, export_params=True, verbose=False, training=False,
             parameters are all in one file. This argument is ignored for all export types other
             than ONNX. 
     """
-
     from torch.onnx import utils
-    return utils.export(model, args, f, export_params, verbose, training,
-                        input_names, output_names, aten, export_raw_ir,
-                        operator_export_type, opset_version, _retain_param_name,
-                        do_constant_folding, example_outputs,
-                        strip_doc_string, dynamic_axes, keep_initializers_as_inputs,
-                        custom_opsets, enable_onnx_checker, use_external_data_format)
-
+    return utils.export(model, args, f, export_params, verbose, training, input_names, output_names, aten, export_raw_ir, operator_export_type, opset_version, _retain_param_name, do_constant_folding, example_outputs, strip_doc_string, dynamic_axes, keep_initializers_as_inputs, custom_opsets, enable_onnx_checker, use_external_data_format)
 
 def export_to_pretty_string(*args, **kwargs):
     from torch.onnx import utils
     return utils.export_to_pretty_string(*args, **kwargs)
 
-
 def _export_to_pretty_string(*args, **kwargs):
     from torch.onnx import utils
     return utils._export_to_pretty_string(*args, **kwargs)
-
 
 def _optimize_trace(graph, operator_export_type):
     from torch.onnx import utils
     return utils._optimize_graph(graph, operator_export_type)
 
-
 def set_training(model, mode):
-    r"""
+    """
     A context manager to temporarily set the training mode of 'model'
     to 'mode', resetting it when we exit the with-block.  A no-op if
     mode is None.
     """
-
     from torch.onnx import utils
     return utils.set_training(model, mode)
-
 
 def _run_symbolic_function(*args, **kwargs):
     from torch.onnx import utils
     return utils._run_symbolic_function(*args, **kwargs)
 
-
 def _run_symbolic_method(*args, **kwargs):
     from torch.onnx import utils
     return utils._run_symbolic_method(*args, **kwargs)
 
-
 def is_in_onnx_export():
-    r"""
+    """
     Check whether it's in the middle of the ONNX export.
     This function returns True in the middle of torch.onnx.export().
     torch.onnx.export should be executed with single thread.
     """
-
     from torch.onnx import utils
     return utils.is_in_onnx_export()
-
 
 def register_custom_op_symbolic(symbolic_name, symbolic_fn, opset_version):
     from torch.onnx import utils
     return utils.register_custom_op_symbolic(symbolic_name, symbolic_fn, opset_version)
+

@@ -36,31 +36,19 @@ This exception class is also disabled:
 """
 
 from __future__ import division, absolute_import, print_function
-
 from future import utils
-
-
-OBSOLETE_BUILTINS = ['apply', 'chr', 'cmp', 'coerce', 'execfile', 'file',
-                     'input', 'long', 'raw_input', 'reduce', 'reload',
-                     'unicode', 'xrange', 'StandardError']
-
+OBSOLETE_BUILTINS = ['apply', 'chr', 'cmp', 'coerce', 'execfile', 'file', 'input', 'long', 'raw_input', 'reduce', 'reload', 'unicode', 'xrange', 'StandardError']
 
 def disabled_function(name):
-    '''
+    """
     Returns a function that cannot be called
-    '''
-    def disabled(*args, **kwargs):
-        '''
-        A function disabled by the ``future`` module. This function is
-        no longer a builtin in Python 3.
-        '''
-        raise NameError('obsolete Python 2 builtin {0} is disabled'.format(name))
-    return disabled
-
-
+    """
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('future.builtins.disabled.disabled_function', 'disabled_function(name)', {'name': name}, 1)
 if not utils.PY3:
     for fname in OBSOLETE_BUILTINS:
         locals()[fname] = disabled_function(fname)
     __all__ = OBSOLETE_BUILTINS
 else:
     __all__ = []
+

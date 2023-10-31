@@ -10,7 +10,6 @@ Forward-ports of types from Python 2 for use with Python 3:
 """
 
 from past import utils
-
 if utils.PY2:
     import __builtin__
     basestring = __builtin__.basestring
@@ -25,5 +24,5 @@ else:
     from .oldstr import oldstr
     long = int
     unicode = str
-    # from .unicode import unicode
     __all__ = ['basestring', 'olddict', 'oldstr', 'long', 'unicode']
+

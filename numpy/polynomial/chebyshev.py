@@ -89,12 +89,12 @@ The implementations of multiplication, division, integration, and
 differentiation use the algebraic identities [1]_:
 
 .. math::
-    T_n(x) = \\frac{z^n + z^{-n}}{2} \\\\
-    z\\frac{dx}{dz} = \\frac{z - z^{-1}}{2}.
+    T_n(x) = rac{z^n + z^{-n}}{2} \
+    zrac{dx}{dz} = rac{z - z^{-1}}{2}.
 
 where
 
-.. math:: x = \\frac{z + z^{-1}}{2}.
+.. math:: x = rac{z + z^{-1}}{2}.
 
 These identities allow a Chebyshev series to be expressed as a finite,
 symmetric Laurent series.  In this module, this sort of Laurent series
@@ -107,28 +107,14 @@ References
   (https://web.archive.org/web/20080221202153/https://www.math.hmc.edu/~benjamin/papers/CombTrig.pdf, pg. 4)
 
 """
+
 import numpy as np
 import numpy.linalg as la
 from numpy.core.multiarray import normalize_axis_index
-
 from . import polyutils as pu
 from ._polybase import ABCPolyBase
-
-__all__ = [
-    'chebzero', 'chebone', 'chebx', 'chebdomain', 'chebline', 'chebadd',
-    'chebsub', 'chebmulx', 'chebmul', 'chebdiv', 'chebpow', 'chebval',
-    'chebder', 'chebint', 'cheb2poly', 'poly2cheb', 'chebfromroots',
-    'chebvander', 'chebfit', 'chebtrim', 'chebroots', 'chebpts1',
-    'chebpts2', 'Chebyshev', 'chebval2d', 'chebval3d', 'chebgrid2d',
-    'chebgrid3d', 'chebvander2d', 'chebvander3d', 'chebcompanion',
-    'chebgauss', 'chebweight', 'chebinterpolate']
-
+__all__ = ['chebzero', 'chebone', 'chebx', 'chebdomain', 'chebline', 'chebadd', 'chebsub', 'chebmulx', 'chebmul', 'chebdiv', 'chebpow', 'chebval', 'chebder', 'chebint', 'cheb2poly', 'poly2cheb', 'chebfromroots', 'chebvander', 'chebfit', 'chebtrim', 'chebroots', 'chebpts1', 'chebpts2', 'Chebyshev', 'chebval2d', 'chebval3d', 'chebgrid2d', 'chebgrid3d', 'chebvander2d', 'chebvander3d', 'chebcompanion', 'chebgauss', 'chebweight', 'chebinterpolate']
 chebtrim = pu.trimcoef
-
-#
-# A collection of functions for manipulating z-series. These are private
-# functions and do minimal error checking.
-#
 
 def _cseries_to_zseries(c):
     """Convert Chebyshev series to z-series.
@@ -149,11 +135,8 @@ def _cseries_to_zseries(c):
         Odd length symmetric z-series, ordered from  low to high.
 
     """
-    n = c.size
-    zs = np.zeros(2*n-1, dtype=c.dtype)
-    zs[n-1:] = c/2
-    return zs + zs[::-1]
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.chebyshev._cseries_to_zseries', '_cseries_to_zseries(c)', {'np': np, 'c': c}, 1)
 
 def _zseries_to_cseries(zs):
     """Convert z-series to a Chebyshev series.
@@ -174,11 +157,8 @@ def _zseries_to_cseries(zs):
         Chebyshev coefficients, ordered from  low to high.
 
     """
-    n = (zs.size + 1)//2
-    c = zs[n-1:].copy()
-    c[1:n] *= 2
-    return c
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.chebyshev._zseries_to_cseries', '_zseries_to_cseries(zs)', {'zs': zs}, 1)
 
 def _zseries_mul(z1, z2):
     """Multiply two z-series.
@@ -205,7 +185,6 @@ def _zseries_mul(z1, z2):
 
     """
     return np.convolve(z1, z2)
-
 
 def _zseries_div(z1, z2):
     """Divide the first z-series by the second.
@@ -240,39 +219,8 @@ def _zseries_div(z1, z2):
     where there is no symmetry.
 
     """
-    z1 = z1.copy()
-    z2 = z2.copy()
-    lc1 = len(z1)
-    lc2 = len(z2)
-    if lc2 == 1:
-        z1 /= z2
-        return z1, z1[:1]*0
-    elif lc1 < lc2:
-        return z1[:1]*0, z1
-    else:
-        dlen = lc1 - lc2
-        scl = z2[0]
-        z2 /= scl
-        quo = np.empty(dlen + 1, dtype=z1.dtype)
-        i = 0
-        j = dlen
-        while i < j:
-            r = z1[i]
-            quo[i] = z1[i]
-            quo[dlen - i] = r
-            tmp = r*z2
-            z1[i:i+lc2] -= tmp
-            z1[j:j+lc2] -= tmp
-            i += 1
-            j -= 1
-        r = z1[i]
-        quo[i] = r
-        tmp = r*z2
-        z1[i:i+lc2] -= tmp
-        quo /= scl
-        rem = z1[i+1:i-1+lc2].copy()
-        return quo, rem
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.chebyshev._zseries_div', '_zseries_div(z1, z2)', {'np': np, 'z1': z1, 'z2': z2}, 2)
 
 def _zseries_der(zs):
     """Differentiate a z-series.
@@ -299,12 +247,8 @@ def _zseries_der(zs):
     division.
 
     """
-    n = len(zs)//2
-    ns = np.array([-1, 0, 1], dtype=zs.dtype)
-    zs *= np.arange(-n, n+1)*2
-    d, r = _zseries_div(zs, ns)
-    return d
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.chebyshev._zseries_der', '_zseries_der(zs)', {'np': np, '_zseries_div': _zseries_div, 'zs': zs}, 1)
 
 def _zseries_int(zs):
     """Integrate a z-series.
@@ -330,19 +274,8 @@ def _zseries_int(zs):
     dividing the resulting zs by two.
 
     """
-    n = 1 + len(zs)//2
-    ns = np.array([-1, 0, 1], dtype=zs.dtype)
-    zs = _zseries_mul(zs, ns)
-    div = np.arange(-n, n+1)*2
-    zs[:n] /= div[:n]
-    zs[n+1:] /= div[n+1:]
-    zs[n] = 0
-    return zs
-
-#
-# Chebyshev series functions
-#
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.chebyshev._zseries_int', '_zseries_int(zs)', {'np': np, '_zseries_mul': _zseries_mul, 'zs': zs}, 1)
 
 def poly2cheb(pol):
     """
@@ -386,13 +319,8 @@ def poly2cheb(pol):
     array([1.  , 3.25, 1.  , 0.75])
 
     """
-    [pol] = pu.as_series([pol])
-    deg = len(pol) - 1
-    res = 0
-    for i in range(deg, -1, -1):
-        res = chebadd(chebmulx(res), pol[i])
-    return res
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.chebyshev.poly2cheb', 'poly2cheb(pol)', {'pu': pu, 'chebadd': chebadd, 'chebmulx': chebmulx, 'pol': pol}, 1)
 
 def cheb2poly(c):
     """
@@ -438,40 +366,12 @@ def cheb2poly(c):
     array([-2.,  -8.,   4.,  12.])
 
     """
-    from .polynomial import polyadd, polysub, polymulx
-
-    [c] = pu.as_series([c])
-    n = len(c)
-    if n < 3:
-        return c
-    else:
-        c0 = c[-2]
-        c1 = c[-1]
-        # i is the current degree of c1
-        for i in range(n - 1, 1, -1):
-            tmp = c0
-            c0 = polysub(c[i - 2], c1)
-            c1 = polyadd(tmp, polymulx(c1)*2)
-        return polyadd(c0, polymulx(c1))
-
-
-#
-# These are constant arrays are of integer type so as to be compatible
-# with the widest range of other types, such as Decimal.
-#
-
-# Chebyshev default domain.
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.chebyshev.cheb2poly', 'cheb2poly(c)', {'pu': pu, 'c': c}, 1)
 chebdomain = np.array([-1, 1])
-
-# Chebyshev coefficients representing zero.
 chebzero = np.array([0])
-
-# Chebyshev coefficients representing one.
 chebone = np.array([1])
-
-# Chebyshev coefficients representing the identity x.
 chebx = np.array([0, 1])
-
 
 def chebline(off, scl):
     """
@@ -505,11 +405,8 @@ def chebline(off, scl):
     -3.0
 
     """
-    if scl != 0:
-        return np.array([off, scl])
-    else:
-        return np.array([off])
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.chebyshev.chebline', 'chebline(off, scl)', {'np': np, 'off': off, 'scl': scl}, 1)
 
 def chebfromroots(roots):
     """
@@ -565,7 +462,6 @@ def chebfromroots(roots):
     """
     return pu._fromroots(chebline, chebmul, roots)
 
-
 def chebadd(c1, c2):
     """
     Add one Chebyshev series to another.
@@ -606,7 +502,6 @@ def chebadd(c1, c2):
 
     """
     return pu._add(c1, c2)
-
 
 def chebsub(c1, c2):
     """
@@ -651,7 +546,6 @@ def chebsub(c1, c2):
     """
     return pu._sub(c1, c2)
 
-
 def chebmulx(c):
     """Multiply a Chebyshev series by x.
 
@@ -682,21 +576,8 @@ def chebmulx(c):
     array([1. , 2.5, 1. , 1.5])
 
     """
-    # c is a trimmed copy
-    [c] = pu.as_series([c])
-    # The zero series needs special treatment
-    if len(c) == 1 and c[0] == 0:
-        return c
-
-    prd = np.empty(len(c) + 1, dtype=c.dtype)
-    prd[0] = c[0]*0
-    prd[1] = c[0]
-    if len(c) > 1:
-        tmp = c[1:]/2
-        prd[2:] = tmp
-        prd[0:-2] += tmp
-    return prd
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.chebyshev.chebmulx', 'chebmulx(c)', {'pu': pu, 'np': np, 'c': c}, 1)
 
 def chebmul(c1, c2):
     """
@@ -738,14 +619,8 @@ def chebmul(c1, c2):
     array([  6.5,  12. ,  12. ,   4. ,   1.5])
 
     """
-    # c1, c2 are trimmed copies
-    [c1, c2] = pu.as_series([c1, c2])
-    z1 = _cseries_to_zseries(c1)
-    z2 = _cseries_to_zseries(c2)
-    prd = _zseries_mul(z1, z2)
-    ret = _zseries_to_cseries(prd)
-    return pu.trimseq(ret)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.chebyshev.chebmul', 'chebmul(c1, c2)', {'pu': pu, '_cseries_to_zseries': _cseries_to_zseries, '_zseries_mul': _zseries_mul, '_zseries_to_cseries': _zseries_to_cseries, 'c1': c1, 'c2': c2}, 1)
 
 def chebdiv(c1, c2):
     """
@@ -793,26 +668,8 @@ def chebdiv(c1, c2):
     (array([0., 2.]), array([-2., -4.]))
 
     """
-    # c1, c2 are trimmed copies
-    [c1, c2] = pu.as_series([c1, c2])
-    if c2[-1] == 0:
-        raise ZeroDivisionError()
-
-    # note: this is more efficient than `pu._div(chebmul, c1, c2)`
-    lc1 = len(c1)
-    lc2 = len(c2)
-    if lc1 < lc2:
-        return c1[:1]*0, c1
-    elif lc2 == 1:
-        return c1/c2[-1], c1[:1]*0
-    else:
-        z1 = _cseries_to_zseries(c1)
-        z2 = _cseries_to_zseries(c2)
-        quo, rem = _zseries_div(z1, z2)
-        quo = pu.trimseq(_zseries_to_cseries(quo))
-        rem = pu.trimseq(_zseries_to_cseries(rem))
-        return quo, rem
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.chebyshev.chebdiv', 'chebdiv(c1, c2)', {'pu': pu, '_cseries_to_zseries': _cseries_to_zseries, '_zseries_div': _zseries_div, '_zseries_to_cseries': _zseries_to_cseries, 'c1': c1, 'c2': c2}, 2)
 
 def chebpow(c, pow, maxpower=16):
     """Raise a Chebyshev series to a power.
@@ -848,29 +705,8 @@ def chebpow(c, pow, maxpower=16):
     array([15.5, 22. , 16. , ..., 12.5, 12. ,  8. ])
 
     """
-    # note: this is more efficient than `pu._pow(chebmul, c1, c2)`, as it
-    # avoids converting between z and c series repeatedly
-
-    # c is a trimmed copy
-    [c] = pu.as_series([c])
-    power = int(pow)
-    if power != pow or power < 0:
-        raise ValueError("Power must be a non-negative integer.")
-    elif maxpower is not None and power > maxpower:
-        raise ValueError("Power is too large")
-    elif power == 0:
-        return np.array([1], dtype=c.dtype)
-    elif power == 1:
-        return c
-    else:
-        # This can be made more efficient by using powers of two
-        # in the usual way.
-        zs = _cseries_to_zseries(c)
-        prd = zs
-        for i in range(2, power + 1):
-            prd = np.convolve(prd, zs)
-        return _zseries_to_cseries(prd)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.chebyshev.chebpow', 'chebpow(c, pow, maxpower=16)', {'pu': pu, 'np': np, '_cseries_to_zseries': _cseries_to_zseries, '_zseries_to_cseries': _zseries_to_cseries, 'c': c, 'pow': pow, 'maxpower': maxpower}, 1)
 
 def chebder(c, m=1, scl=1, axis=0):
     """
@@ -932,37 +768,8 @@ def chebder(c, m=1, scl=1, axis=0):
     array([12.,  96.])
 
     """
-    c = np.array(c, ndmin=1, copy=True)
-    if c.dtype.char in '?bBhHiIlLqQpP':
-        c = c.astype(np.double)
-    cnt = pu._deprecate_as_int(m, "the order of derivation")
-    iaxis = pu._deprecate_as_int(axis, "the axis")
-    if cnt < 0:
-        raise ValueError("The order of derivation must be non-negative")
-    iaxis = normalize_axis_index(iaxis, c.ndim)
-
-    if cnt == 0:
-        return c
-
-    c = np.moveaxis(c, iaxis, 0)
-    n = len(c)
-    if cnt >= n:
-        c = c[:1]*0
-    else:
-        for i in range(cnt):
-            n = n - 1
-            c *= scl
-            der = np.empty((n,) + c.shape[1:], dtype=c.dtype)
-            for j in range(n, 2, -1):
-                der[j - 1] = (2*j)*c[j]
-                c[j - 2] += (j*c[j])/(j - 2)
-            if n > 1:
-                der[1] = 4*c[2]
-            der[0] = c[1]
-            c = der
-    c = np.moveaxis(c, 0, iaxis)
-    return c
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.chebyshev.chebder', 'chebder(c, m=1, scl=1, axis=0)', {'np': np, 'pu': pu, 'normalize_axis_index': normalize_axis_index, 'c': c, 'm': m, 'scl': scl, 'axis': axis}, 1)
 
 def chebint(c, m=1, k=[], lbnd=0, scl=1, axis=0):
     """
@@ -1049,47 +856,8 @@ def chebint(c, m=1, k=[], lbnd=0, scl=1, axis=0):
     array([-1.,  1., -1., -1.])
 
     """
-    c = np.array(c, ndmin=1, copy=True)
-    if c.dtype.char in '?bBhHiIlLqQpP':
-        c = c.astype(np.double)
-    if not np.iterable(k):
-        k = [k]
-    cnt = pu._deprecate_as_int(m, "the order of integration")
-    iaxis = pu._deprecate_as_int(axis, "the axis")
-    if cnt < 0:
-        raise ValueError("The order of integration must be non-negative")
-    if len(k) > cnt:
-        raise ValueError("Too many integration constants")
-    if np.ndim(lbnd) != 0:
-        raise ValueError("lbnd must be a scalar.")
-    if np.ndim(scl) != 0:
-        raise ValueError("scl must be a scalar.")
-    iaxis = normalize_axis_index(iaxis, c.ndim)
-
-    if cnt == 0:
-        return c
-
-    c = np.moveaxis(c, iaxis, 0)
-    k = list(k) + [0]*(cnt - len(k))
-    for i in range(cnt):
-        n = len(c)
-        c *= scl
-        if n == 1 and np.all(c[0] == 0):
-            c[0] += k[i]
-        else:
-            tmp = np.empty((n + 1,) + c.shape[1:], dtype=c.dtype)
-            tmp[0] = c[0]*0
-            tmp[1] = c[0]
-            if n > 1:
-                tmp[2] = c[1]/4
-            for j in range(2, n):
-                tmp[j + 1] = c[j]/(2*(j + 1))
-                tmp[j - 1] -= c[j]/(2*(j - 1))
-            tmp[0] += k[i] - chebval(lbnd, tmp)
-            c = tmp
-    c = np.moveaxis(c, 0, iaxis)
-    return c
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.chebyshev.chebint', 'chebint(c, m=1, k=[], lbnd=0, scl=1, axis=0)', {'np': np, 'pu': pu, 'normalize_axis_index': normalize_axis_index, 'chebval': chebval, 'c': c, 'm': m, 'k': k, 'lbnd': lbnd, 'scl': scl, 'axis': axis}, 1)
 
 def chebval(x, c, tensor=True):
     """
@@ -1150,30 +918,8 @@ def chebval(x, c, tensor=True):
     The evaluation uses Clenshaw recursion, aka synthetic division.
 
     """
-    c = np.array(c, ndmin=1, copy=True)
-    if c.dtype.char in '?bBhHiIlLqQpP':
-        c = c.astype(np.double)
-    if isinstance(x, (tuple, list)):
-        x = np.asarray(x)
-    if isinstance(x, np.ndarray) and tensor:
-        c = c.reshape(c.shape + (1,)*x.ndim)
-
-    if len(c) == 1:
-        c0 = c[0]
-        c1 = 0
-    elif len(c) == 2:
-        c0 = c[0]
-        c1 = c[1]
-    else:
-        x2 = 2*x
-        c0 = c[-2]
-        c1 = c[-1]
-        for i in range(3, len(c) + 1):
-            tmp = c0
-            c0 = c[-i] - c1
-            c1 = tmp + c1*x2
-    return c0 + c1*x
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.chebyshev.chebval', 'chebval(x, c, tensor=True)', {'np': np, 'x': x, 'c': c, 'tensor': tensor}, 1)
 
 def chebval2d(x, y, c):
     """
@@ -1181,7 +927,7 @@ def chebval2d(x, y, c):
 
     This function returns the values:
 
-    .. math:: p(x,y) = \\sum_{i,j} c_{i,j} * T_i(x) * T_j(y)
+    .. math:: p(x,y) = \sum_{i,j} c_{i,j} * T_i(x) * T_j(y)
 
     The parameters `x` and `y` are converted to arrays only if they are
     tuples or a lists, otherwise they are treated as a scalars and they
@@ -1223,14 +969,13 @@ def chebval2d(x, y, c):
     """
     return pu._valnd(chebval, c, x, y)
 
-
 def chebgrid2d(x, y, c):
     """
     Evaluate a 2-D Chebyshev series on the Cartesian product of x and y.
 
     This function returns the values:
 
-    .. math:: p(a,b) = \\sum_{i,j} c_{i,j} * T_i(a) * T_j(b),
+    .. math:: p(a,b) = \sum_{i,j} c_{i,j} * T_i(a) * T_j(b),
 
     where the points `(a, b)` consist of all pairs formed by taking
     `a` from `x` and `b` from `y`. The resulting points form a grid with
@@ -1276,14 +1021,13 @@ def chebgrid2d(x, y, c):
     """
     return pu._gridnd(chebval, c, x, y)
 
-
 def chebval3d(x, y, z, c):
     """
     Evaluate a 3-D Chebyshev series at points (x, y, z).
 
     This function returns the values:
 
-    .. math:: p(x,y,z) = \\sum_{i,j,k} c_{i,j,k} * T_i(x) * T_j(y) * T_k(z)
+    .. math:: p(x,y,z) = \sum_{i,j,k} c_{i,j,k} * T_i(x) * T_j(y) * T_k(z)
 
     The parameters `x`, `y`, and `z` are converted to arrays only if
     they are tuples or a lists, otherwise they are treated as a scalars and
@@ -1327,14 +1071,13 @@ def chebval3d(x, y, z, c):
     """
     return pu._valnd(chebval, c, x, y, z)
 
-
 def chebgrid3d(x, y, z, c):
     """
     Evaluate a 3-D Chebyshev series on the Cartesian product of x, y, and z.
 
     This function returns the values:
 
-    .. math:: p(a,b,c) = \\sum_{i,j,k} c_{i,j,k} * T_i(a) * T_j(b) * T_k(c)
+    .. math:: p(a,b,c) = \sum_{i,j,k} c_{i,j,k} * T_i(a) * T_j(b) * T_k(c)
 
     where the points `(a, b, c)` consist of all triples formed by taking
     `a` from `x`, `b` from `y`, and `c` from `z`. The resulting points form
@@ -1383,7 +1126,6 @@ def chebgrid3d(x, y, z, c):
     """
     return pu._gridnd(chebval, c, x, y, z)
 
-
 def chebvander(x, deg):
     """Pseudo-Vandermonde matrix of given degree.
 
@@ -1419,23 +1161,8 @@ def chebvander(x, deg):
         the converted `x`.
 
     """
-    ideg = pu._deprecate_as_int(deg, "deg")
-    if ideg < 0:
-        raise ValueError("deg must be non-negative")
-
-    x = np.array(x, copy=False, ndmin=1) + 0.0
-    dims = (ideg + 1,) + x.shape
-    dtyp = x.dtype
-    v = np.empty(dims, dtype=dtyp)
-    # Use forward recursion to generate the entries.
-    v[0] = x*0 + 1
-    if ideg > 0:
-        x2 = 2*x
-        v[1] = x
-        for i in range(2, ideg + 1):
-            v[i] = v[i-1]*x2 - v[i-2]
-    return np.moveaxis(v, 0, -1)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.chebyshev.chebvander', 'chebvander(x, deg)', {'pu': pu, 'np': np, 'x': x, 'deg': deg}, 1)
 
 def chebvander2d(x, y, deg):
     """Pseudo-Vandermonde matrix of given degrees.
@@ -1489,7 +1216,6 @@ def chebvander2d(x, y, deg):
     """
     return pu._vander_nd_flat((chebvander, chebvander), (x, y), deg)
 
-
 def chebvander3d(x, y, z, deg):
     """Pseudo-Vandermonde matrix of given degrees.
 
@@ -1542,7 +1268,6 @@ def chebvander3d(x, y, z, deg):
 
     """
     return pu._vander_nd_flat((chebvander, chebvander, chebvander), (x, y, z), deg)
-
 
 def chebfit(x, y, deg, rcond=None, full=False, w=None):
     """
@@ -1635,7 +1360,7 @@ def chebfit(x, y, deg, rcond=None, full=False, w=None):
     The solution is the coefficients of the Chebyshev series `p` that
     minimizes the sum of the weighted squared errors
 
-    .. math:: E = \\sum_j w_j^2 * |y_j - p(x_j)|^2,
+    .. math:: E = \sum_j w_j^2 * |y_j - p(x_j)|^2,
 
     where :math:`w_j` are the weights. This problem is solved by setting up
     as the (typically) overdetermined matrix equation
@@ -1670,7 +1395,6 @@ def chebfit(x, y, deg, rcond=None, full=False, w=None):
     """
     return pu._fit(chebvander, x, y, deg, rcond, full, w)
 
-
 def chebcompanion(c):
     """Return the scaled companion matrix of c.
 
@@ -1697,24 +1421,8 @@ def chebcompanion(c):
     .. versionadded:: 1.7.0
 
     """
-    # c is a trimmed copy
-    [c] = pu.as_series([c])
-    if len(c) < 2:
-        raise ValueError('Series must have maximum degree of at least 1.')
-    if len(c) == 2:
-        return np.array([[-c[0]/c[1]]])
-
-    n = len(c) - 1
-    mat = np.zeros((n, n), dtype=c.dtype)
-    scl = np.array([1.] + [np.sqrt(.5)]*(n-1))
-    top = mat.reshape(-1)[1::n+1]
-    bot = mat.reshape(-1)[n::n+1]
-    top[0] = np.sqrt(.5)
-    top[1:] = 1/2
-    bot[...] = top
-    mat[:, -1] -= (c[:-1]/c[-1])*(scl/scl[-1])*.5
-    return mat
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.chebyshev.chebcompanion', 'chebcompanion(c)', {'pu': pu, 'np': np, 'c': c}, 1)
 
 def chebroots(c):
     """
@@ -1722,7 +1430,7 @@ def chebroots(c):
 
     Return the roots (a.k.a. "zeros") of the polynomial
 
-    .. math:: p(x) = \\sum_i c[i] * T_i(x).
+    .. math:: p(x) = \sum_i c[i] * T_i(x).
 
     Parameters
     ----------
@@ -1763,19 +1471,8 @@ def chebroots(c):
     array([ -5.00000000e-01,   2.60860684e-17,   1.00000000e+00]) # may vary
 
     """
-    # c is a trimmed copy
-    [c] = pu.as_series([c])
-    if len(c) < 2:
-        return np.array([], dtype=c.dtype)
-    if len(c) == 2:
-        return np.array([-c[0]/c[1]])
-
-    # rotated companion matrix reduces error
-    m = chebcompanion(c)[::-1,::-1]
-    r = la.eigvals(m)
-    r.sort()
-    return r
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.chebyshev.chebroots', 'chebroots(c)', {'pu': pu, 'np': np, 'chebcompanion': chebcompanion, 'la': la, 'c': c}, 1)
 
 def chebinterpolate(func, deg, args=()):
     """Interpolate a function at the Chebyshev points of the first kind.
@@ -1825,24 +1522,8 @@ def chebinterpolate(func, deg, args=()):
     terms of odd degree in the result can be set to zero.
 
     """
-    deg = np.asarray(deg)
-
-    # check arguments.
-    if deg.ndim > 0 or deg.dtype.kind not in 'iu' or deg.size == 0:
-        raise TypeError("deg must be an int")
-    if deg < 0:
-        raise ValueError("expected deg >= 0")
-
-    order = deg + 1
-    xcheb = chebpts1(order)
-    yfunc = func(xcheb, *args)
-    m = chebvander(xcheb, deg)
-    c = np.dot(m.T, yfunc)
-    c[0] /= order
-    c[1:] /= 0.5*order
-
-    return c
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.chebyshev.chebinterpolate', 'chebinterpolate(func, deg, args=())', {'np': np, 'chebpts1': chebpts1, 'chebvander': chebvander, 'func': func, 'deg': deg, 'args': args}, 1)
 
 def chebgauss(deg):
     """
@@ -1851,7 +1532,7 @@ def chebgauss(deg):
     Computes the sample points and weights for Gauss-Chebyshev quadrature.
     These sample points and weights will correctly integrate polynomials of
     degree :math:`2*deg - 1` or less over the interval :math:`[-1, 1]` with
-    the weight function :math:`f(x) = 1/\\sqrt{1 - x^2}`.
+    the weight function :math:`f(x) = 1/\sqrt{1 - x^2}`.
 
     Parameters
     ----------
@@ -1874,26 +1555,19 @@ def chebgauss(deg):
     be problematic. For Gauss-Chebyshev there are closed form solutions for
     the sample points and weights. If n = `deg`, then
 
-    .. math:: x_i = \\cos(\\pi (2 i - 1) / (2 n))
+    .. math:: x_i = \cos(\pi (2 i - 1) / (2 n))
 
-    .. math:: w_i = \\pi / n
+    .. math:: w_i = \pi / n
 
     """
-    ideg = pu._deprecate_as_int(deg, "deg")
-    if ideg <= 0:
-        raise ValueError("deg must be a positive integer")
-
-    x = np.cos(np.pi * np.arange(1, 2*ideg, 2) / (2.0*ideg))
-    w = np.ones(ideg)*(np.pi/ideg)
-
-    return x, w
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.chebyshev.chebgauss', 'chebgauss(deg)', {'pu': pu, 'np': np, 'deg': deg}, 2)
 
 def chebweight(x):
     """
     The weight function of the Chebyshev polynomials.
 
-    The weight function is :math:`1/\\sqrt{1 - x^2}` and the interval of
+    The weight function is :math:`1/\sqrt{1 - x^2}` and the interval of
     integration is :math:`[-1, 1]`. The Chebyshev polynomials are
     orthogonal, but not normalized, with respect to this weight function.
 
@@ -1913,9 +1587,8 @@ def chebweight(x):
     .. versionadded:: 1.7.0
 
     """
-    w = 1./(np.sqrt(1. + x) * np.sqrt(1. - x))
+    w = 1.0 / (np.sqrt(1.0 + x) * np.sqrt(1.0 - x))
     return w
-
 
 def chebpts1(npts):
     """
@@ -1944,15 +1617,8 @@ def chebpts1(npts):
     .. versionadded:: 1.5.0
 
     """
-    _npts = int(npts)
-    if _npts != npts:
-        raise ValueError("npts must be integer")
-    if _npts < 1:
-        raise ValueError("npts must be >= 1")
-
-    x = 0.5 * np.pi / _npts * np.arange(-_npts+1, _npts+1, 2)
-    return np.sin(x)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.chebyshev.chebpts1', 'chebpts1(npts)', {'np': np, 'npts': npts}, 1)
 
 def chebpts2(npts):
     """
@@ -1978,19 +1644,9 @@ def chebpts2(npts):
     .. versionadded:: 1.5.0
 
     """
-    _npts = int(npts)
-    if _npts != npts:
-        raise ValueError("npts must be integer")
-    if _npts < 2:
-        raise ValueError("npts must be >= 2")
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.chebyshev.chebpts2', 'chebpts2(npts)', {'np': np, 'npts': npts}, 1)
 
-    x = np.linspace(-np.pi, 0, _npts)
-    return np.cos(x)
-
-
-#
-# Chebyshev series class
-#
 
 class Chebyshev(ABCPolyBase):
     """A Chebyshev series class.
@@ -2014,7 +1670,6 @@ class Chebyshev(ABCPolyBase):
         .. versionadded:: 1.6.0
 
     """
-    # Virtual Functions
     _add = staticmethod(chebadd)
     _sub = staticmethod(chebsub)
     _mul = staticmethod(chebmul)
@@ -2027,7 +1682,7 @@ class Chebyshev(ABCPolyBase):
     _line = staticmethod(chebline)
     _roots = staticmethod(chebroots)
     _fromroots = staticmethod(chebfromroots)
-
+    
     @classmethod
     def interpolate(cls, func, deg, domain=None, args=()):
         """Interpolate a function at the Chebyshev points of the first kind.
@@ -2069,8 +1724,8 @@ class Chebyshev(ABCPolyBase):
         xfunc = lambda x: func(pu.mapdomain(x, cls.window, domain), *args)
         coef = chebinterpolate(xfunc, deg)
         return cls(coef, domain=domain)
-
-    # Virtual properties
     domain = np.array(chebdomain)
     window = np.array(chebdomain)
     basis_name = 'T'
+
+

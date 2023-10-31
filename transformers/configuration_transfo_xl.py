@@ -1,32 +1,10 @@
-# coding=utf-8
-# Copyright 2018 Google AI, Google Brain and Carnegie Mellon University Authors and the HuggingFace Inc. team.
-# Copyright (c) 2018, NVIDIA CORPORATION.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """ Transformer XL configuration """
 
-
 import warnings
-
 from .configuration_utils import PretrainedConfig
 from .utils import logging
-
-
 logger = logging.get_logger(__name__)
-
-TRANSFO_XL_PRETRAINED_CONFIG_ARCHIVE_MAP = {
-    "transfo-xl-wt103": "https://s3.amazonaws.com/models.huggingface.co/bert/transfo-xl-wt103-config.json",
-}
+TRANSFO_XL_PRETRAINED_CONFIG_ARCHIVE_MAP = {'transfo-xl-wt103': 'https://s3.amazonaws.com/models.huggingface.co/bert/transfo-xl-wt103-config.json'}
 
 
 class TransfoXLConfig(PretrainedConfig):
@@ -107,46 +85,12 @@ class TransfoXLConfig(PretrainedConfig):
         >>> # Accessing the model configuration
         >>> configuration = model.config
     """
-
-    model_type = "transfo-xl"
-
-    def __init__(
-        self,
-        vocab_size=267735,
-        cutoffs=[20000, 40000, 200000],
-        d_model=1024,
-        d_embed=1024,
-        n_head=16,
-        d_head=64,
-        d_inner=4096,
-        div_val=4,
-        pre_lnorm=False,
-        n_layer=18,
-        mem_len=1600,
-        clamp_len=1000,
-        same_length=True,
-        proj_share_all_but_first=True,
-        attn_type=0,
-        sample_softmax=-1,
-        adaptive=True,
-        dropout=0.1,
-        dropatt=0.0,
-        untie_r=True,
-        init="normal",
-        init_range=0.01,
-        proj_init_std=0.01,
-        init_std=0.02,
-        layer_norm_epsilon=1e-5,
-        eos_token_id=0,
-        **kwargs
-    ):
-        if "tie_weight" in kwargs:
-            warnings.warn(
-                "The config parameter `tie_weight` is deprecated. Please use `tie_word_embeddings` instead.",
-                FutureWarning,
-            )
-            kwargs["tie_word_embeddings"] = kwargs["tie_weight"]
-
+    model_type = 'transfo-xl'
+    
+    def __init__(self, vocab_size=267735, cutoffs=[20000, 40000, 200000], d_model=1024, d_embed=1024, n_head=16, d_head=64, d_inner=4096, div_val=4, pre_lnorm=False, n_layer=18, mem_len=1600, clamp_len=1000, same_length=True, proj_share_all_but_first=True, attn_type=0, sample_softmax=-1, adaptive=True, dropout=0.1, dropatt=0.0, untie_r=True, init='normal', init_range=0.01, proj_init_std=0.01, init_std=0.02, layer_norm_epsilon=1e-05, eos_token_id=0, **kwargs):
+        if 'tie_weight' in kwargs:
+            warnings.warn('The config parameter `tie_weight` is deprecated. Please use `tie_word_embeddings` instead.', FutureWarning)
+            kwargs['tie_word_embeddings'] = kwargs['tie_weight']
         super().__init__(eos_token_id=eos_token_id, **kwargs)
         self.vocab_size = vocab_size
         self.cutoffs = []
@@ -177,29 +121,30 @@ class TransfoXLConfig(PretrainedConfig):
         self.proj_init_std = proj_init_std
         self.init_std = init_std
         self.layer_norm_epsilon = layer_norm_epsilon
-
+    
     @property
     def max_position_embeddings(self):
-        # Message copied from Transformer-XL documentation
-        logger.info(f"The model {self.model_type} is one of the few models that has no sequence length limit.")
+        logger.info(f'The model {self.model_type} is one of the few models that has no sequence length limit.')
         return -1
-
+    
     @property
-    def n_token(self):  # Backward compatibility
+    def n_token(self):
         return self.vocab_size
-
+    
     @n_token.setter
-    def n_token(self, value):  # Backward compatibility
+    def n_token(self, value):
         self.vocab_size = value
-
+    
     @property
     def hidden_size(self):
         return self.d_model
-
+    
     @property
     def num_attention_heads(self):
         return self.n_head
-
+    
     @property
     def num_hidden_layers(self):
         return self.n_layer
+
+

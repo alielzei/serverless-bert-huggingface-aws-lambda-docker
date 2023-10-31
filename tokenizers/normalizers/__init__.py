@@ -1,5 +1,4 @@
 from .. import normalizers
-
 Normalizer = normalizers.Normalizer
 BertNormalizer = normalizers.BertNormalizer
 NFD = normalizers.NFD
@@ -13,17 +12,9 @@ StripAccents = normalizers.StripAccents
 Nmt = normalizers.Nmt
 Precompiled = normalizers.Precompiled
 Replace = normalizers.Replace
-
-
-NORMALIZERS = {"nfc": NFC, "nfd": NFD, "nfkc": NFKC, "nfkd": NFKD}
-
+NORMALIZERS = {'nfc': NFC, 'nfd': NFD, 'nfkc': NFKC, 'nfkd': NFKD}
 
 def unicode_normalizer_from_str(normalizer: str) -> Normalizer:
-    if normalizer not in NORMALIZERS:
-        raise ValueError(
-            "{} is not a known unicode normalizer. Available are {}".format(
-                normalizer, NORMALIZERS.keys()
-            )
-        )
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('tokenizers.normalizers.__init__.unicode_normalizer_from_str', 'unicode_normalizer_from_str(normalizer)', {'NORMALIZERS': NORMALIZERS, 'normalizer': normalizer}, 1)
 
-    return NORMALIZERS[normalizer]()

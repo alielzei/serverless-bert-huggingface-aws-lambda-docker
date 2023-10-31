@@ -1,20 +1,9 @@
 from __future__ import absolute_import
-
 import time
-
-# The default socket timeout, used by httplib to indicate that no timeout was
-# specified by the user
 from socket import _GLOBAL_DEFAULT_TIMEOUT
-
 from ..exceptions import TimeoutStateError
-
-# A sentinel value to indicate that no timeout was specified by the user in
-# urllib3
 _Default = object()
-
-
-# Use time.monotonic if available.
-current_time = getattr(time, "monotonic", time.time)
+current_time = getattr(time, 'monotonic', time.time)
 
 
 class Timeout(object):
@@ -95,27 +84,18 @@ class Timeout(object):
         time, consider having a second "watcher" thread to cut off a slow
         request.
     """
-
-    #: A sentinel object representing the default timeout value
     DEFAULT_TIMEOUT = _GLOBAL_DEFAULT_TIMEOUT
-
+    
     def __init__(self, total=None, connect=_Default, read=_Default):
-        self._connect = self._validate_timeout(connect, "connect")
-        self._read = self._validate_timeout(read, "read")
-        self.total = self._validate_timeout(total, "total")
+        self._connect = self._validate_timeout(connect, 'connect')
+        self._read = self._validate_timeout(read, 'read')
+        self.total = self._validate_timeout(total, 'total')
         self._start_connect = None
-
+    
     def __repr__(self):
-        return "%s(connect=%r, read=%r, total=%r)" % (
-            type(self).__name__,
-            self._connect,
-            self._read,
-            self.total,
-        )
-
-    # __str__ provided for backwards compatibility
+        return '%s(connect=%r, read=%r, total=%r)' % (type(self).__name__, self._connect, self._read, self.total)
     __str__ = __repr__
-
+    
     @classmethod
     def _validate_timeout(cls, value, name):
         """Check that a timeout attribute is valid.
@@ -129,39 +109,21 @@ class Timeout(object):
         """
         if value is _Default:
             return cls.DEFAULT_TIMEOUT
-
-        if value is None or value is cls.DEFAULT_TIMEOUT:
+        if (value is None or value is cls.DEFAULT_TIMEOUT):
             return value
-
         if isinstance(value, bool):
-            raise ValueError(
-                "Timeout cannot be a boolean value. It must "
-                "be an int, float or None."
-            )
+            raise ValueError('Timeout cannot be a boolean value. It must be an int, float or None.')
         try:
             float(value)
         except (TypeError, ValueError):
-            raise ValueError(
-                "Timeout value %s was %s, but it must be an "
-                "int, float or None." % (name, value)
-            )
-
+            raise ValueError('Timeout value %s was %s, but it must be an int, float or None.' % (name, value))
         try:
             if value <= 0:
-                raise ValueError(
-                    "Attempted to set %s timeout to %s, but the "
-                    "timeout cannot be set to a value less "
-                    "than or equal to 0." % (name, value)
-                )
+                raise ValueError('Attempted to set %s timeout to %s, but the timeout cannot be set to a value less than or equal to 0.' % (name, value))
         except TypeError:
-            # Python 3
-            raise ValueError(
-                "Timeout value %s was %s, but it must be an "
-                "int, float or None." % (name, value)
-            )
-
+            raise ValueError('Timeout value %s was %s, but it must be an int, float or None.' % (name, value))
         return value
-
+    
     @classmethod
     def from_float(cls, timeout):
         """Create a new Timeout from a legacy timeout value.
@@ -177,7 +139,7 @@ class Timeout(object):
         :rtype: :class:`Timeout`
         """
         return Timeout(read=timeout, connect=timeout)
-
+    
     def clone(self):
         """Create a copy of the timeout object
 
@@ -187,11 +149,8 @@ class Timeout(object):
         :return: a copy of the timeout object
         :rtype: :class:`Timeout`
         """
-        # We can't use copy.deepcopy because that will also create a new object
-        # for _GLOBAL_DEFAULT_TIMEOUT, which socket.py uses as a sentinel to
-        # detect the user default.
         return Timeout(connect=self._connect, read=self._read, total=self.total)
-
+    
     def start_connect(self):
         """Start the timeout clock, used during a connect() attempt
 
@@ -199,10 +158,10 @@ class Timeout(object):
             to start a timer that has been started already.
         """
         if self._start_connect is not None:
-            raise TimeoutStateError("Timeout timer has already been started.")
+            raise TimeoutStateError('Timeout timer has already been started.')
         self._start_connect = current_time()
         return self._start_connect
-
+    
     def get_connect_duration(self):
         """Gets the time elapsed since the call to :meth:`start_connect`.
 
@@ -212,11 +171,9 @@ class Timeout(object):
             to get duration for a timer that hasn't been started.
         """
         if self._start_connect is None:
-            raise TimeoutStateError(
-                "Can't get connect duration for timer that has not started."
-            )
+            raise TimeoutStateError("Can't get connect duration for timer that has not started.")
         return current_time() - self._start_connect
-
+    
     @property
     def connect_timeout(self):
         """Get the value to use when setting a connection timeout.
@@ -229,12 +186,10 @@ class Timeout(object):
         """
         if self.total is None:
             return self._connect
-
-        if self._connect is None or self._connect is self.DEFAULT_TIMEOUT:
+        if (self._connect is None or self._connect is self.DEFAULT_TIMEOUT):
             return self.total
-
         return min(self._connect, self.total)
-
+    
     @property
     def read_timeout(self):
         """Get the value for the read timeout.
@@ -252,17 +207,13 @@ class Timeout(object):
         :raises urllib3.exceptions.TimeoutStateError: If :meth:`start_connect`
             has not yet been called on this object.
         """
-        if (
-            self.total is not None
-            and self.total is not self.DEFAULT_TIMEOUT
-            and self._read is not None
-            and self._read is not self.DEFAULT_TIMEOUT
-        ):
-            # In case the connect timeout has not yet been established.
+        if (self.total is not None and self.total is not self.DEFAULT_TIMEOUT and self._read is not None and self._read is not self.DEFAULT_TIMEOUT):
             if self._start_connect is None:
                 return self._read
             return max(0, min(self.total - self.get_connect_duration(), self._read))
-        elif self.total is not None and self.total is not self.DEFAULT_TIMEOUT:
+        elif (self.total is not None and self.total is not self.DEFAULT_TIMEOUT):
             return max(0, self.total - self.get_connect_duration())
         else:
             return self._read
+
+

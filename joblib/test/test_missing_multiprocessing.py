@@ -7,7 +7,6 @@ import os
 import subprocess
 import sys
 
-
 def test_missing_multiprocessing(tmp_path):
     """
     Test that import joblib works even if _multiprocessing is missing.
@@ -17,16 +16,6 @@ def test_missing_multiprocessing(tmp_path):
     Python process. This also ensures that we don't break other tests by
     importing a bad `_multiprocessing` module.
     """
-    (tmp_path / "_multiprocessing.py").write_text(
-        'raise ImportError("No _multiprocessing module!")'
-    )
-    env = dict(os.environ)
-    # For subprocess, use current sys.path with our custom version of
-    # multiprocessing inserted.
-    env["PYTHONPATH"] = ":".join([str(tmp_path)] + sys.path)
-    subprocess.check_call(
-        [sys.executable, "-c",
-         "import joblib, math; "
-         "joblib.Parallel(n_jobs=1)("
-         "joblib.delayed(math.sqrt)(i**2) for i in range(10))"
-         ], env=env)
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('joblib.test.test_missing_multiprocessing.test_missing_multiprocessing', 'test_missing_multiprocessing(tmp_path)', {'os': os, 'sys': sys, 'subprocess': subprocess, 'tmp_path': tmp_path}, 0)
+

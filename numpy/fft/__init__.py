@@ -84,13 +84,13 @@ exponent, normalization, etc.  In this implementation, the DFT is defined
 as
 
 .. math::
-   A_k =  \\sum_{m=0}^{n-1} a_m \\exp\\left\\{-2\\pi i{mk \\over n}\\right\\}
-   \\qquad k = 0,\\ldots,n-1.
+   A_k =  \sum_{m=0}^{n-1} a_m \exp\left\{-2\pi i{mk \over n}ight\}
+   \qquad k = 0,\ldots,n-1.
 
 The DFT is in general defined for complex inputs and outputs, and a
 single-frequency component at linear frequency :math:`f` is
 represented by a complex exponential
-:math:`a_m = \\exp\\{2\\pi i\\,f m\\Delta t\\}`, where :math:`\\Delta t`
+:math:`a_m = \exp\{2\pi i\,f m\Delta t\}`, where :math:`\Delta t`
 is the sampling interval.
 
 The values in the result follow so-called "standard" order: If ``A =
@@ -115,8 +115,8 @@ The phase spectrum is obtained by ``np.angle(A)``.
 The inverse DFT is defined as
 
 .. math::
-   a_m = \\frac{1}{n}\\sum_{k=0}^{n-1}A_k\\exp\\left\\{2\\pi i{mk\\over n}\\right\\}
-   \\qquad m = 0,\\ldots,n-1.
+   a_m = rac{1}{n}\sum_{k=0}^{n-1}A_k\exp\left\{2\pi i{mk\over n}ight\}
+   \qquad m = 0,\ldots,n-1.
 
 It differs from the forward transform by the sign of the exponential
 argument and the default normalization by :math:`1/n`.
@@ -137,7 +137,7 @@ The default normalization (``"backward"``) has the direct (forward) transforms
 unscaled and the inverse (backward) transforms scaled by :math:`1/n`. It is
 possible to obtain unitary transforms by setting the keyword argument ``norm``
 to ``"ortho"`` so that both direct and inverse transforms are scaled by
-:math:`1/\\sqrt{n}`. Finally, setting the keyword argument ``norm`` to
+:math:`1/\sqrt{n}`. Finally, setting the keyword argument ``norm`` to
 ``"forward"`` has the direct transforms scaled by :math:`1/n` and the inverse
 transforms unscaled (i.e. exactly opposite to the default ``"backward"``).
 `None` is an alias of the default option ``"backward"`` for backward
@@ -175,9 +175,9 @@ Higher dimensions
 In two dimensions, the DFT is defined as
 
 .. math::
-   A_{kl} =  \\sum_{m=0}^{M-1} \\sum_{n=0}^{N-1}
-   a_{mn}\\exp\\left\\{-2\\pi i \\left({mk\\over M}+{nl\\over N}\\right)\\right\\}
-   \\qquad k = 0, \\ldots, M-1;\\quad l = 0, \\ldots, N-1,
+   A_{kl} =  \sum_{m=0}^{M-1} \sum_{n=0}^{N-1}
+   a_{mn}\exp\left\{-2\pi i \left({mk\over M}+{nl\over N}ight)ight\}
+   \qquad k = 0, \ldots, M-1;\quad l = 0, \ldots, N-1,
 
 which extends in the obvious way to higher dimensions, and the inverses
 in higher dimensions also extend in the same way.
@@ -203,10 +203,9 @@ For examples, see the various functions.
 from . import _pocketfft, helper
 from ._pocketfft import *
 from .helper import *
-
 __all__ = _pocketfft.__all__.copy()
 __all__ += helper.__all__
-
 from numpy._pytesttester import PytestTester
 test = PytestTester(__name__)
 del PytestTester
+

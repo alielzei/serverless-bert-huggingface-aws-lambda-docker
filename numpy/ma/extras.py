@@ -8,29 +8,12 @@ A collection of utilities for `numpy.ma`.
 :version: $Id: extras.py 3473 2007-10-29 15:18:13Z jarrod.millman $
 
 """
-__all__ = [
-    'apply_along_axis', 'apply_over_axes', 'atleast_1d', 'atleast_2d',
-    'atleast_3d', 'average', 'clump_masked', 'clump_unmasked', 'column_stack',
-    'compress_cols', 'compress_nd', 'compress_rowcols', 'compress_rows',
-    'count_masked', 'corrcoef', 'cov', 'diagflat', 'dot', 'dstack', 'ediff1d',
-    'flatnotmasked_contiguous', 'flatnotmasked_edges', 'hsplit', 'hstack',
-    'isin', 'in1d', 'intersect1d', 'mask_cols', 'mask_rowcols', 'mask_rows',
-    'masked_all', 'masked_all_like', 'median', 'mr_', 'ndenumerate',
-    'notmasked_contiguous', 'notmasked_edges', 'polyfit', 'row_stack',
-    'setdiff1d', 'setxor1d', 'stack', 'unique', 'union1d', 'vander', 'vstack',
-    ]
 
+__all__ = ['apply_along_axis', 'apply_over_axes', 'atleast_1d', 'atleast_2d', 'atleast_3d', 'average', 'clump_masked', 'clump_unmasked', 'column_stack', 'compress_cols', 'compress_nd', 'compress_rowcols', 'compress_rows', 'count_masked', 'corrcoef', 'cov', 'diagflat', 'dot', 'dstack', 'ediff1d', 'flatnotmasked_contiguous', 'flatnotmasked_edges', 'hsplit', 'hstack', 'isin', 'in1d', 'intersect1d', 'mask_cols', 'mask_rowcols', 'mask_rows', 'masked_all', 'masked_all_like', 'median', 'mr_', 'ndenumerate', 'notmasked_contiguous', 'notmasked_edges', 'polyfit', 'row_stack', 'setdiff1d', 'setxor1d', 'stack', 'unique', 'union1d', 'vander', 'vstack']
 import itertools
 import warnings
-
 from . import core as ma
-from .core import (
-    MaskedArray, MAError, add, array, asarray, concatenate, filled, count,
-    getmask, getmaskarray, make_mask_descr, masked, masked_array, mask_or,
-    nomask, ones, sort, zeros, getdata, get_masked_subclass, dot,
-    mask_rowcols
-    )
-
+from .core import MaskedArray, MAError, add, array, asarray, concatenate, filled, count, getmask, getmaskarray, make_mask_descr, masked, masked_array, mask_or, nomask, ones, sort, zeros, getdata, get_masked_subclass, dot, mask_rowcols
 import numpy as np
 from numpy import ndarray, array as nxarray
 from numpy.core.multiarray import normalize_axis_index
@@ -38,14 +21,12 @@ from numpy.core.numeric import normalize_axis_tuple
 from numpy.lib.function_base import _ureduce
 from numpy.lib.index_tricks import AxisConcatenator
 
-
 def issequence(seq):
     """
     Is seq a sequence (ndarray, list or tuple)?
 
     """
     return isinstance(seq, (ndarray, tuple, list))
-
 
 def count_masked(arr, axis=None):
     """
@@ -100,7 +81,6 @@ def count_masked(arr, axis=None):
     m = getmaskarray(arr)
     return m.sum(axis)
 
-
 def masked_all(shape, dtype=float):
     """
     Empty masked array with all elements masked.
@@ -148,10 +128,8 @@ def masked_all(shape, dtype=float):
     dtype('int32')
 
     """
-    a = masked_array(np.empty(shape, dtype),
-                     mask=np.ones(shape, make_mask_descr(dtype)))
+    a = masked_array(np.empty(shape, dtype), mask=np.ones(shape, make_mask_descr(dtype)))
     return a
-
 
 def masked_all_like(arr):
     """
@@ -203,14 +181,10 @@ def masked_all_like(arr):
     dtype('float32')
 
     """
-    a = np.empty_like(arr).view(MaskedArray)
-    a._mask = np.ones(a.shape, dtype=make_mask_descr(a.dtype))
-    return a
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.ma.extras.masked_all_like', 'masked_all_like(arr)', {'np': np, 'MaskedArray': MaskedArray, 'make_mask_descr': make_mask_descr, 'arr': arr}, 1)
 
 
-#####--------------------------------------------------------------------------
-#---- --- Standard functions ---
-#####--------------------------------------------------------------------------
 class _fromnxfunction:
     """
     Defines a wrapper to adapt NumPy functions to masked arrays.
@@ -230,11 +204,11 @@ class _fromnxfunction:
         in the NumPy namespace (i.e. ``np.funcname``).
 
     """
-
+    
     def __init__(self, funcname):
         self.__name__ = funcname
         self.__doc__ = self.getdoc()
-
+    
     def getdoc(self):
         """
         Retrieve the docstring and signature from the function.
@@ -252,13 +226,13 @@ class _fromnxfunction:
         doc = getattr(npfunc, '__doc__', None)
         if doc:
             sig = self.__name__ + ma.get_object_signature(npfunc)
-            doc = ma.doc_note(doc, "The function is applied to both the _data "
-                                   "and the _mask, if any.")
+            doc = ma.doc_note(doc, 'The function is applied to both the _data and the _mask, if any.')
             return '\n\n'.join((sig, doc))
         return
-
+    
     def __call__(self, *args, **params):
         pass
+
 
 
 class _fromnxfunction_single(_fromnxfunction):
@@ -267,6 +241,7 @@ class _fromnxfunction_single(_fromnxfunction):
     argument followed by auxiliary args that are passed verbatim for
     both the data and mask calls.
     """
+    
     def __call__(self, x, *args, **params):
         func = getattr(np, self.__name__)
         if isinstance(x, ndarray):
@@ -279,17 +254,20 @@ class _fromnxfunction_single(_fromnxfunction):
             return masked_array(_d, mask=_m)
 
 
+
 class _fromnxfunction_seq(_fromnxfunction):
     """
     A version of `_fromnxfunction` that is called with a single sequence
     of arrays followed by auxiliary args that are passed verbatim for
     both the data and mask calls.
     """
+    
     def __call__(self, x, *args, **params):
         func = getattr(np, self.__name__)
         _d = func(tuple([np.asarray(a) for a in x]), *args, **params)
         _m = func(tuple([getmaskarray(a) for a in x]), *args, **params)
         return masked_array(_d, mask=_m)
+
 
 
 class _fromnxfunction_args(_fromnxfunction):
@@ -301,11 +279,12 @@ class _fromnxfunction_args(_fromnxfunction):
     returned in a list. If only one array is found, the return value is
     just the processed array instead of a list.
     """
+    
     def __call__(self, *args, **params):
         func = getattr(np, self.__name__)
         arrays = []
         args = list(args)
-        while len(args) > 0 and issequence(args[0]):
+        while (len(args) > 0 and issequence(args[0])):
             arrays.append(args.pop(0))
         res = []
         for x in arrays:
@@ -315,6 +294,7 @@ class _fromnxfunction_args(_fromnxfunction):
         if len(arrays) == 1:
             return res[0]
         return res
+
 
 
 class _fromnxfunction_allargs(_fromnxfunction):
@@ -328,6 +308,7 @@ class _fromnxfunction_allargs(_fromnxfunction):
     in a list. If only one arg is present, the return value is just the
     processed array instead of a list.
     """
+    
     def __call__(self, *args, **params):
         func = getattr(np, self.__name__)
         res = []
@@ -339,34 +320,25 @@ class _fromnxfunction_allargs(_fromnxfunction):
             return res[0]
         return res
 
-
 atleast_1d = _fromnxfunction_allargs('atleast_1d')
 atleast_2d = _fromnxfunction_allargs('atleast_2d')
 atleast_3d = _fromnxfunction_allargs('atleast_3d')
-
 vstack = row_stack = _fromnxfunction_seq('vstack')
 hstack = _fromnxfunction_seq('hstack')
 column_stack = _fromnxfunction_seq('column_stack')
 dstack = _fromnxfunction_seq('dstack')
 stack = _fromnxfunction_seq('stack')
-
 hsplit = _fromnxfunction_single('hsplit')
-
 diagflat = _fromnxfunction_single('diagflat')
 
-
-#####--------------------------------------------------------------------------
-#----
-#####--------------------------------------------------------------------------
 def flatten_inplace(seq):
     """Flatten a sequence in place."""
     k = 0
-    while (k != len(seq)):
+    while k != len(seq):
         while hasattr(seq[k], '__iter__'):
-            seq[k:(k + 1)] = seq[k]
+            seq[k:k + 1] = seq[k]
         k += 1
     return seq
-
 
 def apply_along_axis(func1d, axis, arr, *args, **kwargs):
     """
@@ -383,16 +355,12 @@ def apply_along_axis(func1d, axis, arr, *args, **kwargs):
     outshape = np.asarray(arr.shape).take(indlist)
     i.put(indlist, ind)
     res = func1d(arr[tuple(i.tolist())], *args, **kwargs)
-    #  if res is a number, then we have a smaller output array
     asscalar = np.isscalar(res)
     if not asscalar:
         try:
             len(res)
         except TypeError:
             asscalar = True
-    # Note: we shouldn't set the dtype of the output from the first result
-    # so we force the type to object, and build a list of dtypes.  We'll
-    # just take the largest, to avoid some downcasting
     dtypes = []
     if asscalar:
         dtypes.append(np.asarray(res).dtype)
@@ -401,10 +369,9 @@ def apply_along_axis(func1d, axis, arr, *args, **kwargs):
         Ntot = np.product(outshape)
         k = 1
         while k < Ntot:
-            # increment the index
             ind[-1] += 1
             n = -1
-            while (ind[n] >= outshape[n]) and (n > (1 - nd)):
+            while (ind[n] >= outshape[n] and n > 1 - nd):
                 ind[n - 1] += 1
                 ind[n] = 0
                 n -= 1
@@ -416,7 +383,7 @@ def apply_along_axis(func1d, axis, arr, *args, **kwargs):
     else:
         res = array(res, copy=False, subok=True)
         j = i.copy()
-        j[axis] = ([slice(None, None)] * res.ndim)
+        j[axis] = [slice(None, None)] * res.ndim
         j.put(indlist, ind)
         Ntot = np.product(outshape)
         holdshape = outshape
@@ -428,10 +395,9 @@ def apply_along_axis(func1d, axis, arr, *args, **kwargs):
         outarr[tuple(flatten_inplace(j.tolist()))] = res
         k = 1
         while k < Ntot:
-            # increment the index
             ind[-1] += 1
             n = -1
-            while (ind[n] >= holdshape[n]) and (n > (1 - nd)):
+            while (ind[n] >= holdshape[n] and n > 1 - nd):
                 ind[n - 1] += 1
                 ind[n] = 0
                 n -= 1
@@ -450,7 +416,6 @@ def apply_along_axis(func1d, axis, arr, *args, **kwargs):
     return result
 apply_along_axis.__doc__ = np.apply_along_axis.__doc__
 
-
 def apply_over_axes(func, a, axes):
     """
     (This docstring will be overwritten)
@@ -458,7 +423,7 @@ def apply_over_axes(func, a, axes):
     val = asarray(a)
     N = a.ndim
     if array(axes).ndim == 0:
-        axes = (axes,)
+        axes = (axes, )
     for axis in axes:
         if axis < 0:
             axis = N + axis
@@ -471,62 +436,12 @@ def apply_over_axes(func, a, axes):
             if res.ndim == val.ndim:
                 val = res
             else:
-                raise ValueError("function is not returning "
-                        "an array of the correct shape")
+                raise ValueError('function is not returning an array of the correct shape')
     return val
-
-
 if apply_over_axes.__doc__ is not None:
-    apply_over_axes.__doc__ = np.apply_over_axes.__doc__[
-        :np.apply_over_axes.__doc__.find('Notes')].rstrip() + \
-    """
+    apply_over_axes.__doc__ = np.apply_over_axes.__doc__[:np.apply_over_axes.__doc__.find('Notes')].rstrip() + '\n\n    Examples\n    --------\n    >>> a = np.ma.arange(24).reshape(2,3,4)\n    >>> a[:,0,1] = np.ma.masked\n    >>> a[:,1,:] = np.ma.masked\n    >>> a\n    masked_array(\n      data=[[[0, --, 2, 3],\n             [--, --, --, --],\n             [8, 9, 10, 11]],\n            [[12, --, 14, 15],\n             [--, --, --, --],\n             [20, 21, 22, 23]]],\n      mask=[[[False,  True, False, False],\n             [ True,  True,  True,  True],\n             [False, False, False, False]],\n            [[False,  True, False, False],\n             [ True,  True,  True,  True],\n             [False, False, False, False]]],\n      fill_value=999999)\n    >>> np.ma.apply_over_axes(np.ma.sum, a, [0,2])\n    masked_array(\n      data=[[[46],\n             [--],\n             [124]]],\n      mask=[[[False],\n             [ True],\n             [False]]],\n      fill_value=999999)\n\n    Tuple axis arguments to ufuncs are equivalent:\n\n    >>> np.ma.sum(a, axis=(0,2)).reshape((1,-1,1))\n    masked_array(\n      data=[[[46],\n             [--],\n             [124]]],\n      mask=[[[False],\n             [ True],\n             [False]]],\n      fill_value=999999)\n    '
 
-    Examples
-    --------
-    >>> a = np.ma.arange(24).reshape(2,3,4)
-    >>> a[:,0,1] = np.ma.masked
-    >>> a[:,1,:] = np.ma.masked
-    >>> a
-    masked_array(
-      data=[[[0, --, 2, 3],
-             [--, --, --, --],
-             [8, 9, 10, 11]],
-            [[12, --, 14, 15],
-             [--, --, --, --],
-             [20, 21, 22, 23]]],
-      mask=[[[False,  True, False, False],
-             [ True,  True,  True,  True],
-             [False, False, False, False]],
-            [[False,  True, False, False],
-             [ True,  True,  True,  True],
-             [False, False, False, False]]],
-      fill_value=999999)
-    >>> np.ma.apply_over_axes(np.ma.sum, a, [0,2])
-    masked_array(
-      data=[[[46],
-             [--],
-             [124]]],
-      mask=[[[False],
-             [ True],
-             [False]]],
-      fill_value=999999)
-
-    Tuple axis arguments to ufuncs are equivalent:
-
-    >>> np.ma.sum(a, axis=(0,2)).reshape((1,-1,1))
-    masked_array(
-      data=[[[46],
-             [--],
-             [124]]],
-      mask=[[[False],
-             [ True],
-             [False]]],
-      fill_value=999999)
-    """
-
-
-def average(a, axis=None, weights=None, returned=False, *,
-            keepdims=np._NoValue):
+def average(a, axis=None, weights=None, returned=False, *, keepdims=np._NoValue):
     """
     Return the weighted average of array over the given axis.
 
@@ -602,60 +517,8 @@ def average(a, axis=None, weights=None, returned=False, *,
       mask=False,
       fill_value=1e+20)
     """
-    a = asarray(a)
-    m = getmask(a)
-
-    # inspired by 'average' in numpy/lib/function_base.py
-
-    if keepdims is np._NoValue:
-        # Don't pass on the keepdims argument if one wasn't given.
-        keepdims_kw = {}
-    else:
-        keepdims_kw = {'keepdims': keepdims}
-
-    if weights is None:
-        avg = a.mean(axis, **keepdims_kw)
-        scl = avg.dtype.type(a.count(axis))
-    else:
-        wgt = asarray(weights)
-
-        if issubclass(a.dtype.type, (np.integer, np.bool_)):
-            result_dtype = np.result_type(a.dtype, wgt.dtype, 'f8')
-        else:
-            result_dtype = np.result_type(a.dtype, wgt.dtype)
-
-        # Sanity checks
-        if a.shape != wgt.shape:
-            if axis is None:
-                raise TypeError(
-                    "Axis must be specified when shapes of a and weights "
-                    "differ.")
-            if wgt.ndim != 1:
-                raise TypeError(
-                    "1D weights expected when shapes of a and weights differ.")
-            if wgt.shape[0] != a.shape[axis]:
-                raise ValueError(
-                    "Length of weights not compatible with specified axis.")
-
-            # setup wgt to broadcast along axis
-            wgt = np.broadcast_to(wgt, (a.ndim-1)*(1,) + wgt.shape, subok=True)
-            wgt = wgt.swapaxes(-1, axis)
-
-        if m is not nomask:
-            wgt = wgt*(~a.mask)
-            wgt.mask |= a.mask
-
-        scl = wgt.sum(axis=axis, dtype=result_dtype, **keepdims_kw)
-        avg = np.multiply(a, wgt,
-                          dtype=result_dtype).sum(axis, **keepdims_kw) / scl
-
-    if returned:
-        if scl.shape != avg.shape:
-            scl = np.broadcast_to(scl, avg.shape).copy()
-        return avg, scl
-    else:
-        return avg
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.ma.extras.average', 'average(a, axis=None, weights=None, returned=False, keepdims=np._NoValue)', {'asarray': asarray, 'getmask': getmask, 'np': np, 'nomask': nomask, 'a': a, 'axis': axis, 'weights': weights, 'returned': returned, 'keepdims': keepdims}, 2)
 
 def median(a, axis=None, out=None, overwrite_input=False, keepdims=False):
     """
@@ -724,21 +587,14 @@ def median(a, axis=None, out=None, overwrite_input=False, keepdims=False):
 
     """
     if not hasattr(a, 'mask'):
-        m = np.median(getdata(a, subok=True), axis=axis,
-                      out=out, overwrite_input=overwrite_input,
-                      keepdims=keepdims)
-        if isinstance(m, np.ndarray) and 1 <= m.ndim:
+        m = np.median(getdata(a, subok=True), axis=axis, out=out, overwrite_input=overwrite_input, keepdims=keepdims)
+        if (isinstance(m, np.ndarray) and 1 <= m.ndim):
             return masked_array(m, copy=False)
         else:
             return m
-
-    return _ureduce(a, func=_median, keepdims=keepdims, axis=axis, out=out,
-                    overwrite_input=overwrite_input)
-
+    return _ureduce(a, func=_median, keepdims=keepdims, axis=axis, out=out, overwrite_input=overwrite_input)
 
 def _median(a, axis=None, out=None, overwrite_input=False):
-    # when an unmasked NaN is present return it, so we need to sort the NaN
-    # values behind the mask
     if np.issubdtype(a.dtype, np.inexact):
         fill_value = np.inf
     else:
@@ -752,74 +608,48 @@ def _median(a, axis=None, out=None, overwrite_input=False):
             asorted = a
     else:
         asorted = sort(a, axis=axis, fill_value=fill_value)
-
     if axis is None:
         axis = 0
     else:
         axis = normalize_axis_index(axis, asorted.ndim)
-
     if asorted.shape[axis] == 0:
-        # for empty axis integer indices fail so use slicing to get same result
-        # as median (which is mean of empty slice = nan)
         indexer = [slice(None)] * asorted.ndim
         indexer[axis] = slice(0, 0)
         indexer = tuple(indexer)
         return np.ma.mean(asorted[indexer], axis=axis, out=out)
-
     if asorted.ndim == 1:
-        idx, odd = divmod(count(asorted), 2)
+        (idx, odd) = divmod(count(asorted), 2)
         mid = asorted[idx + odd - 1:idx + 1]
-        if np.issubdtype(asorted.dtype, np.inexact) and asorted.size > 0:
-            # avoid inf / x = masked
+        if (np.issubdtype(asorted.dtype, np.inexact) and asorted.size > 0):
             s = mid.sum(out=out)
             if not odd:
-                s = np.true_divide(s, 2., casting='safe', out=out)
+                s = np.true_divide(s, 2.0, casting='safe', out=out)
             s = np.lib.utils._median_nancheck(asorted, s, axis)
         else:
             s = mid.mean(out=out)
-
-        # if result is masked either the input contained enough
-        # minimum_fill_value so that it would be the median or all values
-        # masked
-        if np.ma.is_masked(s) and not np.all(asorted.mask):
+        if (np.ma.is_masked(s) and not np.all(asorted.mask)):
             return np.ma.minimum_fill_value(asorted)
         return s
-
     counts = count(asorted, axis=axis, keepdims=True)
     h = counts // 2
-
-    # duplicate high if odd number of elements so mean does nothing
     odd = counts % 2 == 1
-    l = np.where(odd, h, h-1)
-
-    lh = np.concatenate([l,h], axis=axis)
-
-    # get low and high median
+    l = np.where(odd, h, h - 1)
+    lh = np.concatenate([l, h], axis=axis)
     low_high = np.take_along_axis(asorted, lh, axis=axis)
-
+    
     def replace_masked(s):
-        # Replace masked entries with minimum_full_value unless it all values
-        # are masked. This is required as the sort order of values equal or
-        # larger than the fill value is undefined and a valid value placed
-        # elsewhere, e.g. [4, --, inf].
         if np.ma.is_masked(s):
-            rep = (~np.all(asorted.mask, axis=axis, keepdims=True)) & s.mask
+            rep = ~np.all(asorted.mask, axis=axis, keepdims=True) & s.mask
             s.data[rep] = np.ma.minimum_fill_value(asorted)
             s.mask[rep] = False
-
     replace_masked(low_high)
-
     if np.issubdtype(asorted.dtype, np.inexact):
-        # avoid inf / x = masked
         s = np.ma.sum(low_high, axis=axis, out=out)
-        np.true_divide(s.data, 2., casting='unsafe', out=s.data)
-
+        np.true_divide(s.data, 2.0, casting='unsafe', out=s.data)
         s = np.lib.utils._median_nancheck(asorted, s, axis)
     else:
         s = np.ma.mean(low_high, axis=axis, out=out)
-
     return s
-
 
 def compress_nd(x, axis=None):
     """Suppress slices from multiple dimensions which contain masked values.
@@ -842,27 +672,8 @@ def compress_nd(x, axis=None):
     compress_array : ndarray
         The compressed array.
     """
-    x = asarray(x)
-    m = getmask(x)
-    # Set axis to tuple of ints
-    if axis is None:
-        axis = tuple(range(x.ndim))
-    else:
-        axis = normalize_axis_tuple(axis, x.ndim)
-
-    # Nothing is masked: return x
-    if m is nomask or not m.any():
-        return x._data
-    # All is masked: return empty
-    if m.all():
-        return nxarray([])
-    # Filter elements through boolean indexing
-    data = x._data
-    for ax in axis:
-        axes = tuple(list(range(ax)) + list(range(ax + 1, x.ndim)))
-        data = data[(slice(None),)*ax + (~m.any(axis=axes),)]
-    return data
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.ma.extras.compress_nd', 'compress_nd(x, axis=None)', {'asarray': asarray, 'getmask': getmask, 'normalize_axis_tuple': normalize_axis_tuple, 'nomask': nomask, 'nxarray': nxarray, 'x': x, 'axis': axis}, 1)
 
 def compress_rowcols(x, axis=None):
     """
@@ -914,10 +725,8 @@ def compress_rowcols(x, axis=None):
            [7, 8]])
 
     """
-    if asarray(x).ndim != 2:
-        raise NotImplementedError("compress_rowcols works for 2D arrays only.")
-    return compress_nd(x, axis=axis)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.ma.extras.compress_rowcols', 'compress_rowcols(x, axis=None)', {'asarray': asarray, 'compress_nd': compress_nd, 'x': x, 'axis': axis}, 1)
 
 def compress_rows(a):
     """
@@ -931,11 +740,8 @@ def compress_rows(a):
     compress_rowcols
 
     """
-    a = asarray(a)
-    if a.ndim != 2:
-        raise NotImplementedError("compress_rows works for 2D arrays only.")
-    return compress_rowcols(a, 0)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.ma.extras.compress_rows', 'compress_rows(a)', {'asarray': asarray, 'compress_rowcols': compress_rowcols, 'a': a}, 1)
 
 def compress_cols(a):
     """
@@ -949,11 +755,8 @@ def compress_cols(a):
     compress_rowcols
 
     """
-    a = asarray(a)
-    if a.ndim != 2:
-        raise NotImplementedError("compress_cols works for 2D arrays only.")
-    return compress_rowcols(a, 1)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.ma.extras.compress_cols', 'compress_cols(a)', {'asarray': asarray, 'compress_rowcols': compress_rowcols, 'a': a}, 1)
 
 def mask_rows(a, axis=np._NoValue):
     """
@@ -998,13 +801,8 @@ def mask_rows(a, axis=np._NoValue):
 
     """
     if axis is not np._NoValue:
-        # remove the axis argument when this deprecation expires
-        # NumPy 1.18.0, 2019-11-28
-        warnings.warn(
-            "The axis argument has always been ignored, in future passing it "
-            "will raise TypeError", DeprecationWarning, stacklevel=2)
+        warnings.warn('The axis argument has always been ignored, in future passing it will raise TypeError', DeprecationWarning, stacklevel=2)
     return mask_rowcols(a, 0)
-
 
 def mask_cols(a, axis=np._NoValue):
     """
@@ -1047,18 +845,8 @@ def mask_cols(a, axis=np._NoValue):
       fill_value=1)
 
     """
-    if axis is not np._NoValue:
-        # remove the axis argument when this deprecation expires
-        # NumPy 1.18.0, 2019-11-28
-        warnings.warn(
-            "The axis argument has always been ignored, in future passing it "
-            "will raise TypeError", DeprecationWarning, stacklevel=2)
-    return mask_rowcols(a, 1)
-
-
-#####--------------------------------------------------------------------------
-#---- --- arraysetops ---
-#####--------------------------------------------------------------------------
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.ma.extras.mask_cols', 'mask_cols(a, axis=np._NoValue)', {'np': np, 'warnings': warnings, 'mask_rowcols': mask_rowcols, 'a': a, 'axis': axis}, 1)
 
 def ediff1d(arr, to_end=None, to_begin=None):
     """
@@ -1072,22 +860,8 @@ def ediff1d(arr, to_end=None, to_begin=None):
     numpy.ediff1d : Equivalent function for ndarrays.
 
     """
-    arr = ma.asanyarray(arr).flat
-    ed = arr[1:] - arr[:-1]
-    arrays = [ed]
-    #
-    if to_begin is not None:
-        arrays.insert(0, to_begin)
-    if to_end is not None:
-        arrays.append(to_end)
-    #
-    if len(arrays) != 1:
-        # We'll save ourselves a copy of a potentially large array in the common
-        # case where neither to_begin or to_end was given.
-        ed = hstack(arrays)
-    #
-    return ed
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.ma.extras.ediff1d', 'ediff1d(arr, to_end=None, to_begin=None)', {'ma': ma, 'hstack': hstack, 'arr': arr, 'to_end': to_end, 'to_begin': to_begin}, 1)
 
 def unique(ar1, return_index=False, return_inverse=False):
     """
@@ -1127,9 +901,7 @@ def unique(ar1, return_index=False, return_inverse=False):
                 mask=[False, False, False,  True],
         fill_value=999999), array([0, 1, 4, 2]), array([0, 1, 3, 1, 2]))
     """
-    output = np.unique(ar1,
-                       return_index=return_index,
-                       return_inverse=return_inverse)
+    output = np.unique(ar1, return_index=return_index, return_inverse=return_inverse)
     if isinstance(output, tuple):
         output = list(output)
         output[0] = output[0].view(MaskedArray)
@@ -1137,7 +909,6 @@ def unique(ar1, return_index=False, return_inverse=False):
     else:
         output = output.view(MaskedArray)
     return output
-
 
 def intersect1d(ar1, ar2, assume_unique=False):
     """
@@ -1162,14 +933,8 @@ def intersect1d(ar1, ar2, assume_unique=False):
            fill_value=999999)
 
     """
-    if assume_unique:
-        aux = ma.concatenate((ar1, ar2))
-    else:
-        # Might be faster than unique( intersect1d( ar1, ar2 ) )?
-        aux = ma.concatenate((unique(ar1), unique(ar2)))
-    aux.sort()
-    return aux[:-1][aux[1:] == aux[:-1]]
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.ma.extras.intersect1d', 'intersect1d(ar1, ar2, assume_unique=False)', {'ma': ma, 'unique': unique, 'ar1': ar1, 'ar2': ar2, 'assume_unique': assume_unique}, 1)
 
 def setxor1d(ar1, ar2, assume_unique=False):
     """
@@ -1182,21 +947,8 @@ def setxor1d(ar1, ar2, assume_unique=False):
     numpy.setxor1d : Equivalent function for ndarrays.
 
     """
-    if not assume_unique:
-        ar1 = unique(ar1)
-        ar2 = unique(ar2)
-
-    aux = ma.concatenate((ar1, ar2))
-    if aux.size == 0:
-        return aux
-    aux.sort()
-    auxf = aux.filled()
-#    flag = ediff1d( aux, to_end = 1, to_begin = 1 ) == 0
-    flag = ma.concatenate(([True], (auxf[1:] != auxf[:-1]), [True]))
-#    flag2 = ediff1d( flag ) == 0
-    flag2 = (flag[1:] == flag[:-1])
-    return aux[flag2]
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.ma.extras.setxor1d', 'setxor1d(ar1, ar2, assume_unique=False)', {'unique': unique, 'ma': ma, 'ar1': ar1, 'ar2': ar2, 'assume_unique': assume_unique}, 1)
 
 def in1d(ar1, ar2, assume_unique=False, invert=False):
     """
@@ -1217,28 +969,8 @@ def in1d(ar1, ar2, assume_unique=False, invert=False):
     .. versionadded:: 1.4.0
 
     """
-    if not assume_unique:
-        ar1, rev_idx = unique(ar1, return_inverse=True)
-        ar2 = unique(ar2)
-
-    ar = ma.concatenate((ar1, ar2))
-    # We need this to be a stable sort, so always use 'mergesort'
-    # here. The values from the first array should always come before
-    # the values from the second array.
-    order = ar.argsort(kind='mergesort')
-    sar = ar[order]
-    if invert:
-        bool_ar = (sar[1:] != sar[:-1])
-    else:
-        bool_ar = (sar[1:] == sar[:-1])
-    flag = ma.concatenate((bool_ar, [invert]))
-    indx = order.argsort(kind='mergesort')[:len(ar1)]
-
-    if assume_unique:
-        return flag[indx]
-    else:
-        return flag[indx][rev_idx]
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.ma.extras.in1d', 'in1d(ar1, ar2, assume_unique=False, invert=False)', {'unique': unique, 'ma': ma, 'ar1': ar1, 'ar2': ar2, 'assume_unique': assume_unique, 'invert': invert}, 1)
 
 def isin(element, test_elements, assume_unique=False, invert=False):
     """
@@ -1259,9 +991,7 @@ def isin(element, test_elements, assume_unique=False, invert=False):
 
     """
     element = ma.asarray(element)
-    return in1d(element, test_elements, assume_unique=assume_unique,
-                invert=invert).reshape(element.shape)
-
+    return in1d(element, test_elements, assume_unique=assume_unique, invert=invert).reshape(element.shape)
 
 def union1d(ar1, ar2):
     """
@@ -1275,7 +1005,6 @@ def union1d(ar1, ar2):
 
     """
     return unique(ma.concatenate((ar1, ar2), axis=None))
-
 
 def setdiff1d(ar1, ar2, assume_unique=False):
     """
@@ -1297,18 +1026,8 @@ def setdiff1d(ar1, ar2, assume_unique=False):
            fill_value=999999)
 
     """
-    if assume_unique:
-        ar1 = ma.asarray(ar1).ravel()
-    else:
-        ar1 = unique(ar1)
-        ar2 = unique(ar2)
-    return ar1[in1d(ar1, ar2, assume_unique=True, invert=True)]
-
-
-###############################################################################
-#                                Covariance                                   #
-###############################################################################
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.ma.extras.setdiff1d', 'setdiff1d(ar1, ar2, assume_unique=False)', {'ma': ma, 'unique': unique, 'in1d': in1d, 'ar1': ar1, 'ar2': ar2, 'assume_unique': assume_unique}, 1)
 
 def _covhelper(x, y=None, rowvar=True, allow_masked=True):
     """
@@ -1318,30 +1037,25 @@ def _covhelper(x, y=None, rowvar=True, allow_masked=True):
     """
     x = ma.array(x, ndmin=2, copy=True, dtype=float)
     xmask = ma.getmaskarray(x)
-    # Quick exit if we can't process masked data
-    if not allow_masked and xmask.any():
-        raise ValueError("Cannot process masked data.")
-    #
+    if (not allow_masked and xmask.any()):
+        raise ValueError('Cannot process masked data.')
     if x.shape[0] == 1:
         rowvar = True
-    # Make sure that rowvar is either 0 or 1
     rowvar = int(bool(rowvar))
     axis = 1 - rowvar
     if rowvar:
         tup = (slice(None), None)
     else:
         tup = (None, slice(None))
-    #
     if y is None:
         xnotmask = np.logical_not(xmask).astype(int)
     else:
         y = array(y, copy=False, ndmin=2, dtype=float)
         ymask = ma.getmaskarray(y)
-        if not allow_masked and ymask.any():
-            raise ValueError("Cannot process masked data.")
-        if xmask.any() or ymask.any():
+        if (not allow_masked and ymask.any()):
+            raise ValueError('Cannot process masked data.')
+        if (xmask.any() or ymask.any()):
             if y.shape == x.shape:
-                # Define some common mask
                 common_mask = np.logical_or(xmask, ymask)
                 if common_mask is not nomask:
                     xmask = x._mask = y._mask = ymask = common_mask
@@ -1351,7 +1065,6 @@ def _covhelper(x, y=None, rowvar=True, allow_masked=True):
         xnotmask = np.logical_not(np.concatenate((xmask, ymask), axis)).astype(int)
     x -= x.mean(axis=rowvar)[tup]
     return (x, xnotmask, rowvar)
-
 
 def cov(x, y=None, rowvar=True, bias=False, allow_masked=True, ddof=None):
     """
@@ -1406,28 +1119,23 @@ def cov(x, y=None, rowvar=True, bias=False, allow_masked=True, ddof=None):
     numpy.cov
 
     """
-    # Check inputs
-    if ddof is not None and ddof != int(ddof):
-        raise ValueError("ddof must be an integer")
-    # Set up ddof
+    if (ddof is not None and ddof != int(ddof)):
+        raise ValueError('ddof must be an integer')
     if ddof is None:
         if bias:
             ddof = 0
         else:
             ddof = 1
-
     (x, xnotmask, rowvar) = _covhelper(x, y, rowvar, allow_masked)
     if not rowvar:
-        fact = np.dot(xnotmask.T, xnotmask) * 1. - ddof
+        fact = np.dot(xnotmask.T, xnotmask) * 1.0 - ddof
         result = (dot(x.T, x.conj(), strict=False) / fact).squeeze()
     else:
-        fact = np.dot(xnotmask, xnotmask.T) * 1. - ddof
+        fact = np.dot(xnotmask, xnotmask.T) * 1.0 - ddof
         result = (dot(x, x.T.conj(), strict=False) / fact).squeeze()
     return result
 
-
-def corrcoef(x, y=None, rowvar=True, bias=np._NoValue, allow_masked=True,
-             ddof=np._NoValue):
+def corrcoef(x, y=None, rowvar=True, bias=np._NoValue, allow_masked=True, ddof=np._NoValue):
     """
     Return Pearson product-moment correlation coefficients.
 
@@ -1474,47 +1182,9 @@ def corrcoef(x, y=None, rowvar=True, bias=np._NoValue, allow_masked=True,
     arguments had no effect on the return values of the function and can be
     safely ignored in this and previous versions of numpy.
     """
-    msg = 'bias and ddof have no effect and are deprecated'
-    if bias is not np._NoValue or ddof is not np._NoValue:
-        # 2015-03-15, 1.10
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
-    # Get the data
-    (x, xnotmask, rowvar) = _covhelper(x, y, rowvar, allow_masked)
-    # Compute the covariance matrix
-    if not rowvar:
-        fact = np.dot(xnotmask.T, xnotmask) * 1.
-        c = (dot(x.T, x.conj(), strict=False) / fact).squeeze()
-    else:
-        fact = np.dot(xnotmask, xnotmask.T) * 1.
-        c = (dot(x, x.T.conj(), strict=False) / fact).squeeze()
-    # Check whether we have a scalar
-    try:
-        diag = ma.diagonal(c)
-    except ValueError:
-        return 1
-    #
-    if xnotmask.all():
-        _denom = ma.sqrt(ma.multiply.outer(diag, diag))
-    else:
-        _denom = diagflat(diag)
-        _denom._sharedmask = False  # We know return is always a copy
-        n = x.shape[1 - rowvar]
-        if rowvar:
-            for i in range(n - 1):
-                for j in range(i + 1, n):
-                    _x = mask_cols(vstack((x[i], x[j]))).var(axis=1)
-                    _denom[i, j] = _denom[j, i] = ma.sqrt(ma.multiply.reduce(_x))
-        else:
-            for i in range(n - 1):
-                for j in range(i + 1, n):
-                    _x = mask_cols(
-                            vstack((x[:, i], x[:, j]))).var(axis=1)
-                    _denom[i, j] = _denom[j, i] = ma.sqrt(ma.multiply.reduce(_x))
-    return c / _denom
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.ma.extras.corrcoef', 'corrcoef(x, y=None, rowvar=True, bias=np._NoValue, allow_masked=True, ddof=np._NoValue)', {'np': np, 'warnings': warnings, '_covhelper': _covhelper, 'dot': dot, 'ma': ma, 'diagflat': diagflat, 'mask_cols': mask_cols, 'vstack': vstack, 'x': x, 'y': y, 'rowvar': rowvar, 'bias': bias, 'allow_masked': allow_masked, 'ddof': ddof}, 1)
 
-#####--------------------------------------------------------------------------
-#---- --- Concatenation helpers ---
-#####--------------------------------------------------------------------------
 
 class MAxisConcatenator(AxisConcatenator):
     """
@@ -1528,22 +1198,17 @@ class MAxisConcatenator(AxisConcatenator):
 
     """
     concatenate = staticmethod(concatenate)
-
+    
     @classmethod
     def makemat(cls, arr):
-        # There used to be a view as np.matrix here, but we may eventually
-        # deprecate that class. In preparation, we use the unmasked version
-        # to construct the matrix (with copy=False for backwards compatibility
-        # with the .view)
         data = super().makemat(arr.data, copy=False)
         return array(data, mask=arr.mask)
-
+    
     def __getitem__(self, key):
-        # matrix builder syntax, like 'a, b; c, d'
         if isinstance(key, str):
-            raise MAError("Unavailable for masked array.")
-
+            raise MAError('Unavailable for masked array.')
         return super().__getitem__(key)
+
 
 
 class mr_class(MAxisConcatenator):
@@ -1564,15 +1229,11 @@ class mr_class(MAxisConcatenator):
            fill_value=999999)
 
     """
+    
     def __init__(self):
         MAxisConcatenator.__init__(self, 0)
 
 mr_ = mr_class()
-
-
-#####--------------------------------------------------------------------------
-#---- Find unmasked data ---
-#####--------------------------------------------------------------------------
 
 def ndenumerate(a, compressed=True):
     """
@@ -1635,12 +1296,8 @@ def ndenumerate(a, compressed=True):
     (2, 1) --
     (2, 2) 8
     """
-    for it, mask in zip(np.ndenumerate(a), getmaskarray(a).flat):
-        if not mask:
-            yield it
-        elif not compressed:
-            yield it[0], masked
-
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('numpy.ma.extras.ndenumerate', 'ndenumerate(a, compressed=True)', {'np': np, 'getmaskarray': getmaskarray, 'masked': masked, 'a': a, 'compressed': compressed}, 0)
 
 def flatnotmasked_edges(a):
     """
@@ -1687,15 +1344,8 @@ def flatnotmasked_edges(a):
     None
 
     """
-    m = getmask(a)
-    if m is nomask or not np.any(m):
-        return np.array([0, a.size - 1])
-    unmasked = np.flatnonzero(~m)
-    if len(unmasked) > 0:
-        return unmasked[[0, -1]]
-    else:
-        return None
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.ma.extras.flatnotmasked_edges', 'flatnotmasked_edges(a)', {'getmask': getmask, 'nomask': nomask, 'np': np, 'a': a}, 1)
 
 def notmasked_edges(a, axis=None):
     """
@@ -1739,14 +1389,8 @@ def notmasked_edges(a, axis=None):
     array([0, 6])
 
     """
-    a = asarray(a)
-    if axis is None or a.ndim == 1:
-        return flatnotmasked_edges(a)
-    m = getmaskarray(a)
-    idx = array(np.indices(a.shape), mask=np.asarray([m] * a.ndim))
-    return [tuple([idx[i].min(axis).compressed() for i in range(a.ndim)]),
-            tuple([idx[i].max(axis).compressed() for i in range(a.ndim)]), ]
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.ma.extras.notmasked_edges', 'notmasked_edges(a, axis=None)', {'asarray': asarray, 'flatnotmasked_edges': flatnotmasked_edges, 'getmaskarray': getmaskarray, 'array': array, 'np': np, 'a': a, 'axis': axis}, 1)
 
 def flatnotmasked_contiguous(a):
     """
@@ -1792,18 +1436,8 @@ def flatnotmasked_contiguous(a):
     []
 
     """
-    m = getmask(a)
-    if m is nomask:
-        return [slice(0, a.size)]
-    i = 0
-    result = []
-    for (k, g) in itertools.groupby(m.ravel()):
-        n = len(list(g))
-        if not k:
-            result.append(slice(i, i + n))
-        i += n
-    return result
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.ma.extras.flatnotmasked_contiguous', 'flatnotmasked_contiguous(a)', {'getmask': getmask, 'nomask': nomask, 'itertools': itertools, 'a': a}, 1)
 
 def notmasked_contiguous(a, axis=None):
     """
@@ -1863,24 +1497,8 @@ def notmasked_contiguous(a, axis=None):
     [[slice(0, 1, None), slice(2, 4, None)], [slice(3, 4, None)], [slice(0, 1, None), slice(3, 4, None)]]
 
     """
-    a = asarray(a)
-    nd = a.ndim
-    if nd > 2:
-        raise NotImplementedError("Currently limited to at most 2D array.")
-    if axis is None or nd == 1:
-        return flatnotmasked_contiguous(a)
-    #
-    result = []
-    #
-    other = (axis + 1) % 2
-    idx = [0, 0]
-    idx[axis] = slice(None, None)
-    #
-    for i in range(a.shape[other]):
-        idx[other] = i
-        result.append(flatnotmasked_contiguous(a[tuple(idx)]))
-    return result
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.ma.extras.notmasked_contiguous', 'notmasked_contiguous(a, axis=None)', {'asarray': asarray, 'flatnotmasked_contiguous': flatnotmasked_contiguous, 'a': a, 'axis': axis}, 1)
 
 def _ezclump(mask):
     """
@@ -1888,28 +1506,8 @@ def _ezclump(mask):
 
     Returns a series of slices.
     """
-    if mask.ndim > 1:
-        mask = mask.ravel()
-    idx = (mask[1:] ^ mask[:-1]).nonzero()
-    idx = idx[0] + 1
-
-    if mask[0]:
-        if len(idx) == 0:
-            return [slice(0, mask.size)]
-
-        r = [slice(0, idx[0])]
-        r.extend((slice(left, right)
-                  for left, right in zip(idx[1:-1:2], idx[2::2])))
-    else:
-        if len(idx) == 0:
-            return []
-
-        r = [slice(left, right) for left, right in zip(idx[:-1:2], idx[1::2])]
-
-    if mask[-1]:
-        r.append(slice(idx[-1], mask.size))
-    return r
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.ma.extras._ezclump', '_ezclump(mask)', {'mask': mask}, 1)
 
 def clump_unmasked(a):
     """
@@ -1944,11 +1542,8 @@ def clump_unmasked(a):
     [slice(3, 6, None), slice(7, 8, None)]
 
     """
-    mask = getattr(a, '_mask', nomask)
-    if mask is nomask:
-        return [slice(0, a.size)]
-    return _ezclump(~mask)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.ma.extras.clump_unmasked', 'clump_unmasked(a)', {'nomask': nomask, '_ezclump': _ezclump, 'a': a}, 1)
 
 def clump_masked(a):
     """
@@ -1983,16 +1578,8 @@ def clump_masked(a):
     [slice(0, 3, None), slice(6, 7, None), slice(8, 10, None)]
 
     """
-    mask = ma.getmask(a)
-    if mask is nomask:
-        return []
-    return _ezclump(mask)
-
-
-###############################################################################
-#                              Polynomial fit                                 #
-###############################################################################
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.ma.extras.clump_masked', 'clump_masked(a)', {'ma': ma, 'nomask': nomask, '_ezclump': _ezclump, 'a': a}, 1)
 
 def vander(x, n=None):
     """
@@ -2004,9 +1591,7 @@ def vander(x, n=None):
     if m is not nomask:
         _vander[m] = 0
     return _vander
-
 vander.__doc__ = ma.doc_note(np.vander.__doc__, vander.__doc__)
-
 
 def polyfit(x, y, deg, rcond=None, full=False, w=None, cov=False):
     """
@@ -2015,7 +1600,6 @@ def polyfit(x, y, deg, rcond=None, full=False, w=None, cov=False):
     """
     x = asarray(x)
     y = asarray(y)
-
     m = getmask(x)
     if y.ndim == 1:
         m = mask_or(m, getmask(y))
@@ -2024,16 +1608,14 @@ def polyfit(x, y, deg, rcond=None, full=False, w=None, cov=False):
         if my is not nomask:
             m = mask_or(m, my[:, 0])
     else:
-        raise TypeError("Expected a 1D or 2D array for y!")
-
+        raise TypeError('Expected a 1D or 2D array for y!')
     if w is not None:
         w = asarray(w)
         if w.ndim != 1:
-            raise TypeError("expected a 1-d array for weights")
+            raise TypeError('expected a 1-d array for weights')
         if w.shape[0] != y.shape[0]:
-            raise TypeError("expected w and y to have the same length")
+            raise TypeError('expected w and y to have the same length')
         m = mask_or(m, getmask(w))
-
     if m is not nomask:
         not_m = ~m
         if w is not None:
@@ -2041,5 +1623,5 @@ def polyfit(x, y, deg, rcond=None, full=False, w=None, cov=False):
         return np.polyfit(x[not_m], y[not_m], deg, rcond, full, w, cov)
     else:
         return np.polyfit(x, y, deg, rcond, full, w, cov)
-
 polyfit.__doc__ = ma.doc_note(np.polyfit.__doc__, polyfit.__doc__)
+

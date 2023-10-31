@@ -18,14 +18,17 @@ class ELFInvalid(ValueError):
     pass
 
 
+
 class EIClass(enum.IntEnum):
     C32 = 1
     C64 = 2
 
 
+
 class EIData(enum.IntEnum):
     Lsb = 1
     Msb = 2
+
 
 
 class EMachine(enum.IntEnum):
@@ -36,60 +39,35 @@ class EMachine(enum.IntEnum):
     AArc64 = 183
 
 
+
 class ELFFile:
     """
     Representation of an ELF executable.
     """
-
+    
     def __init__(self, f: IO[bytes]) -> None:
         self._f = f
-
         try:
-            ident = self._read("16B")
+            ident = self._read('16B')
         except struct.error:
-            raise ELFInvalid("unable to parse identification")
+            raise ELFInvalid('unable to parse identification')
         magic = bytes(ident[:4])
-        if magic != b"\x7fELF":
-            raise ELFInvalid(f"invalid magic: {magic!r}")
-
-        self.capacity = ident[4]  # Format for program header (bitness).
-        self.encoding = ident[5]  # Data structure encoding (endianness).
-
+        if magic != b'\x7fELF':
+            raise ELFInvalid(f'invalid magic: {magic!r}')
+        self.capacity = ident[4]
+        self.encoding = ident[5]
         try:
-            # e_fmt: Format for program header.
-            # p_fmt: Format for section header.
-            # p_idx: Indexes to find p_type, p_offset, and p_filesz.
-            e_fmt, self._p_fmt, self._p_idx = {
-                (1, 1): ("<HHIIIIIHHH", "<IIIIIIII", (0, 1, 4)),  # 32-bit LSB.
-                (1, 2): (">HHIIIIIHHH", ">IIIIIIII", (0, 1, 4)),  # 32-bit MSB.
-                (2, 1): ("<HHIQQQIHHH", "<IIQQQQQQ", (0, 2, 5)),  # 64-bit LSB.
-                (2, 2): (">HHIQQQIHHH", ">IIQQQQQQ", (0, 2, 5)),  # 64-bit MSB.
-            }[(self.capacity, self.encoding)]
+            (e_fmt, self._p_fmt, self._p_idx) = {(1, 1): ('<HHIIIIIHHH', '<IIIIIIII', (0, 1, 4)), (1, 2): ('>HHIIIIIHHH', '>IIIIIIII', (0, 1, 4)), (2, 1): ('<HHIQQQIHHH', '<IIQQQQQQ', (0, 2, 5)), (2, 2): ('>HHIQQQIHHH', '>IIQQQQQQ', (0, 2, 5))}[(self.capacity, self.encoding)]
         except KeyError:
-            raise ELFInvalid(
-                f"unrecognized capacity ({self.capacity}) or "
-                f"encoding ({self.encoding})"
-            )
-
+            raise ELFInvalid(f'unrecognized capacity ({self.capacity}) or encoding ({self.encoding})')
         try:
-            (
-                _,
-                self.machine,  # Architecture type.
-                _,
-                _,
-                self._e_phoff,  # Offset of program header.
-                _,
-                self.flags,  # Processor-specific flags.
-                _,
-                self._e_phentsize,  # Size of section.
-                self._e_phnum,  # Number of sections.
-            ) = self._read(e_fmt)
+            (_, self.machine, _, _, self._e_phoff, _, self.flags, _, self._e_phentsize, self._e_phnum) = self._read(e_fmt)
         except struct.error as e:
-            raise ELFInvalid("unable to parse machine and section information") from e
-
-    def _read(self, fmt: str) -> Tuple[int, ...]:
+            raise ELFInvalid('unable to parse machine and section information') from e
+    
+    def _read(self, fmt: str) -> Tuple[(int, ...)]:
         return struct.unpack(fmt, self._f.read(struct.calcsize(fmt)))
-
+    
     @property
     def interpreter(self) -> Optional[str]:
         """
@@ -101,8 +79,10 @@ class ELFFile:
                 data = self._read(self._p_fmt)
             except struct.error:
                 continue
-            if data[self._p_idx[0]] != 3:  # Not PT_INTERP.
+            if data[self._p_idx[0]] != 3:
                 continue
             self._f.seek(data[self._p_idx[1]])
-            return os.fsdecode(self._f.read(data[self._p_idx[2]])).strip("\0")
+            return os.fsdecode(self._f.read(data[self._p_idx[2]])).strip('\x00')
         return None
+
+

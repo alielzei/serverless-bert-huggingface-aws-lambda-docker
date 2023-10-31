@@ -1,17 +1,13 @@
-# Copyright (C) 2001-2006 Python Software Foundation
-# Author: Barry Warsaw
-# Contact: email-sig@python.org
-
 """Base class for MIME specializations."""
+
 from __future__ import absolute_import, division, unicode_literals
 from future.backports.email import message
-
 __all__ = ['MIMEBase']
 
 
 class MIMEBase(message.Message):
     """Base class for MIME specializations."""
-
+    
     def __init__(self, _maintype, _subtype, **_params):
         """This constructor adds a Content-Type: and a MIME-Version: header.
 
@@ -23,3 +19,5 @@ class MIMEBase(message.Message):
         ctype = '%s/%s' % (_maintype, _subtype)
         self.add_header('Content-Type', ctype, **_params)
         self['MIME-Version'] = '1.0'
+
+

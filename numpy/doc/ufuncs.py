@@ -22,7 +22,7 @@ have equivalent functions defined (e.g. add() for +)
 Type coercion
 =============
 
-What happens when a binary operator (e.g., +,-,\\*,/, etc) deals with arrays of
+What happens when a binary operator (e.g., +,-,\*,/, etc) deals with arrays of
 two different types? What is the type of the result? Typically, the result is
 the higher of the two types. For example: ::
 
@@ -128,10 +128,13 @@ overloaded with array equivalents. Thus using 'and' or 'or' with an array
 results in an error. There are two alternatives:
 
  1) use the ufunc functions logical_and() and logical_or().
- 2) use the bitwise operators & and \\|. The drawback of these is that if
+ 2) use the bitwise operators & and \|. The drawback of these is that if
     the arguments to these operators are not boolean arrays, the result is
     likely incorrect. On the other hand, most usages of logical_and and
     logical_or are with boolean arrays. As long as one is careful, this is
     a convenient way to apply these operators.
 
 """
+
+
+

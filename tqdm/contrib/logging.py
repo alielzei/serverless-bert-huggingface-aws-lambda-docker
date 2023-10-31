@@ -1,26 +1,23 @@
 """
 Helper functionality for interoperability with stdlib `logging`.
 """
+
 import logging
 import sys
 from contextlib import contextmanager
-
 try:
-    from typing import Iterator, List, Optional, Type  # noqa: F401
+    from typing import Iterator, List, Optional, Type
 except ImportError:
     pass
-
 from ..std import tqdm as std_tqdm
 
 
 class _TqdmLoggingHandler(logging.StreamHandler):
-    def __init__(
-        self,
-        tqdm_class=std_tqdm  # type: Type[std_tqdm]
-    ):
+    
+    def __init__(self, tqdm_class=std_tqdm):
         super(_TqdmLoggingHandler, self).__init__()
         self.tqdm_class = tqdm_class
-
+    
     def emit(self, record):
         try:
             msg = self.format(record)
@@ -28,27 +25,19 @@ class _TqdmLoggingHandler(logging.StreamHandler):
             self.flush()
         except (KeyboardInterrupt, SystemExit):
             raise
-        except:  # noqa pylint: disable=bare-except
+        except:
             self.handleError(record)
 
 
 def _is_console_logging_handler(handler):
-    return (isinstance(handler, logging.StreamHandler)
-            and handler.stream in {sys.stdout, sys.stderr})
-
+    return (isinstance(handler, logging.StreamHandler) and handler.stream in {sys.stdout, sys.stderr})
 
 def _get_first_found_console_logging_handler(handlers):
-    for handler in handlers:
-        if _is_console_logging_handler(handler):
-            return handler
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('tqdm.contrib.logging._get_first_found_console_logging_handler', '_get_first_found_console_logging_handler(handlers)', {'_is_console_logging_handler': _is_console_logging_handler, 'handlers': handlers}, 1)
 
 @contextmanager
-def logging_redirect_tqdm(
-    loggers=None,  # type: Optional[List[logging.Logger]],
-    tqdm_class=std_tqdm  # type: Type[std_tqdm]
-):
-    # type: (...) -> Iterator[None]
+def logging_redirect_tqdm(loggers=None, tqdm_class=std_tqdm):
     """
     Context manager redirecting console logging to `tqdm.write()`, leaving
     other logging handlers (e.g. log files) unaffected.
@@ -77,33 +66,11 @@ def logging_redirect_tqdm(
         # logging restored
     ```
     """
-    if loggers is None:
-        loggers = [logging.root]
-    original_handlers_list = [logger.handlers for logger in loggers]
-    try:
-        for logger in loggers:
-            tqdm_handler = _TqdmLoggingHandler(tqdm_class)
-            orig_handler = _get_first_found_console_logging_handler(logger.handlers)
-            if orig_handler is not None:
-                tqdm_handler.setFormatter(orig_handler.formatter)
-                tqdm_handler.stream = orig_handler.stream
-            logger.handlers = [
-                handler for handler in logger.handlers
-                if not _is_console_logging_handler(handler)] + [tqdm_handler]
-        yield
-    finally:
-        for logger, original_handlers in zip(loggers, original_handlers_list):
-            logger.handlers = original_handlers
-
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('tqdm.contrib.logging.logging_redirect_tqdm', 'logging_redirect_tqdm(loggers=None, tqdm_class=std_tqdm)', {'logging': logging, '_TqdmLoggingHandler': _TqdmLoggingHandler, '_get_first_found_console_logging_handler': _get_first_found_console_logging_handler, '_is_console_logging_handler': _is_console_logging_handler, 'contextmanager': contextmanager, 'loggers': loggers, 'tqdm_class': tqdm_class, 'std_tqdm': std_tqdm}, 0)
 
 @contextmanager
-def tqdm_logging_redirect(
-    *args,
-    # loggers=None,  # type: Optional[List[logging.Logger]]
-    # tqdm=None,  # type: Optional[Type[tqdm.tqdm]]
-    **kwargs
-):
-    # type: (...) -> Iterator[None]
+def tqdm_logging_redirect(*args, **kwargs):
     """
     Convenience shortcut for:
     ```python
@@ -118,9 +85,6 @@ def tqdm_logging_redirect(
     loggers  : optional, list.
     **tqdm_kwargs  : passed to `tqdm_class`.
     """
-    tqdm_kwargs = kwargs.copy()
-    loggers = tqdm_kwargs.pop('loggers', None)
-    tqdm_class = tqdm_kwargs.pop('tqdm_class', std_tqdm)
-    with tqdm_class(*args, **tqdm_kwargs) as pbar:
-        with logging_redirect_tqdm(loggers=loggers, tqdm_class=tqdm_class):
-            yield pbar
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('tqdm.contrib.logging.tqdm_logging_redirect', 'tqdm_logging_redirect(*args, **kwargs)', {'std_tqdm': std_tqdm, 'logging_redirect_tqdm': logging_redirect_tqdm, 'contextmanager': contextmanager, 'args': args, 'kwargs': kwargs}, 0)
+

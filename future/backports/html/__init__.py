@@ -6,13 +6,8 @@ module names and locations.
 """
 
 from __future__ import unicode_literals
-
-
 _escape_map = {ord('&'): '&amp;', ord('<'): '&lt;', ord('>'): '&gt;'}
-_escape_map_full = {ord('&'): '&amp;', ord('<'): '&lt;', ord('>'): '&gt;',
-                    ord('"'): '&quot;', ord('\''): '&#x27;'}
-
-# NB: this is a candidate for a bytes/string polymorphic interface
+_escape_map_full = {ord('&'): '&amp;', ord('<'): '&lt;', ord('>'): '&gt;', ord('"'): '&quot;', ord("'"): '&#x27;'}
 
 def escape(s, quote=True):
     """
@@ -21,7 +16,6 @@ def escape(s, quote=True):
     characters, both double quote (") and single quote (') characters are also
     translated.
     """
-    assert not isinstance(s, bytes), 'Pass a unicode string'
-    if quote:
-        return s.translate(_escape_map_full)
-    return s.translate(_escape_map)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('future.backports.html.__init__.escape', 'escape(s, quote=True)', {'_escape_map_full': _escape_map_full, '_escape_map': _escape_map, 's': s, 'quote': quote}, 1)
+

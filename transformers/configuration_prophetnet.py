@@ -1,33 +1,13 @@
-# coding=utf-8
-# Copyright 2020 The Microsoft Authors and The HuggingFace Inc. team.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """ ProphetNet model configuration """
-
 
 from .configuration_utils import PretrainedConfig
 from .utils import logging
-
-
 logger = logging.get_logger(__name__)
-
-PROPHETNET_PRETRAINED_CONFIG_ARCHIVE_MAP = {
-    "microsoft/prophetnet-large-uncased": "https://s3.amazonaws.com/models.huggingface.co/bert/microsoft/prophetnet-large-uncased/config.json",
-}
+PROPHETNET_PRETRAINED_CONFIG_ARCHIVE_MAP = {'microsoft/prophetnet-large-uncased': 'https://s3.amazonaws.com/models.huggingface.co/bert/microsoft/prophetnet-large-uncased/config.json'}
 
 
 class ProphetNetConfig(PretrainedConfig):
-    r"""
+    """
     This is the configuration class to store the configuration of a :class:`~transformers.ProphetNetModel`. It is used to
     instantiate a ProphetNet model according to the specified arguments, defining the model architecture.
 
@@ -94,46 +74,10 @@ class ProphetNetConfig(PretrainedConfig):
             Controls the ``epsilon`` parameter value for label
             smoothing in the loss calculation. If set to 0, no label smoothing is performed.
     """
-    model_type = "prophetnet"
-
-    def __init__(
-        self,
-        activation_dropout=0.1,
-        activation_function="gelu",
-        vocab_size=30522,
-        hidden_size=1024,
-        encoder_ffn_dim=4096,
-        num_encoder_layers=12,
-        num_encoder_attention_heads=16,
-        decoder_ffn_dim=4096,
-        num_decoder_layers=12,
-        num_decoder_attention_heads=16,
-        attention_dropout=0.1,
-        dropout=0.1,
-        max_position_embeddings=512,
-        init_std=0.02,
-        is_encoder_decoder=True,
-        add_cross_attention=True,
-        pad_token_id=0,
-        bos_token_id=1,
-        eos_token_id=2,
-        decoder_start_token_id=0,
-        ngram=2,
-        num_buckets=32,
-        relative_max_distance=128,
-        disable_ngram_loss=False,
-        eps=0.0,
-        **kwargs
-    ):
-        super().__init__(
-            pad_token_id=pad_token_id,
-            bos_token_id=bos_token_id,
-            eos_token_id=eos_token_id,
-            is_encoder_decoder=is_encoder_decoder,
-            add_cross_attention=add_cross_attention,
-            decoder_start_token_id=decoder_start_token_id,
-            **kwargs,
-        )
+    model_type = 'prophetnet'
+    
+    def __init__(self, activation_dropout=0.1, activation_function='gelu', vocab_size=30522, hidden_size=1024, encoder_ffn_dim=4096, num_encoder_layers=12, num_encoder_attention_heads=16, decoder_ffn_dim=4096, num_decoder_layers=12, num_decoder_attention_heads=16, attention_dropout=0.1, dropout=0.1, max_position_embeddings=512, init_std=0.02, is_encoder_decoder=True, add_cross_attention=True, pad_token_id=0, bos_token_id=1, eos_token_id=2, decoder_start_token_id=0, ngram=2, num_buckets=32, relative_max_distance=128, disable_ngram_loss=False, eps=0.0, **kwargs):
+        super().__init__(pad_token_id=pad_token_id, bos_token_id=bos_token_id, eos_token_id=eos_token_id, is_encoder_decoder=is_encoder_decoder, add_cross_attention=add_cross_attention, decoder_start_token_id=decoder_start_token_id, **kwargs)
         self.vocab_size = vocab_size
         self.hidden_size = hidden_size
         self.encoder_ffn_dim = encoder_ffn_dim
@@ -143,25 +87,23 @@ class ProphetNetConfig(PretrainedConfig):
         self.num_decoder_layers = num_decoder_layers
         self.num_decoder_attention_heads = num_decoder_attention_heads
         self.max_position_embeddings = max_position_embeddings
-        self.init_std = init_std  # Normal(0, this parameter)
+        self.init_std = init_std
         self.activation_function = activation_function
-
-        # parameters for prophetnet
         self.ngram = ngram
         self.num_buckets = num_buckets
         self.relative_max_distance = relative_max_distance
         self.disable_ngram_loss = disable_ngram_loss
         self.eps = eps
-
-        # 3 Types of Dropout
         self.attention_dropout = attention_dropout
         self.activation_dropout = activation_dropout
         self.dropout = dropout
-
+    
     @property
     def num_attention_heads(self) -> int:
         return self.num_encoder_attention_heads
-
+    
     @property
     def num_hidden_layers(self) -> int:
         return self.num_encoder_layers + self.num_decoder_layers
+
+

@@ -1,8 +1,6 @@
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
-
 import torch
-
 from .file_utils import ModelOutput
 
 
@@ -26,10 +24,10 @@ class BaseModelOutput(ModelOutput):
             Attentions weights after the attention softmax, used to compute the weighted average in the self-attention
             heads.
     """
-
     last_hidden_state: torch.FloatTensor
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
+
 
 
 @dataclass
@@ -57,11 +55,11 @@ class BaseModelOutputWithPooling(ModelOutput):
             Attentions weights after the attention softmax, used to compute the weighted average in the self-attention
             heads.
     """
-
     last_hidden_state: torch.FloatTensor
     pooler_output: torch.FloatTensor = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
+
 
 
 @dataclass
@@ -93,11 +91,11 @@ class BaseModelOutputWithPast(ModelOutput):
             Attentions weights after the attention softmax, used to compute the weighted average in the self-attention
             heads.
     """
-
     last_hidden_state: torch.FloatTensor
     past_key_values: Optional[List[torch.FloatTensor]] = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
+
 
 
 @dataclass
@@ -142,7 +140,6 @@ class Seq2SeqModelOutput(ModelOutput):
             Attentions weights of the encoder, after the attention softmax, used to compute the weighted average in the
             self-attention heads.
     """
-
     last_hidden_state: torch.FloatTensor
     past_key_values: Optional[List[torch.FloatTensor]] = None
     decoder_hidden_states: Optional[Tuple[torch.FloatTensor]] = None
@@ -150,6 +147,7 @@ class Seq2SeqModelOutput(ModelOutput):
     encoder_last_hidden_state: Optional[torch.FloatTensor] = None
     encoder_hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     encoder_attentions: Optional[Tuple[torch.FloatTensor]] = None
+
 
 
 @dataclass
@@ -174,11 +172,11 @@ class CausalLMOutput(ModelOutput):
             Attentions weights after the attention softmax, used to compute the weighted average in the self-attention
             heads.
     """
-
     loss: Optional[torch.FloatTensor]
     logits: torch.FloatTensor = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
+
 
 
 @dataclass
@@ -209,12 +207,12 @@ class CausalLMOutputWithPast(ModelOutput):
             Attentions weights after the attention softmax, used to compute the weighted average in the self-attention
             heads.
     """
-
     loss: Optional[torch.FloatTensor] = None
     logits: torch.FloatTensor = None
     past_key_values: Optional[List[torch.FloatTensor]] = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
+
 
 
 @dataclass
@@ -245,12 +243,12 @@ class SequenceClassifierOutputWithPast(ModelOutput):
             Attentions weights after the attention softmax, used to compute the weighted average in the self-attention
             heads.
     """
-
     loss: Optional[torch.FloatTensor] = None
     logits: torch.FloatTensor = None
     past_key_values: Optional[List[torch.FloatTensor]] = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
+
 
 
 @dataclass
@@ -275,11 +273,11 @@ class MaskedLMOutput(ModelOutput):
             Attentions weights after the attention softmax, used to compute the weighted average in the self-attention
             heads.
     """
-
     loss: Optional[torch.FloatTensor] = None
     logits: torch.FloatTensor = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
+
 
 
 @dataclass
@@ -323,7 +321,6 @@ class Seq2SeqLMOutput(ModelOutput):
             Attentions weights of the encoder, after the attention softmax, used to compute the weighted average in the
             self-attention heads.
     """
-
     loss: Optional[torch.FloatTensor] = None
     logits: torch.FloatTensor = None
     past_key_values: Optional[List[torch.FloatTensor]] = None
@@ -332,6 +329,7 @@ class Seq2SeqLMOutput(ModelOutput):
     encoder_last_hidden_state: Optional[torch.FloatTensor] = None
     encoder_hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     encoder_attentions: Optional[Tuple[torch.FloatTensor]] = None
+
 
 
 @dataclass
@@ -356,11 +354,11 @@ class NextSentencePredictorOutput(ModelOutput):
             Attentions weights after the attention softmax, used to compute the weighted average in the self-attention
             heads.
     """
-
     loss: Optional[torch.FloatTensor] = None
     logits: torch.FloatTensor = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
+
 
 
 @dataclass
@@ -385,11 +383,11 @@ class SequenceClassifierOutput(ModelOutput):
             Attentions weights after the attention softmax, used to compute the weighted average in the self-attention
             heads.
     """
-
     loss: Optional[torch.FloatTensor] = None
     logits: torch.FloatTensor = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
+
 
 
 @dataclass
@@ -433,7 +431,6 @@ class Seq2SeqSequenceClassifierOutput(ModelOutput):
             Attentions weights of the encoder, after the attention softmax, used to compute the weighted average in the
             self-attention heads.
     """
-
     loss: Optional[torch.FloatTensor] = None
     logits: torch.FloatTensor = None
     past_key_values: Optional[List[torch.FloatTensor]] = None
@@ -442,6 +439,7 @@ class Seq2SeqSequenceClassifierOutput(ModelOutput):
     encoder_last_hidden_state: Optional[torch.FloatTensor] = None
     encoder_hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     encoder_attentions: Optional[Tuple[torch.FloatTensor]] = None
+
 
 
 @dataclass
@@ -468,11 +466,11 @@ class MultipleChoiceModelOutput(ModelOutput):
             Attentions weights after the attention softmax, used to compute the weighted average in the self-attention
             heads.
     """
-
     loss: Optional[torch.FloatTensor] = None
     logits: torch.FloatTensor = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
+
 
 
 @dataclass
@@ -497,11 +495,11 @@ class TokenClassifierOutput(ModelOutput):
             Attentions weights after the attention softmax, used to compute the weighted average in the self-attention
             heads.
     """
-
     loss: Optional[torch.FloatTensor] = None
     logits: torch.FloatTensor = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
+
 
 
 @dataclass
@@ -528,12 +526,12 @@ class QuestionAnsweringModelOutput(ModelOutput):
             Attentions weights after the attention softmax, used to compute the weighted average in the self-attention
             heads.
     """
-
     loss: Optional[torch.FloatTensor] = None
     start_logits: torch.FloatTensor = None
     end_logits: torch.FloatTensor = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
+
 
 
 @dataclass
@@ -579,7 +577,6 @@ class Seq2SeqQuestionAnsweringModelOutput(ModelOutput):
             Attentions weights of the encoder, after the attention softmax, used to compute the weighted average in the
             self-attention heads.
     """
-
     loss: Optional[torch.FloatTensor] = None
     start_logits: torch.FloatTensor = None
     end_logits: torch.FloatTensor = None
@@ -589,3 +586,5 @@ class Seq2SeqQuestionAnsweringModelOutput(ModelOutput):
     encoder_last_hidden_state: Optional[torch.FloatTensor] = None
     encoder_hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     encoder_attentions: Optional[Tuple[torch.FloatTensor]] = None
+
+

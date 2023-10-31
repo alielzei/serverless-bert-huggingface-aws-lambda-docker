@@ -12,27 +12,27 @@ Example use:
 """
 
 import sys
-
 from past.utils import with_metaclass, PY2
-
 if PY2:
     str = unicode
-
 ver = sys.version_info[:2]
 
 
 class BaseBaseString(type):
+    
     def __instancecheck__(cls, instance):
         return isinstance(instance, (bytes, str))
-
+    
     def __subclasscheck__(cls, subclass):
-        return super(BaseBaseString, cls).__subclasscheck__(subclass) or issubclass(subclass, (bytes, str))
+        return (super(BaseBaseString, cls).__subclasscheck__(subclass) or issubclass(subclass, (bytes, str)))
+
 
 
 class basestring(with_metaclass(BaseBaseString)):
     """
     A minimal backport of the Python 2 basestring type to Py3
     """
-
+    
 
 __all__ = ['basestring']
+

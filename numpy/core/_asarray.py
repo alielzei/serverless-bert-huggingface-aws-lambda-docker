@@ -3,30 +3,14 @@ Functions in the ``as*array`` family that promote array-likes into arrays.
 
 `require` fits this category despite its name not matching this pattern.
 """
-from .overrides import (
-    array_function_dispatch,
-    set_array_function_like_doc,
-    set_module,
-)
+
+from .overrides import array_function_dispatch, set_array_function_like_doc, set_module
 from .multiarray import array, asanyarray
-
-
-__all__ = ["require"]
-
-
-POSSIBLE_FLAGS = {
-    'C': 'C', 'C_CONTIGUOUS': 'C', 'CONTIGUOUS': 'C',
-    'F': 'F', 'F_CONTIGUOUS': 'F', 'FORTRAN': 'F',
-    'A': 'A', 'ALIGNED': 'A',
-    'W': 'W', 'WRITEABLE': 'W',
-    'O': 'O', 'OWNDATA': 'O',
-    'E': 'E', 'ENSUREARRAY': 'E'
-}
-
+__all__ = ['require']
+POSSIBLE_FLAGS = {'C': 'C', 'C_CONTIGUOUS': 'C', 'CONTIGUOUS': 'C', 'F': 'F', 'F_CONTIGUOUS': 'F', 'FORTRAN': 'F', 'A': 'A', 'ALIGNED': 'A', 'W': 'W', 'WRITEABLE': 'W', 'O': 'O', 'OWNDATA': 'O', 'E': 'E', 'ENSUREARRAY': 'E'}
 
 def _require_dispatcher(a, dtype=None, requirements=None, *, like=None):
-    return (like,)
-
+    return (like, )
 
 @set_array_function_like_doc
 @set_module('numpy')
@@ -99,24 +83,15 @@ def require(a, dtype=None, requirements=None, *, like=None):
 
     """
     if like is not None:
-        return _require_with_like(
-            a,
-            dtype=dtype,
-            requirements=requirements,
-            like=like,
-        )
-
+        return _require_with_like(a, dtype=dtype, requirements=requirements, like=like)
     if not requirements:
         return asanyarray(a, dtype=dtype)
-
     requirements = {POSSIBLE_FLAGS[x.upper()] for x in requirements}
-
     if 'E' in requirements:
         requirements.remove('E')
         subok = False
     else:
         subok = True
-
     order = 'A'
     if requirements >= {'C', 'F'}:
         raise ValueError('Cannot specify both "C" and "F" order')
@@ -126,15 +101,10 @@ def require(a, dtype=None, requirements=None, *, like=None):
     elif 'C' in requirements:
         order = 'C'
         requirements.remove('C')
-
     arr = array(a, dtype=dtype, order=order, copy=False, subok=subok)
-
     for prop in requirements:
         if not arr.flags[prop]:
             return arr.copy(order)
     return arr
+_require_with_like = array_function_dispatch(_require_dispatcher, use_like=True)(require)
 
-
-_require_with_like = array_function_dispatch(
-    _require_dispatcher, use_like=True
-)(require)

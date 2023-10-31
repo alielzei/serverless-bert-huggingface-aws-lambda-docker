@@ -1,32 +1,13 @@
 import warnings
 
-
 def _viztracer_init(init_kwargs):
     """Initialize viztracer's profiler in worker processes"""
-    from viztracer import VizTracer
-
-    tracer = VizTracer(**init_kwargs)
-    tracer.register_exit()
-    tracer.start()
-
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('joblib.externals.loky.initializers._viztracer_init', '_viztracer_init(init_kwargs)', {'init_kwargs': init_kwargs}, 0)
 
 def _make_viztracer_initializer_and_initargs():
-    try:
-        import viztracer
-
-        tracer = viztracer.get_tracer()
-        if tracer is not None and getattr(tracer, "enable", False):
-            # Profiler is active: introspect its configuration to
-            # initialize the workers with the same configuration.
-            return _viztracer_init, (tracer.init_kwargs,)
-    except ImportError:
-        # viztracer is not installed: nothing to do
-        pass
-    except Exception as e:
-        # In case viztracer's API evolve, we do not want to crash loky but
-        # we want to know about it to be able to update loky.
-        warnings.warn(f"Unable to introspect viztracer state: {e}")
-    return None, ()
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.loky.initializers._make_viztracer_initializer_and_initargs', '_make_viztracer_initializer_and_initargs()', {'_viztracer_init': _viztracer_init, 'warnings': warnings}, 2)
 
 
 class _ChainedInitializer:
@@ -35,12 +16,12 @@ class _ChainedInitializer:
     This is meant to be used in conjunction with _chain_initializers to
     produce  the necessary chained_args list to be passed to __call__.
     """
-
+    
     def __init__(self, initializers):
         self._initializers = initializers
-
+    
     def __call__(self, *chained_args):
-        for initializer, args in zip(self._initializers, chained_args):
+        for (initializer, args) in zip(self._initializers, chained_args):
             initializer(*args)
 
 
@@ -49,32 +30,10 @@ def _chain_initializers(initializer_and_args):
 
     If some initializers are None, they are filtered out.
     """
-    filtered_initializers = []
-    filtered_initargs = []
-    for initializer, initargs in initializer_and_args:
-        if initializer is not None:
-            filtered_initializers.append(initializer)
-            filtered_initargs.append(initargs)
-
-    if not filtered_initializers:
-        return None, ()
-    elif len(filtered_initializers) == 1:
-        return filtered_initializers[0], filtered_initargs[0]
-    else:
-        return _ChainedInitializer(filtered_initializers), filtered_initargs
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.loky.initializers._chain_initializers', '_chain_initializers(initializer_and_args)', {'_ChainedInitializer': _ChainedInitializer, 'initializer_and_args': initializer_and_args}, 2)
 
 def _prepare_initializer(initializer, initargs):
-    if initializer is not None and not callable(initializer):
-        raise TypeError(
-            f"initializer must be a callable, got: {initializer!r}"
-        )
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.loky.initializers._prepare_initializer', '_prepare_initializer(initializer, initargs)', {'_chain_initializers': _chain_initializers, '_make_viztracer_initializer_and_initargs': _make_viztracer_initializer_and_initargs, 'initializer': initializer, 'initargs': initargs}, 1)
 
-    # Introspect runtime to determine if we need to propagate the viztracer
-    # profiler information to the workers:
-    return _chain_initializers(
-        [
-            (initializer, initargs),
-            _make_viztracer_initializer_and_initargs(),
-        ]
-    )

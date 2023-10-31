@@ -75,23 +75,14 @@ See also
 `numpy.polynomial`
 
 """
+
 import numpy as np
 import numpy.linalg as la
 from numpy.core.multiarray import normalize_axis_index
-
 from . import polyutils as pu
 from ._polybase import ABCPolyBase
-
-__all__ = [
-    'lagzero', 'lagone', 'lagx', 'lagdomain', 'lagline', 'lagadd',
-    'lagsub', 'lagmulx', 'lagmul', 'lagdiv', 'lagpow', 'lagval', 'lagder',
-    'lagint', 'lag2poly', 'poly2lag', 'lagfromroots', 'lagvander',
-    'lagfit', 'lagtrim', 'lagroots', 'Laguerre', 'lagval2d', 'lagval3d',
-    'laggrid2d', 'laggrid3d', 'lagvander2d', 'lagvander3d', 'lagcompanion',
-    'laggauss', 'lagweight']
-
+__all__ = ['lagzero', 'lagone', 'lagx', 'lagdomain', 'lagline', 'lagadd', 'lagsub', 'lagmulx', 'lagmul', 'lagdiv', 'lagpow', 'lagval', 'lagder', 'lagint', 'lag2poly', 'poly2lag', 'lagfromroots', 'lagvander', 'lagfit', 'lagtrim', 'lagroots', 'Laguerre', 'lagval2d', 'lagval3d', 'laggrid2d', 'laggrid3d', 'lagvander2d', 'lagvander3d', 'lagcompanion', 'laggauss', 'lagweight']
 lagtrim = pu.trimcoef
-
 
 def poly2lag(pol):
     """
@@ -131,12 +122,8 @@ def poly2lag(pol):
     array([ 23., -63.,  58., -18.])
 
     """
-    [pol] = pu.as_series([pol])
-    res = 0
-    for p in pol[::-1]:
-        res = lagadd(lagmulx(res), p)
-    return res
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.laguerre.poly2lag', 'poly2lag(pol)', {'pu': pu, 'lagadd': lagadd, 'lagmulx': lagmulx, 'pol': pol}, 1)
 
 def lag2poly(c):
     """
@@ -176,39 +163,12 @@ def lag2poly(c):
     array([0., 1., 2., 3.])
 
     """
-    from .polynomial import polyadd, polysub, polymulx
-
-    [c] = pu.as_series([c])
-    n = len(c)
-    if n == 1:
-        return c
-    else:
-        c0 = c[-2]
-        c1 = c[-1]
-        # i is the current degree of c1
-        for i in range(n - 1, 1, -1):
-            tmp = c0
-            c0 = polysub(c[i - 2], (c1*(i - 1))/i)
-            c1 = polyadd(tmp, polysub((2*i - 1)*c1, polymulx(c1))/i)
-        return polyadd(c0, polysub(c1, polymulx(c1)))
-
-#
-# These are constant arrays are of integer type so as to be compatible
-# with the widest range of other types, such as Decimal.
-#
-
-# Laguerre
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.laguerre.lag2poly', 'lag2poly(c)', {'pu': pu, 'c': c}, 1)
 lagdomain = np.array([0, 1])
-
-# Laguerre coefficients representing zero.
 lagzero = np.array([0])
-
-# Laguerre coefficients representing one.
 lagone = np.array([1])
-
-# Laguerre coefficients representing the identity x.
 lagx = np.array([1, -1])
-
 
 def lagline(off, scl):
     """
@@ -242,11 +202,8 @@ def lagline(off, scl):
     5.0
 
     """
-    if scl != 0:
-        return np.array([off + scl, -scl])
-    else:
-        return np.array([off])
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.laguerre.lagline', 'lagline(off, scl)', {'np': np, 'off': off, 'scl': scl}, 1)
 
 def lagfromroots(roots):
     """
@@ -303,7 +260,6 @@ def lagfromroots(roots):
     """
     return pu._fromroots(lagline, lagmul, roots)
 
-
 def lagadd(c1, c2):
     """
     Add one Laguerre series to another.
@@ -344,7 +300,6 @@ def lagadd(c1, c2):
     """
     return pu._add(c1, c2)
 
-
 def lagsub(c1, c2):
     """
     Subtract one Laguerre series from another.
@@ -384,7 +339,6 @@ def lagsub(c1, c2):
     """
     return pu._sub(c1, c2)
 
-
 def lagmulx(c):
     """Multiply a Laguerre series by x.
 
@@ -423,21 +377,8 @@ def lagmulx(c):
     array([-1.,  -1.,  11.,  -9.])
 
     """
-    # c is a trimmed copy
-    [c] = pu.as_series([c])
-    # The zero series needs special treatment
-    if len(c) == 1 and c[0] == 0:
-        return c
-
-    prd = np.empty(len(c) + 1, dtype=c.dtype)
-    prd[0] = c[0]
-    prd[1] = -c[0]
-    for i in range(1, len(c)):
-        prd[i + 1] = -c[i]*(i + 1)
-        prd[i] += c[i]*(2*i + 1)
-        prd[i - 1] -= c[i]*i
-    return prd
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.laguerre.lagmulx', 'lagmulx(c)', {'pu': pu, 'np': np, 'c': c}, 1)
 
 def lagmul(c1, c2):
     """
@@ -477,33 +418,8 @@ def lagmul(c1, c2):
     array([  8., -13.,  38., -51.,  36.])
 
     """
-    # s1, s2 are trimmed copies
-    [c1, c2] = pu.as_series([c1, c2])
-
-    if len(c1) > len(c2):
-        c = c2
-        xs = c1
-    else:
-        c = c1
-        xs = c2
-
-    if len(c) == 1:
-        c0 = c[0]*xs
-        c1 = 0
-    elif len(c) == 2:
-        c0 = c[0]*xs
-        c1 = c[1]*xs
-    else:
-        nd = len(c)
-        c0 = c[-2]*xs
-        c1 = c[-1]*xs
-        for i in range(3, len(c) + 1):
-            tmp = c0
-            nd = nd - 1
-            c0 = lagsub(c[-i]*xs, (c1*(nd - 1))/nd)
-            c1 = lagadd(tmp, lagsub((2*nd - 1)*c1, lagmulx(c1))/nd)
-    return lagadd(c0, lagsub(c1, lagmulx(c1)))
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.laguerre.lagmul', 'lagmul(c1, c2)', {'pu': pu, 'lagsub': lagsub, 'lagadd': lagadd, 'lagmulx': lagmulx, 'c1': c1, 'c2': c2}, 1)
 
 def lagdiv(c1, c2):
     """
@@ -550,7 +466,6 @@ def lagdiv(c1, c2):
     """
     return pu._div(lagmul, c1, c2)
 
-
 def lagpow(c, pow, maxpower=16):
     """Raise a Laguerre series to a power.
 
@@ -586,7 +501,6 @@ def lagpow(c, pow, maxpower=16):
 
     """
     return pu._pow(lagmul, c, pow, maxpower)
-
 
 def lagder(c, m=1, scl=1, axis=0):
     """
@@ -643,36 +557,8 @@ def lagder(c, m=1, scl=1, axis=0):
     array([1.,  2.,  3.])
 
     """
-    c = np.array(c, ndmin=1, copy=True)
-    if c.dtype.char in '?bBhHiIlLqQpP':
-        c = c.astype(np.double)
-
-    cnt = pu._deprecate_as_int(m, "the order of derivation")
-    iaxis = pu._deprecate_as_int(axis, "the axis")
-    if cnt < 0:
-        raise ValueError("The order of derivation must be non-negative")
-    iaxis = normalize_axis_index(iaxis, c.ndim)
-
-    if cnt == 0:
-        return c
-
-    c = np.moveaxis(c, iaxis, 0)
-    n = len(c)
-    if cnt >= n:
-        c = c[:1]*0
-    else:
-        for i in range(cnt):
-            n = n - 1
-            c *= scl
-            der = np.empty((n,) + c.shape[1:], dtype=c.dtype)
-            for j in range(n, 1, -1):
-                der[j - 1] = -c[j]
-                c[j - 1] += c[j]
-            der[0] = -c[1]
-            c = der
-    c = np.moveaxis(c, 0, iaxis)
-    return c
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.laguerre.lagder', 'lagder(c, m=1, scl=1, axis=0)', {'np': np, 'pu': pu, 'normalize_axis_index': normalize_axis_index, 'c': c, 'm': m, 'scl': scl, 'axis': axis}, 1)
 
 def lagint(c, m=1, k=[], lbnd=0, scl=1, axis=0):
     """
@@ -758,45 +644,8 @@ def lagint(c, m=1, k=[], lbnd=0, scl=1, axis=0):
     array([ 11.16666667,  -5.        ,  -3.        ,   2.        ]) # may vary
 
     """
-    c = np.array(c, ndmin=1, copy=True)
-    if c.dtype.char in '?bBhHiIlLqQpP':
-        c = c.astype(np.double)
-    if not np.iterable(k):
-        k = [k]
-    cnt = pu._deprecate_as_int(m, "the order of integration")
-    iaxis = pu._deprecate_as_int(axis, "the axis")
-    if cnt < 0:
-        raise ValueError("The order of integration must be non-negative")
-    if len(k) > cnt:
-        raise ValueError("Too many integration constants")
-    if np.ndim(lbnd) != 0:
-        raise ValueError("lbnd must be a scalar.")
-    if np.ndim(scl) != 0:
-        raise ValueError("scl must be a scalar.")
-    iaxis = normalize_axis_index(iaxis, c.ndim)
-
-    if cnt == 0:
-        return c
-
-    c = np.moveaxis(c, iaxis, 0)
-    k = list(k) + [0]*(cnt - len(k))
-    for i in range(cnt):
-        n = len(c)
-        c *= scl
-        if n == 1 and np.all(c[0] == 0):
-            c[0] += k[i]
-        else:
-            tmp = np.empty((n + 1,) + c.shape[1:], dtype=c.dtype)
-            tmp[0] = c[0]
-            tmp[1] = -c[0]
-            for j in range(1, n):
-                tmp[j] += c[j]
-                tmp[j + 1] = -c[j]
-            tmp[0] += k[i] - lagval(lbnd, tmp)
-            c = tmp
-    c = np.moveaxis(c, 0, iaxis)
-    return c
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.laguerre.lagint', 'lagint(c, m=1, k=[], lbnd=0, scl=1, axis=0)', {'np': np, 'pu': pu, 'normalize_axis_index': normalize_axis_index, 'lagval': lagval, 'c': c, 'm': m, 'k': k, 'lbnd': lbnd, 'scl': scl, 'axis': axis}, 1)
 
 def lagval(x, c, tensor=True):
     """
@@ -867,31 +716,8 @@ def lagval(x, c, tensor=True):
            [-4.5, -2. ]])
 
     """
-    c = np.array(c, ndmin=1, copy=False)
-    if c.dtype.char in '?bBhHiIlLqQpP':
-        c = c.astype(np.double)
-    if isinstance(x, (tuple, list)):
-        x = np.asarray(x)
-    if isinstance(x, np.ndarray) and tensor:
-        c = c.reshape(c.shape + (1,)*x.ndim)
-
-    if len(c) == 1:
-        c0 = c[0]
-        c1 = 0
-    elif len(c) == 2:
-        c0 = c[0]
-        c1 = c[1]
-    else:
-        nd = len(c)
-        c0 = c[-2]
-        c1 = c[-1]
-        for i in range(3, len(c) + 1):
-            tmp = c0
-            nd = nd - 1
-            c0 = c[-i] - (c1*(nd - 1))/nd
-            c1 = tmp + (c1*((2*nd - 1) - x))/nd
-    return c0 + c1*(1 - x)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.laguerre.lagval', 'lagval(x, c, tensor=True)', {'np': np, 'x': x, 'c': c, 'tensor': tensor}, 1)
 
 def lagval2d(x, y, c):
     """
@@ -899,7 +725,7 @@ def lagval2d(x, y, c):
 
     This function returns the values:
 
-    .. math:: p(x,y) = \\sum_{i,j} c_{i,j} * L_i(x) * L_j(y)
+    .. math:: p(x,y) = \sum_{i,j} c_{i,j} * L_i(x) * L_j(y)
 
     The parameters `x` and `y` are converted to arrays only if they are
     tuples or a lists, otherwise they are treated as a scalars and they
@@ -941,14 +767,13 @@ def lagval2d(x, y, c):
     """
     return pu._valnd(lagval, c, x, y)
 
-
 def laggrid2d(x, y, c):
     """
     Evaluate a 2-D Laguerre series on the Cartesian product of x and y.
 
     This function returns the values:
 
-    .. math:: p(a,b) = \\sum_{i,j} c_{i,j} * L_i(a) * L_j(b)
+    .. math:: p(a,b) = \sum_{i,j} c_{i,j} * L_i(a) * L_j(b)
 
     where the points `(a, b)` consist of all pairs formed by taking
     `a` from `x` and `b` from `y`. The resulting points form a grid with
@@ -994,14 +819,13 @@ def laggrid2d(x, y, c):
     """
     return pu._gridnd(lagval, c, x, y)
 
-
 def lagval3d(x, y, z, c):
     """
     Evaluate a 3-D Laguerre series at points (x, y, z).
 
     This function returns the values:
 
-    .. math:: p(x,y,z) = \\sum_{i,j,k} c_{i,j,k} * L_i(x) * L_j(y) * L_k(z)
+    .. math:: p(x,y,z) = \sum_{i,j,k} c_{i,j,k} * L_i(x) * L_j(y) * L_k(z)
 
     The parameters `x`, `y`, and `z` are converted to arrays only if
     they are tuples or a lists, otherwise they are treated as a scalars and
@@ -1045,14 +869,13 @@ def lagval3d(x, y, z, c):
     """
     return pu._valnd(lagval, c, x, y, z)
 
-
 def laggrid3d(x, y, z, c):
     """
     Evaluate a 3-D Laguerre series on the Cartesian product of x, y, and z.
 
     This function returns the values:
 
-    .. math:: p(a,b,c) = \\sum_{i,j,k} c_{i,j,k} * L_i(a) * L_j(b) * L_k(c)
+    .. math:: p(a,b,c) = \sum_{i,j,k} c_{i,j,k} * L_i(a) * L_j(b) * L_k(c)
 
     where the points `(a, b, c)` consist of all triples formed by taking
     `a` from `x`, `b` from `y`, and `c` from `z`. The resulting points form
@@ -1101,7 +924,6 @@ def laggrid3d(x, y, z, c):
     """
     return pu._gridnd(lagval, c, x, y, z)
 
-
 def lagvander(x, deg):
     """Pseudo-Vandermonde matrix of given degree.
 
@@ -1146,21 +968,8 @@ def lagvander(x, deg):
            [ 1.        , -1.        , -1.        , -0.33333333]])
 
     """
-    ideg = pu._deprecate_as_int(deg, "deg")
-    if ideg < 0:
-        raise ValueError("deg must be non-negative")
-
-    x = np.array(x, copy=False, ndmin=1) + 0.0
-    dims = (ideg + 1,) + x.shape
-    dtyp = x.dtype
-    v = np.empty(dims, dtype=dtyp)
-    v[0] = x*0 + 1
-    if ideg > 0:
-        v[1] = 1 - x
-        for i in range(2, ideg + 1):
-            v[i] = (v[i-1]*(2*i - 1 - x) - v[i-2]*(i - 1))/i
-    return np.moveaxis(v, 0, -1)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.laguerre.lagvander', 'lagvander(x, deg)', {'pu': pu, 'np': np, 'x': x, 'deg': deg}, 1)
 
 def lagvander2d(x, y, deg):
     """Pseudo-Vandermonde matrix of given degrees.
@@ -1214,7 +1023,6 @@ def lagvander2d(x, y, deg):
     """
     return pu._vander_nd_flat((lagvander, lagvander), (x, y), deg)
 
-
 def lagvander3d(x, y, z, deg):
     """Pseudo-Vandermonde matrix of given degrees.
 
@@ -1267,7 +1075,6 @@ def lagvander3d(x, y, z, deg):
 
     """
     return pu._vander_nd_flat((lagvander, lagvander, lagvander), (x, y, z), deg)
-
 
 def lagfit(x, y, deg, rcond=None, full=False, w=None):
     """
@@ -1358,7 +1165,7 @@ def lagfit(x, y, deg, rcond=None, full=False, w=None):
     The solution is the coefficients of the Laguerre series ``p`` that
     minimizes the sum of the weighted squared errors
 
-    .. math:: E = \\sum_j w_j^2 * |y_j - p(x_j)|^2,
+    .. math:: E = \sum_j w_j^2 * |y_j - p(x_j)|^2,
 
     where the :math:`w_j` are the weights. This problem is solved by
     setting up as the (typically) overdetermined matrix equation
@@ -1400,7 +1207,6 @@ def lagfit(x, y, deg, rcond=None, full=False, w=None):
     """
     return pu._fit(lagvander, x, y, deg, rcond, full, w)
 
-
 def lagcompanion(c):
     """
     Return the companion matrix of c.
@@ -1426,24 +1232,8 @@ def lagcompanion(c):
     .. versionadded:: 1.7.0
 
     """
-    # c is a trimmed copy
-    [c] = pu.as_series([c])
-    if len(c) < 2:
-        raise ValueError('Series must have maximum degree of at least 1.')
-    if len(c) == 2:
-        return np.array([[1 + c[0]/c[1]]])
-
-    n = len(c) - 1
-    mat = np.zeros((n, n), dtype=c.dtype)
-    top = mat.reshape(-1)[1::n+1]
-    mid = mat.reshape(-1)[0::n+1]
-    bot = mat.reshape(-1)[n::n+1]
-    top[...] = -np.arange(1, n)
-    mid[...] = 2.*np.arange(n) + 1.
-    bot[...] = top
-    mat[:, -1] += (c[:-1]/c[-1])*n
-    return mat
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.laguerre.lagcompanion', 'lagcompanion(c)', {'pu': pu, 'np': np, 'c': c}, 1)
 
 def lagroots(c):
     """
@@ -1451,7 +1241,7 @@ def lagroots(c):
 
     Return the roots (a.k.a. "zeros") of the polynomial
 
-    .. math:: p(x) = \\sum_i c[i] * L_i(x).
+    .. math:: p(x) = \sum_i c[i] * L_i(x).
 
     Parameters
     ----------
@@ -1495,19 +1285,8 @@ def lagroots(c):
     array([-4.4408921e-16,  1.0000000e+00,  2.0000000e+00])
 
     """
-    # c is a trimmed copy
-    [c] = pu.as_series([c])
-    if len(c) <= 1:
-        return np.array([], dtype=c.dtype)
-    if len(c) == 2:
-        return np.array([1 + c[0]/c[1]])
-
-    # rotated companion matrix reduces error
-    m = lagcompanion(c)[::-1,::-1]
-    r = la.eigvals(m)
-    r.sort()
-    return r
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.laguerre.lagroots', 'lagroots(c)', {'pu': pu, 'np': np, 'lagcompanion': lagcompanion, 'la': la, 'c': c}, 1)
 
 def laggauss(deg):
     """
@@ -1515,8 +1294,8 @@ def laggauss(deg):
 
     Computes the sample points and weights for Gauss-Laguerre quadrature.
     These sample points and weights will correctly integrate polynomials of
-    degree :math:`2*deg - 1` or less over the interval :math:`[0, \\inf]`
-    with the weight function :math:`f(x) = \\exp(-x)`.
+    degree :math:`2*deg - 1` or less over the interval :math:`[0, \inf]`
+    with the weight function :math:`f(x) = \exp(-x)`.
 
     Parameters
     ----------
@@ -1545,39 +1324,14 @@ def laggauss(deg):
     the right value when integrating 1.
 
     """
-    ideg = pu._deprecate_as_int(deg, "deg")
-    if ideg <= 0:
-        raise ValueError("deg must be a positive integer")
-
-    # first approximation of roots. We use the fact that the companion
-    # matrix is symmetric in this case in order to obtain better zeros.
-    c = np.array([0]*deg + [1])
-    m = lagcompanion(c)
-    x = la.eigvalsh(m)
-
-    # improve roots by one application of Newton
-    dy = lagval(x, c)
-    df = lagval(x, lagder(c))
-    x -= dy/df
-
-    # compute the weights. We scale the factor to avoid possible numerical
-    # overflow.
-    fm = lagval(x, c[1:])
-    fm /= np.abs(fm).max()
-    df /= np.abs(df).max()
-    w = 1/(fm * df)
-
-    # scale w to get the right value, 1 in this case
-    w /= w.sum()
-
-    return x, w
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.laguerre.laggauss', 'laggauss(deg)', {'pu': pu, 'np': np, 'lagcompanion': lagcompanion, 'la': la, 'lagval': lagval, 'lagder': lagder, 'deg': deg}, 2)
 
 def lagweight(x):
     """Weight function of the Laguerre polynomials.
 
     The weight function is :math:`exp(-x)` and the interval of integration
-    is :math:`[0, \\inf]`. The Laguerre polynomials are orthogonal, but not
+    is :math:`[0, \inf]`. The Laguerre polynomials are orthogonal, but not
     normalized, with respect to this weight function.
 
     Parameters
@@ -1599,9 +1353,6 @@ def lagweight(x):
     w = np.exp(-x)
     return w
 
-#
-# Laguerre series class
-#
 
 class Laguerre(ABCPolyBase):
     """A Laguerre series class.
@@ -1625,7 +1376,6 @@ class Laguerre(ABCPolyBase):
         .. versionadded:: 1.6.0
 
     """
-    # Virtual Functions
     _add = staticmethod(lagadd)
     _sub = staticmethod(lagsub)
     _mul = staticmethod(lagmul)
@@ -1638,8 +1388,8 @@ class Laguerre(ABCPolyBase):
     _line = staticmethod(lagline)
     _roots = staticmethod(lagroots)
     _fromroots = staticmethod(lagfromroots)
-
-    # Virtual properties
     domain = np.array(lagdomain)
     window = np.array(lagdomain)
     basis_name = 'L'
+
+

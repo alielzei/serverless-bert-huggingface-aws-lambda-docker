@@ -4,6 +4,7 @@ from .observer import *
 from .fake_quantize import *
 import torch.nn as nn
 
+
 class QConfig(namedtuple('QConfig', ['activation', 'weight'])):
     """
     Describes how to quantize a layer or a part of the network by providing
@@ -21,22 +22,16 @@ class QConfig(namedtuple('QConfig', ['activation', 'weight'])):
       my_qconfig = QConfig(activation=MinMaxObserver.with_args(dtype=torch.qint8), 
       weight=default_observer.with_args(dtype=torch.qint8))
     """
+    
     def __new__(cls, activation, weight):
-        # catch common mistakes
-        if isinstance(activation, nn.Module) or isinstance(weight, nn.Module):
-            raise ValueError("QConfig received observer instance, please pass observer class instead. " +
-                             "Use MyObserver.with_args(x=1) to override arguments to constructor if needed")
+        if (isinstance(activation, nn.Module) or isinstance(weight, nn.Module)):
+            raise ValueError('QConfig received observer instance, please pass observer class instead. ' + 'Use MyObserver.with_args(x=1) to override arguments to constructor if needed')
         return super(QConfig, cls).__new__(cls, activation, weight)
 
+default_qconfig = QConfig(activation=default_observer, weight=default_weight_observer)
+default_debug_qconfig = QConfig(weight=default_weight_observer, activation=default_debug_observer)
+default_per_channel_qconfig = QConfig(activation=default_observer, weight=default_per_channel_weight_observer)
 
-default_qconfig = QConfig(activation=default_observer,
-                          weight=default_weight_observer)
-
-default_debug_qconfig = QConfig(weight=default_weight_observer,
-                                activation=default_debug_observer)
-
-default_per_channel_qconfig = QConfig(activation=default_observer,
-                                      weight=default_per_channel_weight_observer)
 
 class QConfigDynamic(namedtuple('QConfigDynamic', ['weight'])):
     """
@@ -54,51 +49,24 @@ class QConfigDynamic(namedtuple('QConfigDynamic', ['weight'])):
 
       my_qconfig = QConfigDynamic(weight=default_observer.with_args(dtype=torch.qint8))
     """
+    
     def __new__(cls, weight):
-        # catch common mistakes
         if isinstance(weight, nn.Module):
-            raise ValueError("QConfigDynamic received observer instance, please pass observer class instead. " +
-                             "Use MyObserver.with_args(x=1) to override arguments to constructor if needed")
+            raise ValueError('QConfigDynamic received observer instance, please pass observer class instead. ' + 'Use MyObserver.with_args(x=1) to override arguments to constructor if needed')
         return super(QConfigDynamic, cls).__new__(cls, weight)
 
 default_dynamic_qconfig = QConfigDynamic(weight=default_weight_observer)
 float16_dynamic_qconfig = QConfigDynamic(weight=NoopObserver.with_args(dtype=torch.float16))
 per_channel_dynamic_qconfig = QConfigDynamic(weight=default_per_channel_weight_observer)
-
-default_qat_qconfig = QConfig(activation=default_fake_quant,
-                              weight=default_weight_fake_quant)
-
-default_weight_only_qconfig = QConfig(activation=torch.nn.Identity,
-                                      weight=default_weight_fake_quant)
-default_activation_only_qconfig = QConfig(activation=default_fake_quant,
-                                          weight=torch.nn.Identity)
+default_qat_qconfig = QConfig(activation=default_fake_quant, weight=default_weight_fake_quant)
+default_weight_only_qconfig = QConfig(activation=torch.nn.Identity, weight=default_weight_fake_quant)
+default_activation_only_qconfig = QConfig(activation=default_fake_quant, weight=torch.nn.Identity)
 
 def get_default_qconfig(backend='fbgemm'):
-    if backend == 'fbgemm':
-        qconfig = QConfig(activation=HistogramObserver.with_args(reduce_range=True),
-                          weight=default_per_channel_weight_observer)
-    elif backend == 'qnnpack':
-        qconfig = QConfig(activation=HistogramObserver.with_args(reduce_range=False),
-                          weight=default_weight_observer)
-    else:
-        raise ValueError("Unknown backend, please specify qconfig manually")
-    return qconfig
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.quantization.qconfig.get_default_qconfig', "get_default_qconfig(backend='fbgemm')", {'QConfig': QConfig, 'HistogramObserver': HistogramObserver, 'default_per_channel_weight_observer': default_per_channel_weight_observer, 'default_weight_observer': default_weight_observer, 'backend': backend}, 1)
 
 def get_default_qat_qconfig(backend='fbgemm'):
-    # Histogram observer is too slow for quantization aware training
-    if backend == 'fbgemm':
-        qconfig = QConfig(activation=FakeQuantize.with_args(observer=MovingAverageMinMaxObserver,
-                                                            quant_min=0,
-                                                            quant_max=255,
-                                                            reduce_range=True),
-                          weight=default_per_channel_weight_fake_quant)
-    elif backend == 'qnnpack':
-        qconfig = QConfig(activation=FakeQuantize.with_args(observer=MovingAverageMinMaxObserver,
-                                                            quant_min=0,
-                                                            quant_max=255,
-                                                            reduce_range=False),
-                          weight=default_weight_fake_quant)
-    else:
-        raise ValueError("Unknown backend, please specify qconfig manually")
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.quantization.qconfig.get_default_qat_qconfig', "get_default_qat_qconfig(backend='fbgemm')", {'QConfig': QConfig, 'FakeQuantize': FakeQuantize, 'MovingAverageMinMaxObserver': MovingAverageMinMaxObserver, 'default_per_channel_weight_fake_quant': default_per_channel_weight_fake_quant, 'default_weight_fake_quant': default_weight_fake_quant, 'backend': backend}, 1)
 
-    return qconfig

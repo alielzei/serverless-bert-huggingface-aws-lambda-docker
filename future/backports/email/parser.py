@@ -1,23 +1,18 @@
-# Copyright (C) 2001-2007 Python Software Foundation
-# Author: Barry Warsaw, Thomas Wouters, Anthony Baxter
-# Contact: email-sig@python.org
-
 """A parser of RFC 2822 and MIME email messages."""
+
 from __future__ import unicode_literals
 from __future__ import division
 from __future__ import absolute_import
-
 __all__ = ['Parser', 'HeaderParser', 'BytesParser', 'BytesHeaderParser']
-
 import warnings
 from io import StringIO, TextIOWrapper
-
 from future.backports.email.feedparser import FeedParser, BytesFeedParser
 from future.backports.email.message import Message
 from future.backports.email._policybase import compat32
 
 
 class Parser(object):
+    
     def __init__(self, _class=Message, **_3to2kwargs):
         """Parser of RFC 2822 and MIME email messages.
 
@@ -39,11 +34,14 @@ class Parser(object):
         backward compatibility.
 
         """
-        if 'policy' in _3to2kwargs: policy = _3to2kwargs['policy']; del _3to2kwargs['policy']
-        else: policy = compat32
+        if 'policy' in _3to2kwargs:
+            policy = _3to2kwargs['policy']
+            del _3to2kwargs['policy']
+        else:
+            policy = compat32
         self._class = _class
         self.policy = policy
-
+    
     def parse(self, fp, headersonly=False):
         """Create a message structure from the data in a file.
 
@@ -61,7 +59,7 @@ class Parser(object):
                 break
             feedparser.feed(data)
         return feedparser.close()
-
+    
     def parsestr(self, text, headersonly=False):
         """Create a message structure from a string.
 
@@ -75,15 +73,17 @@ class Parser(object):
 
 
 class HeaderParser(Parser):
+    
     def parse(self, fp, headersonly=True):
         return Parser.parse(self, fp, True)
-
+    
     def parsestr(self, text, headersonly=True):
         return Parser.parsestr(self, text, True)
 
 
-class BytesParser(object):
 
+class BytesParser(object):
+    
     def __init__(self, *args, **kw):
         """Parser of binary RFC 2822 and MIME email messages.
 
@@ -101,7 +101,7 @@ class BytesParser(object):
         zero arguments.  Default is Message.Message.
         """
         self.parser = Parser(*args, **kw)
-
+    
     def parse(self, fp, headersonly=False):
         """Create a message structure from the data in a binary file.
 
@@ -113,8 +113,7 @@ class BytesParser(object):
         fp = TextIOWrapper(fp, encoding='ascii', errors='surrogateescape')
         with fp:
             return self.parser.parse(fp, headersonly)
-
-
+    
     def parsebytes(self, text, headersonly=False):
         """Create a message structure from a byte string.
 
@@ -127,9 +126,13 @@ class BytesParser(object):
         return self.parser.parsestr(text, headersonly)
 
 
+
 class BytesHeaderParser(BytesParser):
+    
     def parse(self, fp, headersonly=True):
         return BytesParser.parse(self, fp, headersonly=True)
-
+    
     def parsebytes(self, text, headersonly=True):
         return BytesParser.parsebytes(self, text, headersonly=True)
+
+

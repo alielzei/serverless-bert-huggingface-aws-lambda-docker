@@ -1,18 +1,12 @@
 import sys
-
-
 if sys.version_info < (3, 8):
     try:
-        import pickle5 as pickle  # noqa: F401
-        from pickle5 import Pickler  # noqa: F401
+        import pickle5 as pickle
+        from pickle5 import Pickler
     except ImportError:
-        import pickle  # noqa: F401
-
-        # Use the Python pickler for old CPython versions
-        from pickle import _Pickler as Pickler  # noqa: F401
+        import pickle
+        from pickle import _Pickler as Pickler
 else:
-    import pickle  # noqa: F401
+    import pickle
+    from pickle import Pickler
 
-    # Pickler will the C implementation in CPython and the Python
-    # implementation in PyPy
-    from pickle import Pickler  # noqa: F401

@@ -1,42 +1,4 @@
-####
-# Copyright 2000 by Timothy O'Malley <timo@alum.mit.edu>
-#
-#                All Rights Reserved
-#
-# Permission to use, copy, modify, and distribute this software
-# and its documentation for any purpose and without fee is hereby
-# granted, provided that the above copyright notice appear in all
-# copies and that both that copyright notice and this permission
-# notice appear in supporting documentation, and that the name of
-# Timothy O'Malley  not be used in advertising or publicity
-# pertaining to distribution of the software without specific, written
-# prior permission.
-#
-# Timothy O'Malley DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS
-# SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-# AND FITNESS, IN NO EVENT SHALL Timothy O'Malley BE LIABLE FOR
-# ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
-# WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
-# ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-# PERFORMANCE OF THIS SOFTWARE.
-#
-####
-#
-# Id: Cookie.py,v 2.29 2000/08/23 05:28:49 timo Exp
-#   by Timothy O'Malley <timo@alum.mit.edu>
-#
-#  Cookie.py is a Python module for the handling of HTTP
-#  cookies as a Python dictionary.  See RFC 2109 for more
-#  information on cookies.
-#
-#  The original idea to treat Cookies as a dictionary came from
-#  Dave Mitchell (davem@magnet.com) in 1995, when he released the
-#  first version of nscookie.py.
-#
-####
-
-r"""
+"""
 http.cookies module ported to python-future from Py3.3
 
 Here's a sample session to show how to use this module.
@@ -60,7 +22,8 @@ a dictionary.
    >>> C["fig"] = "newton"
    >>> C["sugar"] = "wafer"
    >>> C.output()
-   'Set-Cookie: fig=newton\r\nSet-Cookie: sugar=wafer'
+   'Set-Cookie: fig=newton
+Set-Cookie: sugar=wafer'
 
 Notice that the printable representation of a Cookie is the
 appropriate format for a Set-Cookie: header.  This is the
@@ -82,16 +45,18 @@ HTTP_COOKIE environment variable.
    >>> C = cookies.SimpleCookie()
    >>> C.load("chips=ahoy; vienna=finger")
    >>> C.output()
-   'Set-Cookie: chips=ahoy\r\nSet-Cookie: vienna=finger'
+   'Set-Cookie: chips=ahoy
+Set-Cookie: vienna=finger'
 
 The load() method is darn-tootin smart about identifying cookies
 within a string.  Escaped quotation marks, nested semicolons, and other
 such trickeries do not confuse it.
 
    >>> C = cookies.SimpleCookie()
-   >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=\\012;";')
+   >>> C.load('keebler="E=everybody; L=\"Loves\"; fudge=\012;";')
    >>> print(C)
-   Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=\012;"
+   Set-Cookie: keebler="E=everybody; L="Loves"; fudge=
+;"
 
 Each element of the Cookie also supports all of the RFC 2109
 Cookie attributes.  Here's an example which sets the Path
@@ -123,193 +88,85 @@ the value to a string, when the values are set dictionary-style.
    >>> C["string"].value
    'seven'
    >>> C.output()
-   'Set-Cookie: number=7\r\nSet-Cookie: string=seven'
+   'Set-Cookie: number=7
+Set-Cookie: string=seven'
 
 Finis.
 """
+
 from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 from future.builtins import chr, dict, int, str
 from future.utils import PY2, as_native_str
-
-#
-# Import our required modules
-#
 import re
 if PY2:
-    re.ASCII = 0    # for py2 compatibility
+    re.ASCII = 0
 import string
-
-__all__ = ["CookieError", "BaseCookie", "SimpleCookie"]
-
+__all__ = ['CookieError', 'BaseCookie', 'SimpleCookie']
 _nulljoin = ''.join
 _semispacejoin = '; '.join
 _spacejoin = ' '.join
 
-#
-# Define an exception visible to External modules
-#
+
 class CookieError(Exception):
     pass
 
-
-# These quoting routines conform to the RFC2109 specification, which in
-# turn references the character definitions from RFC2068.  They provide
-# a two-way quoting algorithm.  Any non-text character is translated
-# into a 4 character sequence: a forward-slash followed by the
-# three-digit octal equivalent of the character.  Any '\' or '"' is
-# quoted with a preceeding '\' slash.
-#
-# These are taken from RFC2068 and RFC2109.
-#       _LegalChars       is the list of chars which don't require "'s
-#       _Translator       hash-table for fast quoting
-#
-_LegalChars       = string.ascii_letters + string.digits + "!#$%&'*+-.^_`|~:"
-_Translator       = {
-    '\000' : '\\000',  '\001' : '\\001',  '\002' : '\\002',
-    '\003' : '\\003',  '\004' : '\\004',  '\005' : '\\005',
-    '\006' : '\\006',  '\007' : '\\007',  '\010' : '\\010',
-    '\011' : '\\011',  '\012' : '\\012',  '\013' : '\\013',
-    '\014' : '\\014',  '\015' : '\\015',  '\016' : '\\016',
-    '\017' : '\\017',  '\020' : '\\020',  '\021' : '\\021',
-    '\022' : '\\022',  '\023' : '\\023',  '\024' : '\\024',
-    '\025' : '\\025',  '\026' : '\\026',  '\027' : '\\027',
-    '\030' : '\\030',  '\031' : '\\031',  '\032' : '\\032',
-    '\033' : '\\033',  '\034' : '\\034',  '\035' : '\\035',
-    '\036' : '\\036',  '\037' : '\\037',
-
-    # Because of the way browsers really handle cookies (as opposed
-    # to what the RFC says) we also encode , and ;
-
-    ',' : '\\054', ';' : '\\073',
-
-    '"' : '\\"',       '\\' : '\\\\',
-
-    '\177' : '\\177',  '\200' : '\\200',  '\201' : '\\201',
-    '\202' : '\\202',  '\203' : '\\203',  '\204' : '\\204',
-    '\205' : '\\205',  '\206' : '\\206',  '\207' : '\\207',
-    '\210' : '\\210',  '\211' : '\\211',  '\212' : '\\212',
-    '\213' : '\\213',  '\214' : '\\214',  '\215' : '\\215',
-    '\216' : '\\216',  '\217' : '\\217',  '\220' : '\\220',
-    '\221' : '\\221',  '\222' : '\\222',  '\223' : '\\223',
-    '\224' : '\\224',  '\225' : '\\225',  '\226' : '\\226',
-    '\227' : '\\227',  '\230' : '\\230',  '\231' : '\\231',
-    '\232' : '\\232',  '\233' : '\\233',  '\234' : '\\234',
-    '\235' : '\\235',  '\236' : '\\236',  '\237' : '\\237',
-    '\240' : '\\240',  '\241' : '\\241',  '\242' : '\\242',
-    '\243' : '\\243',  '\244' : '\\244',  '\245' : '\\245',
-    '\246' : '\\246',  '\247' : '\\247',  '\250' : '\\250',
-    '\251' : '\\251',  '\252' : '\\252',  '\253' : '\\253',
-    '\254' : '\\254',  '\255' : '\\255',  '\256' : '\\256',
-    '\257' : '\\257',  '\260' : '\\260',  '\261' : '\\261',
-    '\262' : '\\262',  '\263' : '\\263',  '\264' : '\\264',
-    '\265' : '\\265',  '\266' : '\\266',  '\267' : '\\267',
-    '\270' : '\\270',  '\271' : '\\271',  '\272' : '\\272',
-    '\273' : '\\273',  '\274' : '\\274',  '\275' : '\\275',
-    '\276' : '\\276',  '\277' : '\\277',  '\300' : '\\300',
-    '\301' : '\\301',  '\302' : '\\302',  '\303' : '\\303',
-    '\304' : '\\304',  '\305' : '\\305',  '\306' : '\\306',
-    '\307' : '\\307',  '\310' : '\\310',  '\311' : '\\311',
-    '\312' : '\\312',  '\313' : '\\313',  '\314' : '\\314',
-    '\315' : '\\315',  '\316' : '\\316',  '\317' : '\\317',
-    '\320' : '\\320',  '\321' : '\\321',  '\322' : '\\322',
-    '\323' : '\\323',  '\324' : '\\324',  '\325' : '\\325',
-    '\326' : '\\326',  '\327' : '\\327',  '\330' : '\\330',
-    '\331' : '\\331',  '\332' : '\\332',  '\333' : '\\333',
-    '\334' : '\\334',  '\335' : '\\335',  '\336' : '\\336',
-    '\337' : '\\337',  '\340' : '\\340',  '\341' : '\\341',
-    '\342' : '\\342',  '\343' : '\\343',  '\344' : '\\344',
-    '\345' : '\\345',  '\346' : '\\346',  '\347' : '\\347',
-    '\350' : '\\350',  '\351' : '\\351',  '\352' : '\\352',
-    '\353' : '\\353',  '\354' : '\\354',  '\355' : '\\355',
-    '\356' : '\\356',  '\357' : '\\357',  '\360' : '\\360',
-    '\361' : '\\361',  '\362' : '\\362',  '\363' : '\\363',
-    '\364' : '\\364',  '\365' : '\\365',  '\366' : '\\366',
-    '\367' : '\\367',  '\370' : '\\370',  '\371' : '\\371',
-    '\372' : '\\372',  '\373' : '\\373',  '\374' : '\\374',
-    '\375' : '\\375',  '\376' : '\\376',  '\377' : '\\377'
-    }
+_LegalChars = string.ascii_letters + string.digits + "!#$%&'*+-.^_`|~:"
+_Translator = {'\x00': '\\000', '\x01': '\\001', '\x02': '\\002', '\x03': '\\003', '\x04': '\\004', '\x05': '\\005', '\x06': '\\006', '\x07': '\\007', '\x08': '\\010', '\t': '\\011', '\n': '\\012', '\x0b': '\\013', '\x0c': '\\014', '\r': '\\015', '\x0e': '\\016', '\x0f': '\\017', '\x10': '\\020', '\x11': '\\021', '\x12': '\\022', '\x13': '\\023', '\x14': '\\024', '\x15': '\\025', '\x16': '\\026', '\x17': '\\027', '\x18': '\\030', '\x19': '\\031', '\x1a': '\\032', '\x1b': '\\033', '\x1c': '\\034', '\x1d': '\\035', '\x1e': '\\036', '\x1f': '\\037', ',': '\\054', ';': '\\073', '"': '\\"', '\\': '\\\\', '\x7f': '\\177', '\x80': '\\200', '\x81': '\\201', '\x82': '\\202', '\x83': '\\203', '\x84': '\\204', '\x85': '\\205', '\x86': '\\206', '\x87': '\\207', '\x88': '\\210', '\x89': '\\211', '\x8a': '\\212', '\x8b': '\\213', '\x8c': '\\214', '\x8d': '\\215', '\x8e': '\\216', '\x8f': '\\217', '\x90': '\\220', '\x91': '\\221', '\x92': '\\222', '\x93': '\\223', '\x94': '\\224', '\x95': '\\225', '\x96': '\\226', '\x97': '\\227', '\x98': '\\230', '\x99': '\\231', '\x9a': '\\232', '\x9b': '\\233', '\x9c': '\\234', '\x9d': '\\235', '\x9e': '\\236', '\x9f': '\\237', '\xa0': '\\240', '¡': '\\241', '¢': '\\242', '£': '\\243', '¤': '\\244', '¥': '\\245', '¦': '\\246', '§': '\\247', '¨': '\\250', '©': '\\251', 'ª': '\\252', '«': '\\253', '¬': '\\254', '\xad': '\\255', '®': '\\256', '¯': '\\257', '°': '\\260', '±': '\\261', '²': '\\262', '³': '\\263', '´': '\\264', 'µ': '\\265', '¶': '\\266', '·': '\\267', '¸': '\\270', '¹': '\\271', 'º': '\\272', '»': '\\273', '¼': '\\274', '½': '\\275', '¾': '\\276', '¿': '\\277', 'À': '\\300', 'Á': '\\301', 'Â': '\\302', 'Ã': '\\303', 'Ä': '\\304', 'Å': '\\305', 'Æ': '\\306', 'Ç': '\\307', 'È': '\\310', 'É': '\\311', 'Ê': '\\312', 'Ë': '\\313', 'Ì': '\\314', 'Í': '\\315', 'Î': '\\316', 'Ï': '\\317', 'Ð': '\\320', 'Ñ': '\\321', 'Ò': '\\322', 'Ó': '\\323', 'Ô': '\\324', 'Õ': '\\325', 'Ö': '\\326', '×': '\\327', 'Ø': '\\330', 'Ù': '\\331', 'Ú': '\\332', 'Û': '\\333', 'Ü': '\\334', 'Ý': '\\335', 'Þ': '\\336', 'ß': '\\337', 'à': '\\340', 'á': '\\341', 'â': '\\342', 'ã': '\\343', 'ä': '\\344', 'å': '\\345', 'æ': '\\346', 'ç': '\\347', 'è': '\\350', 'é': '\\351', 'ê': '\\352', 'ë': '\\353', 'ì': '\\354', 'í': '\\355', 'î': '\\356', 'ï': '\\357', 'ð': '\\360', 'ñ': '\\361', 'ò': '\\362', 'ó': '\\363', 'ô': '\\364', 'õ': '\\365', 'ö': '\\366', '÷': '\\367', 'ø': '\\370', 'ù': '\\371', 'ú': '\\372', 'û': '\\373', 'ü': '\\374', 'ý': '\\375', 'þ': '\\376', 'ÿ': '\\377'}
 
 def _quote(str, LegalChars=_LegalChars):
-    r"""Quote a string for use in a cookie header.
+    """Quote a string for use in a cookie header.
 
     If the string does not need to be double-quoted, then just return the
     string.  Otherwise, surround the string in doublequotes and quote
     (with a \) special characters.
     """
-    if all(c in LegalChars for c in str):
+    if all((c in LegalChars for c in str)):
         return str
     else:
-        return '"' + _nulljoin(_Translator.get(s, s) for s in str) + '"'
-
-
-_OctalPatt = re.compile(r"\\[0-3][0-7][0-7]")
-_QuotePatt = re.compile(r"[\\].")
+        return '"' + _nulljoin((_Translator.get(s, s) for s in str)) + '"'
+_OctalPatt = re.compile('\\\\[0-3][0-7][0-7]')
+_QuotePatt = re.compile('[\\\\].')
 
 def _unquote(mystr):
-    # If there aren't any doublequotes,
-    # then there can't be any special characters.  See RFC 2109.
     if len(mystr) < 2:
         return mystr
-    if mystr[0] != '"' or mystr[-1] != '"':
+    if (mystr[0] != '"' or mystr[-1] != '"'):
         return mystr
-
-    # We have to assume that we must decode this string.
-    # Down to work.
-
-    # Remove the "s
     mystr = mystr[1:-1]
-
-    # Check for special sequences.  Examples:
-    #    \012 --> \n
-    #    \"   --> "
-    #
     i = 0
     n = len(mystr)
     res = []
     while 0 <= i < n:
         o_match = _OctalPatt.search(mystr, i)
         q_match = _QuotePatt.search(mystr, i)
-        if not o_match and not q_match:              # Neither matched
+        if (not o_match and not q_match):
             res.append(mystr[i:])
             break
-        # else:
         j = k = -1
         if o_match:
             j = o_match.start(0)
         if q_match:
             k = q_match.start(0)
-        if q_match and (not o_match or k < j):     # QuotePatt matched
+        if (q_match and ((not o_match or k < j))):
             res.append(mystr[i:k])
-            res.append(mystr[k+1])
+            res.append(mystr[k + 1])
             i = k + 2
-        else:                                      # OctalPatt matched
+        else:
             res.append(mystr[i:j])
-            res.append(chr(int(mystr[j+1:j+4], 8)))
+            res.append(chr(int(mystr[j + 1:j + 4], 8)))
             i = j + 4
     return _nulljoin(res)
-
-# The _getdate() routine is used to set the expiration time in the cookie's HTTP
-# header.  By default, _getdate() returns the current time in the appropriate
-# "expires" format for a Set-Cookie header.  The one optional argument is an
-# offset from now, in seconds.  For example, an offset of -3600 means "one hour
-# ago".  The offset may be a floating point number.
-#
-
 _weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-
-_monthname = [None,
-              'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+_monthname = [None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 def _getdate(future=0, weekdayname=_weekdayname, monthname=_monthname):
     from time import gmtime, time
     now = time()
-    year, month, day, hh, mm, ss, wd, y, z = gmtime(now + future)
-    return "%s, %02d %3s %4d %02d:%02d:%02d GMT" % \
-           (weekdayname[wd], day, monthname[month], year, hh, mm, ss)
+    (year, month, day, hh, mm, ss, wd, y, z) = gmtime(now + future)
+    return '%s, %02d %3s %4d %02d:%02d:%02d GMT' % (weekdayname[wd], day, monthname[month], year, hh, mm, ss)
 
 
 class Morsel(dict):
@@ -321,155 +178,78 @@ class Morsel(dict):
     the network representation of the value.  This is most useful when Python
     objects are pickled for network transit.
     """
-    # RFC 2109 lists these attributes as reserved:
-    #   path       comment         domain
-    #   max-age    secure      version
-    #
-    # For historical reasons, these attributes are also reserved:
-    #   expires
-    #
-    # This is an extension from Microsoft:
-    #   httponly
-    #
-    # This dictionary provides a mapping from the lowercase
-    # variant on the left to the appropriate traditional
-    # formatting on the right.
-    _reserved = {
-        "expires"  : "expires",
-        "path"     : "Path",
-        "comment"  : "Comment",
-        "domain"   : "Domain",
-        "max-age"  : "Max-Age",
-        "secure"   : "secure",
-        "httponly" : "httponly",
-        "version"  : "Version",
-    }
-
+    _reserved = {'expires': 'expires', 'path': 'Path', 'comment': 'Comment', 'domain': 'Domain', 'max-age': 'Max-Age', 'secure': 'secure', 'httponly': 'httponly', 'version': 'Version'}
     _flags = set(['secure', 'httponly'])
-
+    
     def __init__(self):
-        # Set defaults
         self.key = self.value = self.coded_value = None
-
-        # Set default attributes
         for key in self._reserved:
-            dict.__setitem__(self, key, "")
-
+            dict.__setitem__(self, key, '')
+    
     def __setitem__(self, K, V):
         K = K.lower()
         if not K in self._reserved:
-            raise CookieError("Invalid Attribute %s" % K)
+            raise CookieError('Invalid Attribute %s' % K)
         dict.__setitem__(self, K, V)
-
+    
     def isReservedKey(self, K):
         return K.lower() in self._reserved
-
+    
     def set(self, key, val, coded_val, LegalChars=_LegalChars):
-        # First we verify that the key isn't a reserved word
-        # Second we make sure it only contains legal characters
         if key.lower() in self._reserved:
-            raise CookieError("Attempt to set a reserved key: %s" % key)
-        if any(c not in LegalChars for c in key):
-            raise CookieError("Illegal key value: %s" % key)
-
-        # It's a good key, so save it.
+            raise CookieError('Attempt to set a reserved key: %s' % key)
+        if any((c not in LegalChars for c in key)):
+            raise CookieError('Illegal key value: %s' % key)
         self.key = key
         self.value = val
         self.coded_value = coded_val
-
-    def output(self, attrs=None, header="Set-Cookie:"):
-        return "%s %s" % (header, self.OutputString(attrs))
-
+    
+    def output(self, attrs=None, header='Set-Cookie:'):
+        return '%s %s' % (header, self.OutputString(attrs))
     __str__ = output
-
+    
     @as_native_str()
     def __repr__(self):
-        if PY2 and isinstance(self.value, unicode):
-            val = str(self.value)    # make it a newstr to remove the u prefix
+        if (PY2 and isinstance(self.value, unicode)):
+            val = str(self.value)
         else:
             val = self.value
-        return '<%s: %s=%s>' % (self.__class__.__name__,
-                                str(self.key), repr(val))
-
+        return '<%s: %s=%s>' % (self.__class__.__name__, str(self.key), repr(val))
+    
     def js_output(self, attrs=None):
-        # Print javascript
-        return """
-        <script type="text/javascript">
-        <!-- begin hiding
-        document.cookie = \"%s\";
-        // end hiding -->
-        </script>
-        """ % (self.OutputString(attrs).replace('"', r'\"'))
-
+        return '\n        <script type="text/javascript">\n        <!-- begin hiding\n        document.cookie = "%s";\n        // end hiding -->\n        </script>\n        ' % self.OutputString(attrs).replace('"', '\\"')
+    
     def OutputString(self, attrs=None):
-        # Build up our result
-        #
         result = []
         append = result.append
-
-        # First, the key=value pair
-        append("%s=%s" % (self.key, self.coded_value))
-
-        # Now add any defined attributes
+        append('%s=%s' % (self.key, self.coded_value))
         if attrs is None:
             attrs = self._reserved
         items = sorted(self.items())
-        for key, value in items:
-            if value == "":
+        for (key, value) in items:
+            if value == '':
                 continue
             if key not in attrs:
                 continue
-            if key == "expires" and isinstance(value, int):
-                append("%s=%s" % (self._reserved[key], _getdate(value)))
-            elif key == "max-age" and isinstance(value, int):
-                append("%s=%d" % (self._reserved[key], value))
-            elif key == "secure":
+            if (key == 'expires' and isinstance(value, int)):
+                append('%s=%s' % (self._reserved[key], _getdate(value)))
+            elif (key == 'max-age' and isinstance(value, int)):
+                append('%s=%d' % (self._reserved[key], value))
+            elif key == 'secure':
                 append(str(self._reserved[key]))
-            elif key == "httponly":
+            elif key == 'httponly':
                 append(str(self._reserved[key]))
             else:
-                append("%s=%s" % (self._reserved[key], value))
-
-        # Return the result
+                append('%s=%s' % (self._reserved[key], value))
         return _semispacejoin(result)
 
-
-#
-# Pattern for finding cookie
-#
-# This used to be strict parsing based on the RFC2109 and RFC2068
-# specifications.  I have since discovered that MSIE 3.0x doesn't
-# follow the character rules outlined in those specs.  As a
-# result, the parsing rules here are less strict.
-#
-
-_LegalCharsPatt  = r"[\w\d!#%&'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\=]"
-_CookiePattern = re.compile(r"""
-    (?x)                           # This is a verbose pattern
-    (?P<key>                       # Start of group 'key'
-    """ + _LegalCharsPatt + r"""+?   # Any word of at least one letter
-    )                              # End of group 'key'
-    (                              # Optional group: there may not be a value.
-    \s*=\s*                          # Equal Sign
-    (?P<val>                         # Start of group 'val'
-    "(?:[^\\"]|\\.)*"                  # Any doublequoted string
-    |                                  # or
-    \w{3},\s[\w\d\s-]{9,11}\s[\d:]{8}\sGMT  # Special case for "expires" attr
-    |                                  # or
-    """ + _LegalCharsPatt + r"""*      # Any word or empty string
-    )                                # End of group 'val'
-    )?                             # End of optional value group
-    \s*                            # Any number of spaces.
-    (\s+|;|$)                      # Ending either at space, semicolon, or EOS.
-    """, re.ASCII)                 # May be removed if safe.
+_LegalCharsPatt = "[\\w\\d!#%&'~_`><@,:/\\$\\*\\+\\-\\.\\^\\|\\)\\(\\?\\}\\{\\=]"
+_CookiePattern = re.compile("\n    (?x)                           # This is a verbose pattern\n    (?P<key>                       # Start of group 'key'\n    " + _LegalCharsPatt + '+?   # Any word of at least one letter\n    )                              # End of group \'key\'\n    (                              # Optional group: there may not be a value.\n    \\s*=\\s*                          # Equal Sign\n    (?P<val>                         # Start of group \'val\'\n    "(?:[^\\\\"]|\\\\.)*"                  # Any doublequoted string\n    |                                  # or\n    \\w{3},\\s[\\w\\d\\s-]{9,11}\\s[\\d:]{8}\\sGMT  # Special case for "expires" attr\n    |                                  # or\n    ' + _LegalCharsPatt + "*      # Any word or empty string\n    )                                # End of group 'val'\n    )?                             # End of optional value group\n    \\s*                            # Any number of spaces.\n    (\\s+|;|$)                      # Ending either at space, semicolon, or EOS.\n    ", re.ASCII)
 
 
-# At long last, here is the cookie class.  Using this class is almost just like
-# using a dictionary.  See this module's docstring for example usage.
-#
 class BaseCookie(dict):
     """A container class for a set of Morsels."""
-
+    
     def value_decode(self, val):
         """real_value, coded_value = value_decode(STRING)
         Called prior to setting a cookie's value from the network
@@ -477,8 +257,8 @@ class BaseCookie(dict):
         header.
         Override this function to modify the behavior of cookies.
         """
-        return val, val
-
+        return (val, val)
+    
     def value_encode(self, val):
         """real_value, coded_value = value_encode(VALUE)
         Called prior to setting a cookie's value from the dictionary
@@ -486,53 +266,52 @@ class BaseCookie(dict):
         Override this function to modify the behavior of cookies.
         """
         strval = str(val)
-        return strval, strval
-
+        return (strval, strval)
+    
     def __init__(self, input=None):
         if input:
             self.load(input)
-
+    
     def __set(self, key, real_value, coded_value):
         """Private method for setting a cookie's value"""
         M = self.get(key, Morsel())
         M.set(key, real_value, coded_value)
         dict.__setitem__(self, key, M)
-
+    
     def __setitem__(self, key, value):
         """Dictionary style assignment."""
-        rval, cval = self.value_encode(value)
+        (rval, cval) = self.value_encode(value)
         self.__set(key, rval, cval)
-
-    def output(self, attrs=None, header="Set-Cookie:", sep="\015\012"):
+    
+    def output(self, attrs=None, header='Set-Cookie:', sep='\r\n'):
         """Return a string suitable for HTTP."""
         result = []
         items = sorted(self.items())
-        for key, value in items:
+        for (key, value) in items:
             result.append(value.output(attrs, header))
         return sep.join(result)
-
     __str__ = output
-
+    
     @as_native_str()
     def __repr__(self):
         l = []
         items = sorted(self.items())
-        for key, value in items:
-            if PY2 and isinstance(value.value, unicode):
-                val = str(value.value)    # make it a newstr to remove the u prefix
+        for (key, value) in items:
+            if (PY2 and isinstance(value.value, unicode)):
+                val = str(value.value)
             else:
                 val = value.value
             l.append('%s=%s' % (str(key), repr(val)))
         return '<%s: %s>' % (self.__class__.__name__, _spacejoin(l))
-
+    
     def js_output(self, attrs=None):
         """Return a string suitable for JavaScript."""
         result = []
         items = sorted(self.items())
-        for key, value in items:
+        for (key, value) in items:
             result.append(value.js_output(attrs))
         return _nulljoin(result)
-
+    
     def load(self, rawdata):
         """Load cookies from a string (presumably HTTP_COOKIE) or
         from a dictionary.  Loading cookies from a dictionary 'd'
@@ -542,32 +321,21 @@ class BaseCookie(dict):
         if isinstance(rawdata, str):
             self.__parse_string(rawdata)
         else:
-            # self.update() wouldn't call our custom __setitem__
-            for key, value in rawdata.items():
+            for (key, value) in rawdata.items():
                 self[key] = value
         return
-
+    
     def __parse_string(self, mystr, patt=_CookiePattern):
-        i = 0            # Our starting point
-        n = len(mystr)     # Length of string
-        M = None         # current morsel
-
+        i = 0
+        n = len(mystr)
+        M = None
         while 0 <= i < n:
-            # Start looking for a cookie
             match = patt.search(mystr, i)
             if not match:
-                # No more cookies
                 break
-
-            key, value = match.group("key"), match.group("val")
-
+            (key, value) = (match.group('key'), match.group('val'))
             i = match.end(0)
-
-            # Parse the key, value in case it's metainfo
-            if key[0] == "$":
-                # We ignore attributes which pertain to the cookie
-                # mechanism as a whole.  See RFC 2109.
-                # (Does anyone care?)
+            if key[0] == '$':
                 if M:
                     M[key[1:]] = value
             elif key.lower() in Morsel._reserved:
@@ -578,9 +346,10 @@ class BaseCookie(dict):
                     else:
                         M[key] = _unquote(value)
             elif value is not None:
-                rval, cval = self.value_decode(value)
+                (rval, cval) = self.value_decode(value)
                 self.__set(key, rval, cval)
                 M = self[key]
+
 
 
 class SimpleCookie(BaseCookie):
@@ -590,9 +359,12 @@ class SimpleCookie(BaseCookie):
     calls the builtin str() to convert the value to a string.  Values
     received from HTTP are kept as strings.
     """
+    
     def value_decode(self, val):
-        return _unquote(val), val
-
+        return (_unquote(val), val)
+    
     def value_encode(self, val):
         strval = str(val)
-        return strval, _quote(strval)
+        return (strval, _quote(strval))
+
+

@@ -1,7 +1,7 @@
 import torch
 
 def convert_conv2d_weight_memory_format(module, memory_format):
-    r"""Convert ``memory_format`` of ``nn.Conv2d.weight`` to ``memory_format``
+    """Convert ``memory_format`` of ``nn.Conv2d.weight`` to ``memory_format``
     The conversion recursively applies to nested ``nn.Module``, including ``module``.
     Note that it only changes the memory_format, but not the semantics of each dimensions.
     This function is used to facilitate the computation to adopt NHWC kernels, which
@@ -58,12 +58,6 @@ def convert_conv2d_weight_memory_format(module, memory_format):
         >>>  model = nn.utils.convert_conv2d_weight_memory_format(model, torch.channels_last)
         >>>  out = model(input)
     """
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.nn.utils.memory_format.convert_conv2d_weight_memory_format', 'convert_conv2d_weight_memory_format(module, memory_format)', {'torch': torch, 'convert_conv2d_weight_memory_format': convert_conv2d_weight_memory_format, 'module': module, 'memory_format': memory_format}, 1)
 
-    # TODO: expand this to `_ConvNd` when channels_last support is extended
-    # beyond only 4d tensors.
-    if isinstance(module, torch.nn.Conv2d) or isinstance(module, torch.nn.ConvTranspose2d):
-        weight_data = module.weight.detach().clone().contiguous(memory_format=memory_format)
-        module.weight.data = weight_data.resize_(weight_data.size(), memory_format=memory_format)
-    for child in module.children():
-        convert_conv2d_weight_memory_format(child, memory_format)
-    return module

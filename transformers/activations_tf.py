@@ -1,7 +1,5 @@
 import math
-
 import tensorflow as tf
-
 
 def gelu(x):
     """Gaussian Error Linear Unit.
@@ -10,11 +8,8 @@ def gelu(x):
         0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
         Also see https://arxiv.org/abs/1606.08415
     """
-    x = tf.convert_to_tensor(x)
-    cdf = 0.5 * (1.0 + tf.math.erf(x / tf.math.sqrt(2.0)))
-
-    return x * cdf
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('transformers.activations_tf.gelu', 'gelu(x)', {'tf': tf, 'x': x}, 1)
 
 def gelu_new(x):
     """Gaussian Error Linear Unit.
@@ -25,41 +20,19 @@ def gelu_new(x):
     Returns:
         `x` with the GELU activation applied.
     """
-    x = tf.convert_to_tensor(x)
-    pi = tf.cast(math.pi, x.dtype)
-    coeff = tf.cast(0.044715, x.dtype)
-    cdf = 0.5 * (1.0 + tf.tanh(tf.sqrt(2.0 / pi) * (x + coeff * tf.pow(x, 3))))
-
-    return x * cdf
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('transformers.activations_tf.gelu_new', 'gelu_new(x)', {'tf': tf, 'math': math, 'x': x}, 1)
 
 def mish(x):
     x = tf.convert_to_tensor(x)
-
     return x * tf.tanh(tf.math.softplus(x))
 
-
 def gelu_fast(x):
-    x = tf.convert_to_tensor(x)
-    coeff1 = tf.cast(7978845608, x.dtype)
-    coeff2 = tf.cast(0.044715, x.dtype)
-
-    return 0.5 * x * (1.0 + tf.tanh(x * coeff2 * (1.0 + coeff1 * x * x)))
-
-
-ACT2FN = {
-    "gelu": tf.keras.layers.Activation(gelu),
-    "relu": tf.keras.activations.relu,
-    "swish": tf.keras.activations.swish,
-    "gelu_new": tf.keras.layers.Activation(gelu_new),
-    "mish": tf.keras.layers.Activation(mish),
-    "tanh": tf.keras.activations.tanh,
-    "gelu_fast": tf.keras.layers.Activation(gelu_fast),
-}
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('transformers.activations_tf.gelu_fast', 'gelu_fast(x)', {'tf': tf, 'x': x}, 1)
+ACT2FN = {'gelu': tf.keras.layers.Activation(gelu), 'relu': tf.keras.activations.relu, 'swish': tf.keras.activations.swish, 'gelu_new': tf.keras.layers.Activation(gelu_new), 'mish': tf.keras.layers.Activation(mish), 'tanh': tf.keras.activations.tanh, 'gelu_fast': tf.keras.layers.Activation(gelu_fast)}
 
 def get_tf_activation(activation_string):
-    if activation_string in ACT2FN:
-        return ACT2FN[activation_string]
-    else:
-        raise KeyError("function {} not found in ACT2FN mapping {}".format(activation_string, list(ACT2FN.keys())))
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('transformers.activations_tf.get_tf_activation', 'get_tf_activation(activation_string)', {'ACT2FN': ACT2FN, 'activation_string': activation_string}, 1)
+

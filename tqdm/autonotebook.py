@@ -6,13 +6,13 @@ Usage:
 >>> for i in trange(10):
 ...     ...
 """
+
 import sys
 from warnings import warn
-
 try:
     get_ipython = sys.modules['IPython'].get_ipython
-    if 'IPKernelApp' not in get_ipython().config:  # pragma: no cover
-        raise ImportError("console")
+    if 'IPKernelApp' not in get_ipython().config:
+        raise ImportError('console')
     from .notebook import WARN_NOIPYW, IProgress
     if IProgress is None:
         from .std import TqdmWarning
@@ -20,10 +20,9 @@ try:
         raise ImportError('ipywidgets')
 except Exception:
     from .std import tqdm, trange
-else:  # pragma: no cover
+else:
     from .notebook import tqdm, trange
     from .std import TqdmExperimentalWarning
-    warn("Using `tqdm.autonotebook.tqdm` in notebook mode."
-         " Use `tqdm.tqdm` instead to force console mode"
-         " (e.g. in jupyter console)", TqdmExperimentalWarning, stacklevel=2)
-__all__ = ["tqdm", "trange"]
+    warn('Using `tqdm.autonotebook.tqdm` in notebook mode. Use `tqdm.tqdm` instead to force console mode (e.g. in jupyter console)', TqdmExperimentalWarning, stacklevel=2)
+__all__ = ['tqdm', 'trange']
+

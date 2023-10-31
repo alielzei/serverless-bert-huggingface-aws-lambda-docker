@@ -8,33 +8,13 @@ from .replicate import replicate
 from .parallel_apply import parallel_apply
 from torch.cuda._utils import _get_device_index
 
-
 def _check_balance(device_ids):
-    imbalance_warn = """
-    There is an imbalance between your GPUs. You may want to exclude GPU {} which
-    has less than 75% of the memory or cores of GPU {}. You can do so by setting
-    the device_ids argument to DataParallel, or by setting the CUDA_VISIBLE_DEVICES
-    environment variable."""
-    device_ids = list(map(lambda x: _get_device_index(x, True), device_ids))
-    dev_props = [torch.cuda.get_device_properties(i) for i in device_ids]
-
-    def warn_imbalance(get_prop):
-        values = [get_prop(props) for props in dev_props]
-        min_pos, min_val = min(enumerate(values), key=operator.itemgetter(1))
-        max_pos, max_val = max(enumerate(values), key=operator.itemgetter(1))
-        if min_val / max_val < 0.75:
-            warnings.warn(imbalance_warn.format(device_ids[min_pos], device_ids[max_pos]))
-            return True
-        return False
-
-    if warn_imbalance(lambda props: props.total_memory):
-        return
-    if warn_imbalance(lambda props: props.multi_processor_count):
-        return
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.nn.parallel.data_parallel._check_balance', '_check_balance(device_ids)', {'_get_device_index': _get_device_index, 'torch': torch, 'operator': operator, 'warnings': warnings, 'device_ids': device_ids}, 1)
 
 
 class DataParallel(Module):
-    r"""Implements data parallelism at the module level.
+    """Implements data parallelism at the module level.
 
     This container parallelizes the application of the given :attr:`module` by
     splitting the input across the specified devices by chunking in the batch
@@ -111,65 +91,54 @@ class DataParallel(Module):
         >>> net = torch.nn.DataParallel(model, device_ids=[0, 1, 2])
         >>> output = net(input_var)  # input_var can be on any device, including CPU
     """
-
-    # TODO: update notes/cuda.rst when this class handles 8+ GPUs well
-
+    
     def __init__(self, module, device_ids=None, output_device=None, dim=0):
         super(DataParallel, self).__init__()
-
         if not torch.cuda.is_available():
             self.module = module
             self.device_ids = []
             return
-
         if device_ids is None:
             device_ids = list(range(torch.cuda.device_count()))
         if output_device is None:
             output_device = device_ids[0]
-
         self.dim = dim
         self.module = module
         self.device_ids = list(map(lambda x: _get_device_index(x, True), device_ids))
         self.output_device = _get_device_index(output_device, True)
-        self.src_device_obj = torch.device("cuda:{}".format(self.device_ids[0]))
-
+        self.src_device_obj = torch.device('cuda:{}'.format(self.device_ids[0]))
         _check_balance(self.device_ids)
-
         if len(self.device_ids) == 1:
             self.module.cuda(device_ids[0])
-
+    
     def forward(self, *inputs, **kwargs):
         if not self.device_ids:
             return self.module(*inputs, **kwargs)
-
         for t in chain(self.module.parameters(), self.module.buffers()):
             if t.device != self.src_device_obj:
-                raise RuntimeError("module must have its parameters and buffers "
-                                   "on device {} (device_ids[0]) but found one of "
-                                   "them on device: {}".format(self.src_device_obj, t.device))
-
-        inputs, kwargs = self.scatter(inputs, kwargs, self.device_ids)
+                raise RuntimeError('module must have its parameters and buffers on device {} (device_ids[0]) but found one of them on device: {}'.format(self.src_device_obj, t.device))
+        (inputs, kwargs) = self.scatter(inputs, kwargs, self.device_ids)
         if len(self.device_ids) == 1:
             return self.module(*inputs[0], **kwargs[0])
         replicas = self.replicate(self.module, self.device_ids[:len(inputs)])
         outputs = self.parallel_apply(replicas, inputs, kwargs)
         return self.gather(outputs, self.output_device)
-
+    
     def replicate(self, module, device_ids):
         return replicate(module, device_ids, not torch.is_grad_enabled())
-
+    
     def scatter(self, inputs, kwargs, device_ids):
         return scatter_kwargs(inputs, kwargs, device_ids, dim=self.dim)
-
+    
     def parallel_apply(self, replicas, inputs, kwargs):
         return parallel_apply(replicas, inputs, kwargs, self.device_ids[:len(replicas)])
-
+    
     def gather(self, outputs, output_device):
         return gather(outputs, output_device, dim=self.dim)
 
 
 def data_parallel(module, inputs, device_ids=None, output_device=None, dim=0, module_kwargs=None):
-    r"""Evaluates module(input) in parallel across the GPUs given in device_ids.
+    """Evaluates module(input) in parallel across the GPUs given in device_ids.
 
     This is the functional version of the DataParallel module.
 
@@ -183,29 +152,6 @@ def data_parallel(module, inputs, device_ids=None, output_device=None, dim=0, mo
         a Tensor containing the result of module(input) located on
         output_device
     """
-    if not isinstance(inputs, tuple):
-        inputs = (inputs,)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.nn.parallel.data_parallel.data_parallel', 'data_parallel(module, inputs, device_ids=None, output_device=None, dim=0, module_kwargs=None)', {'torch': torch, '_get_device_index': _get_device_index, 'chain': chain, 'scatter_kwargs': scatter_kwargs, 'replicate': replicate, 'parallel_apply': parallel_apply, 'gather': gather, 'module': module, 'inputs': inputs, 'device_ids': device_ids, 'output_device': output_device, 'dim': dim, 'module_kwargs': module_kwargs}, 1)
 
-    if device_ids is None:
-        device_ids = list(range(torch.cuda.device_count()))
-
-    if output_device is None:
-        output_device = device_ids[0]
-
-    device_ids = list(map(lambda x: _get_device_index(x, True), device_ids))
-    output_device = _get_device_index(output_device, True)
-    src_device_obj = torch.device("cuda:{}".format(device_ids[0]))
-
-    for t in chain(module.parameters(), module.buffers()):
-        if t.device != src_device_obj:
-            raise RuntimeError("module must have its parameters and buffers "
-                               "on device {} (device_ids[0]) but found one of "
-                               "them on device: {}".format(src_device_obj, t.device))
-
-    inputs, module_kwargs = scatter_kwargs(inputs, module_kwargs, device_ids, dim)
-    if len(device_ids) == 1:
-        return module(*inputs[0], **module_kwargs[0])
-    used_device_ids = device_ids[:len(inputs)]
-    replicas = replicate(module, used_device_ids)
-    outputs = parallel_apply(replicas, inputs, module_kwargs, used_device_ids)
-    return gather(outputs, output_device, dim)

@@ -75,24 +75,14 @@ See also
 `numpy.polynomial`
 
 """
+
 import numpy as np
 import numpy.linalg as la
 from numpy.core.multiarray import normalize_axis_index
-
 from . import polyutils as pu
 from ._polybase import ABCPolyBase
-
-__all__ = [
-    'hermezero', 'hermeone', 'hermex', 'hermedomain', 'hermeline',
-    'hermeadd', 'hermesub', 'hermemulx', 'hermemul', 'hermediv',
-    'hermepow', 'hermeval', 'hermeder', 'hermeint', 'herme2poly',
-    'poly2herme', 'hermefromroots', 'hermevander', 'hermefit', 'hermetrim',
-    'hermeroots', 'HermiteE', 'hermeval2d', 'hermeval3d', 'hermegrid2d',
-    'hermegrid3d', 'hermevander2d', 'hermevander3d', 'hermecompanion',
-    'hermegauss', 'hermeweight']
-
+__all__ = ['hermezero', 'hermeone', 'hermex', 'hermedomain', 'hermeline', 'hermeadd', 'hermesub', 'hermemulx', 'hermemul', 'hermediv', 'hermepow', 'hermeval', 'hermeder', 'hermeint', 'herme2poly', 'poly2herme', 'hermefromroots', 'hermevander', 'hermefit', 'hermetrim', 'hermeroots', 'HermiteE', 'hermeval2d', 'hermeval3d', 'hermegrid2d', 'hermegrid3d', 'hermevander2d', 'hermevander3d', 'hermecompanion', 'hermegauss', 'hermeweight']
 hermetrim = pu.trimcoef
-
 
 def poly2herme(pol):
     """
@@ -132,13 +122,8 @@ def poly2herme(pol):
     array([  2.,  10.,   2.,   3.])
 
     """
-    [pol] = pu.as_series([pol])
-    deg = len(pol) - 1
-    res = 0
-    for i in range(deg, -1, -1):
-        res = hermeadd(hermemulx(res), pol[i])
-    return res
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.hermite_e.poly2herme', 'poly2herme(pol)', {'pu': pu, 'hermeadd': hermeadd, 'hermemulx': hermemulx, 'pol': pol}, 1)
 
 def herme2poly(c):
     """
@@ -178,41 +163,12 @@ def herme2poly(c):
     array([0.,  1.,  2.,  3.])
 
     """
-    from .polynomial import polyadd, polysub, polymulx
-
-    [c] = pu.as_series([c])
-    n = len(c)
-    if n == 1:
-        return c
-    if n == 2:
-        return c
-    else:
-        c0 = c[-2]
-        c1 = c[-1]
-        # i is the current degree of c1
-        for i in range(n - 1, 1, -1):
-            tmp = c0
-            c0 = polysub(c[i - 2], c1*(i - 1))
-            c1 = polyadd(tmp, polymulx(c1))
-        return polyadd(c0, polymulx(c1))
-
-#
-# These are constant arrays are of integer type so as to be compatible
-# with the widest range of other types, such as Decimal.
-#
-
-# Hermite
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.hermite_e.herme2poly', 'herme2poly(c)', {'pu': pu, 'c': c}, 1)
 hermedomain = np.array([-1, 1])
-
-# Hermite coefficients representing zero.
 hermezero = np.array([0])
-
-# Hermite coefficients representing one.
 hermeone = np.array([1])
-
-# Hermite coefficients representing the identity x.
 hermex = np.array([0, 1])
-
 
 def hermeline(off, scl):
     """
@@ -247,11 +203,8 @@ def hermeline(off, scl):
     5.0
 
     """
-    if scl != 0:
-        return np.array([off, scl])
-    else:
-        return np.array([off])
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.hermite_e.hermeline', 'hermeline(off, scl)', {'np': np, 'off': off, 'scl': scl}, 1)
 
 def hermefromroots(roots):
     """
@@ -308,7 +261,6 @@ def hermefromroots(roots):
     """
     return pu._fromroots(hermeline, hermemul, roots)
 
-
 def hermeadd(c1, c2):
     """
     Add one Hermite series to another.
@@ -347,7 +299,6 @@ def hermeadd(c1, c2):
 
     """
     return pu._add(c1, c2)
-
 
 def hermesub(c1, c2):
     """
@@ -388,7 +339,6 @@ def hermesub(c1, c2):
     """
     return pu._sub(c1, c2)
 
-
 def hermemulx(c):
     """Multiply a Hermite series by x.
 
@@ -423,20 +373,8 @@ def hermemulx(c):
     array([2.,  7.,  2.,  3.])
 
     """
-    # c is a trimmed copy
-    [c] = pu.as_series([c])
-    # The zero series needs special treatment
-    if len(c) == 1 and c[0] == 0:
-        return c
-
-    prd = np.empty(len(c) + 1, dtype=c.dtype)
-    prd[0] = c[0]*0
-    prd[1] = c[0]
-    for i in range(1, len(c)):
-        prd[i + 1] = c[i]
-        prd[i - 1] += c[i]*i
-    return prd
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.hermite_e.hermemulx', 'hermemulx(c)', {'pu': pu, 'np': np, 'c': c}, 1)
 
 def hermemul(c1, c2):
     """
@@ -476,33 +414,8 @@ def hermemul(c1, c2):
     array([14.,  15.,  28.,   7.,   6.])
 
     """
-    # s1, s2 are trimmed copies
-    [c1, c2] = pu.as_series([c1, c2])
-
-    if len(c1) > len(c2):
-        c = c2
-        xs = c1
-    else:
-        c = c1
-        xs = c2
-
-    if len(c) == 1:
-        c0 = c[0]*xs
-        c1 = 0
-    elif len(c) == 2:
-        c0 = c[0]*xs
-        c1 = c[1]*xs
-    else:
-        nd = len(c)
-        c0 = c[-2]*xs
-        c1 = c[-1]*xs
-        for i in range(3, len(c) + 1):
-            tmp = c0
-            nd = nd - 1
-            c0 = hermesub(c[-i]*xs, c1*(nd - 1))
-            c1 = hermeadd(tmp, hermemulx(c1))
-    return hermeadd(c0, hermemulx(c1))
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.hermite_e.hermemul', 'hermemul(c1, c2)', {'pu': pu, 'hermesub': hermesub, 'hermeadd': hermeadd, 'hermemulx': hermemulx, 'c1': c1, 'c2': c2}, 1)
 
 def hermediv(c1, c2):
     """
@@ -549,7 +462,6 @@ def hermediv(c1, c2):
     """
     return pu._div(hermemul, c1, c2)
 
-
 def hermepow(c, pow, maxpower=16):
     """Raise a Hermite series to a power.
 
@@ -585,7 +497,6 @@ def hermepow(c, pow, maxpower=16):
 
     """
     return pu._pow(hermemul, c, pow, maxpower)
-
 
 def hermeder(c, m=1, scl=1, axis=0):
     """
@@ -642,33 +553,8 @@ def hermeder(c, m=1, scl=1, axis=0):
     array([1.,  2.,  3.])
 
     """
-    c = np.array(c, ndmin=1, copy=True)
-    if c.dtype.char in '?bBhHiIlLqQpP':
-        c = c.astype(np.double)
-    cnt = pu._deprecate_as_int(m, "the order of derivation")
-    iaxis = pu._deprecate_as_int(axis, "the axis")
-    if cnt < 0:
-        raise ValueError("The order of derivation must be non-negative")
-    iaxis = normalize_axis_index(iaxis, c.ndim)
-
-    if cnt == 0:
-        return c
-
-    c = np.moveaxis(c, iaxis, 0)
-    n = len(c)
-    if cnt >= n:
-        return c[:1]*0
-    else:
-        for i in range(cnt):
-            n = n - 1
-            c *= scl
-            der = np.empty((n,) + c.shape[1:], dtype=c.dtype)
-            for j in range(n, 0, -1):
-                der[j - 1] = j*c[j]
-            c = der
-    c = np.moveaxis(c, 0, iaxis)
-    return c
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.hermite_e.hermeder', 'hermeder(c, m=1, scl=1, axis=0)', {'np': np, 'pu': pu, 'normalize_axis_index': normalize_axis_index, 'c': c, 'm': m, 'scl': scl, 'axis': axis}, 1)
 
 def hermeint(c, m=1, k=[], lbnd=0, scl=1, axis=0):
     """
@@ -753,44 +639,8 @@ def hermeint(c, m=1, k=[], lbnd=0, scl=1, axis=0):
     array([ 1.83333333,  0.        ,  0.5       ,  0.33333333,  0.25      ]) # may vary
 
     """
-    c = np.array(c, ndmin=1, copy=True)
-    if c.dtype.char in '?bBhHiIlLqQpP':
-        c = c.astype(np.double)
-    if not np.iterable(k):
-        k = [k]
-    cnt = pu._deprecate_as_int(m, "the order of integration")
-    iaxis = pu._deprecate_as_int(axis, "the axis")
-    if cnt < 0:
-        raise ValueError("The order of integration must be non-negative")
-    if len(k) > cnt:
-        raise ValueError("Too many integration constants")
-    if np.ndim(lbnd) != 0:
-        raise ValueError("lbnd must be a scalar.")
-    if np.ndim(scl) != 0:
-        raise ValueError("scl must be a scalar.")
-    iaxis = normalize_axis_index(iaxis, c.ndim)
-
-    if cnt == 0:
-        return c
-
-    c = np.moveaxis(c, iaxis, 0)
-    k = list(k) + [0]*(cnt - len(k))
-    for i in range(cnt):
-        n = len(c)
-        c *= scl
-        if n == 1 and np.all(c[0] == 0):
-            c[0] += k[i]
-        else:
-            tmp = np.empty((n + 1,) + c.shape[1:], dtype=c.dtype)
-            tmp[0] = c[0]*0
-            tmp[1] = c[0]
-            for j in range(1, n):
-                tmp[j + 1] = c[j]/(j + 1)
-            tmp[0] += k[i] - hermeval(lbnd, tmp)
-            c = tmp
-    c = np.moveaxis(c, 0, iaxis)
-    return c
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.hermite_e.hermeint', 'hermeint(c, m=1, k=[], lbnd=0, scl=1, axis=0)', {'np': np, 'pu': pu, 'normalize_axis_index': normalize_axis_index, 'hermeval': hermeval, 'c': c, 'm': m, 'k': k, 'lbnd': lbnd, 'scl': scl, 'axis': axis}, 1)
 
 def hermeval(x, c, tensor=True):
     """
@@ -861,31 +711,8 @@ def hermeval(x, c, tensor=True):
            [31., 54.]])
 
     """
-    c = np.array(c, ndmin=1, copy=False)
-    if c.dtype.char in '?bBhHiIlLqQpP':
-        c = c.astype(np.double)
-    if isinstance(x, (tuple, list)):
-        x = np.asarray(x)
-    if isinstance(x, np.ndarray) and tensor:
-        c = c.reshape(c.shape + (1,)*x.ndim)
-
-    if len(c) == 1:
-        c0 = c[0]
-        c1 = 0
-    elif len(c) == 2:
-        c0 = c[0]
-        c1 = c[1]
-    else:
-        nd = len(c)
-        c0 = c[-2]
-        c1 = c[-1]
-        for i in range(3, len(c) + 1):
-            tmp = c0
-            nd = nd - 1
-            c0 = c[-i] - c1*(nd - 1)
-            c1 = tmp + c1*x
-    return c0 + c1*x
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.hermite_e.hermeval', 'hermeval(x, c, tensor=True)', {'np': np, 'x': x, 'c': c, 'tensor': tensor}, 1)
 
 def hermeval2d(x, y, c):
     """
@@ -893,7 +720,7 @@ def hermeval2d(x, y, c):
 
     This function returns the values:
 
-    .. math:: p(x,y) = \\sum_{i,j} c_{i,j} * He_i(x) * He_j(y)
+    .. math:: p(x,y) = \sum_{i,j} c_{i,j} * He_i(x) * He_j(y)
 
     The parameters `x` and `y` are converted to arrays only if they are
     tuples or a lists, otherwise they are treated as a scalars and they
@@ -935,14 +762,13 @@ def hermeval2d(x, y, c):
     """
     return pu._valnd(hermeval, c, x, y)
 
-
 def hermegrid2d(x, y, c):
     """
     Evaluate a 2-D HermiteE series on the Cartesian product of x and y.
 
     This function returns the values:
 
-    .. math:: p(a,b) = \\sum_{i,j} c_{i,j} * H_i(a) * H_j(b)
+    .. math:: p(a,b) = \sum_{i,j} c_{i,j} * H_i(a) * H_j(b)
 
     where the points `(a, b)` consist of all pairs formed by taking
     `a` from `x` and `b` from `y`. The resulting points form a grid with
@@ -988,14 +814,13 @@ def hermegrid2d(x, y, c):
     """
     return pu._gridnd(hermeval, c, x, y)
 
-
 def hermeval3d(x, y, z, c):
     """
     Evaluate a 3-D Hermite_e series at points (x, y, z).
 
     This function returns the values:
 
-    .. math:: p(x,y,z) = \\sum_{i,j,k} c_{i,j,k} * He_i(x) * He_j(y) * He_k(z)
+    .. math:: p(x,y,z) = \sum_{i,j,k} c_{i,j,k} * He_i(x) * He_j(y) * He_k(z)
 
     The parameters `x`, `y`, and `z` are converted to arrays only if
     they are tuples or a lists, otherwise they are treated as a scalars and
@@ -1039,14 +864,13 @@ def hermeval3d(x, y, z, c):
     """
     return pu._valnd(hermeval, c, x, y, z)
 
-
 def hermegrid3d(x, y, z, c):
     """
     Evaluate a 3-D HermiteE series on the Cartesian product of x, y, and z.
 
     This function returns the values:
 
-    .. math:: p(a,b,c) = \\sum_{i,j,k} c_{i,j,k} * He_i(a) * He_j(b) * He_k(c)
+    .. math:: p(a,b,c) = \sum_{i,j,k} c_{i,j,k} * He_i(a) * He_j(b) * He_k(c)
 
     where the points `(a, b, c)` consist of all triples formed by taking
     `a` from `x`, `b` from `y`, and `c` from `z`. The resulting points form
@@ -1095,7 +919,6 @@ def hermegrid3d(x, y, z, c):
     """
     return pu._gridnd(hermeval, c, x, y, z)
 
-
 def hermevander(x, deg):
     """Pseudo-Vandermonde matrix of given degree.
 
@@ -1140,21 +963,8 @@ def hermevander(x, deg):
            [ 1.,  1.,  0., -2.]])
 
     """
-    ideg = pu._deprecate_as_int(deg, "deg")
-    if ideg < 0:
-        raise ValueError("deg must be non-negative")
-
-    x = np.array(x, copy=False, ndmin=1) + 0.0
-    dims = (ideg + 1,) + x.shape
-    dtyp = x.dtype
-    v = np.empty(dims, dtype=dtyp)
-    v[0] = x*0 + 1
-    if ideg > 0:
-        v[1] = x
-        for i in range(2, ideg + 1):
-            v[i] = (v[i-1]*x - v[i-2]*(i - 1))
-    return np.moveaxis(v, 0, -1)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.hermite_e.hermevander', 'hermevander(x, deg)', {'pu': pu, 'np': np, 'x': x, 'deg': deg}, 1)
 
 def hermevander2d(x, y, deg):
     """Pseudo-Vandermonde matrix of given degrees.
@@ -1208,7 +1018,6 @@ def hermevander2d(x, y, deg):
     """
     return pu._vander_nd_flat((hermevander, hermevander), (x, y), deg)
 
-
 def hermevander3d(x, y, z, deg):
     """Pseudo-Vandermonde matrix of given degrees.
 
@@ -1261,7 +1070,6 @@ def hermevander3d(x, y, z, deg):
 
     """
     return pu._vander_nd_flat((hermevander, hermevander, hermevander), (x, y, z), deg)
-
 
 def hermefit(x, y, deg, rcond=None, full=False, w=None):
     """
@@ -1352,7 +1160,7 @@ def hermefit(x, y, deg, rcond=None, full=False, w=None):
     The solution is the coefficients of the HermiteE series `p` that
     minimizes the sum of the weighted squared errors
 
-    .. math:: E = \\sum_j w_j^2 * |y_j - p(x_j)|^2,
+    .. math:: E = \sum_j w_j^2 * |y_j - p(x_j)|^2,
 
     where the :math:`w_j` are the weights. This problem is solved by
     setting up the (typically) overdetermined matrix equation
@@ -1395,7 +1203,6 @@ def hermefit(x, y, deg, rcond=None, full=False, w=None):
     """
     return pu._fit(hermevander, x, y, deg, rcond, full, w)
 
-
 def hermecompanion(c):
     """
     Return the scaled companion matrix of c.
@@ -1423,24 +1230,8 @@ def hermecompanion(c):
     .. versionadded:: 1.7.0
 
     """
-    # c is a trimmed copy
-    [c] = pu.as_series([c])
-    if len(c) < 2:
-        raise ValueError('Series must have maximum degree of at least 1.')
-    if len(c) == 2:
-        return np.array([[-c[0]/c[1]]])
-
-    n = len(c) - 1
-    mat = np.zeros((n, n), dtype=c.dtype)
-    scl = np.hstack((1., 1./np.sqrt(np.arange(n - 1, 0, -1))))
-    scl = np.multiply.accumulate(scl)[::-1]
-    top = mat.reshape(-1)[1::n+1]
-    bot = mat.reshape(-1)[n::n+1]
-    top[...] = np.sqrt(np.arange(1, n))
-    bot[...] = top
-    mat[:, -1] -= scl*c[:-1]/c[-1]
-    return mat
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.hermite_e.hermecompanion', 'hermecompanion(c)', {'pu': pu, 'np': np, 'c': c}, 1)
 
 def hermeroots(c):
     """
@@ -1448,7 +1239,7 @@ def hermeroots(c):
 
     Return the roots (a.k.a. "zeros") of the polynomial
 
-    .. math:: p(x) = \\sum_i c[i] * He_i(x).
+    .. math:: p(x) = \sum_i c[i] * He_i(x).
 
     Parameters
     ----------
@@ -1492,19 +1283,8 @@ def hermeroots(c):
     array([-1.,  0.,  1.]) # may vary
 
     """
-    # c is a trimmed copy
-    [c] = pu.as_series([c])
-    if len(c) <= 1:
-        return np.array([], dtype=c.dtype)
-    if len(c) == 2:
-        return np.array([-c[0]/c[1]])
-
-    # rotated companion matrix reduces error
-    m = hermecompanion(c)[::-1,::-1]
-    r = la.eigvals(m)
-    r.sort()
-    return r
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.hermite_e.hermeroots', 'hermeroots(c)', {'pu': pu, 'np': np, 'hermecompanion': hermecompanion, 'la': la, 'c': c}, 1)
 
 def _normed_hermite_e_n(x, n):
     """
@@ -1535,19 +1315,8 @@ def _normed_hermite_e_n(x, n):
     overflow when n >= 207.
 
     """
-    if n == 0:
-        return np.full(x.shape, 1/np.sqrt(np.sqrt(2*np.pi)))
-
-    c0 = 0.
-    c1 = 1./np.sqrt(np.sqrt(2*np.pi))
-    nd = float(n)
-    for i in range(n - 1):
-        tmp = c0
-        c0 = -c1*np.sqrt((nd - 1.)/nd)
-        c1 = tmp + c1*x*np.sqrt(1./nd)
-        nd = nd - 1.0
-    return c0 + c1*x
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.hermite_e._normed_hermite_e_n', '_normed_hermite_e_n(x, n)', {'np': np, 'x': x, 'n': n}, 1)
 
 def hermegauss(deg):
     """
@@ -1555,8 +1324,8 @@ def hermegauss(deg):
 
     Computes the sample points and weights for Gauss-HermiteE quadrature.
     These sample points and weights will correctly integrate polynomials of
-    degree :math:`2*deg - 1` or less over the interval :math:`[-\\inf, \\inf]`
-    with the weight function :math:`f(x) = \\exp(-x^2/2)`.
+    degree :math:`2*deg - 1` or less over the interval :math:`[-\inf, \inf]`
+    with the weight function :math:`f(x) = \exp(-x^2/2)`.
 
     Parameters
     ----------
@@ -1585,42 +1354,14 @@ def hermegauss(deg):
     the right value when integrating 1.
 
     """
-    ideg = pu._deprecate_as_int(deg, "deg")
-    if ideg <= 0:
-        raise ValueError("deg must be a positive integer")
-
-    # first approximation of roots. We use the fact that the companion
-    # matrix is symmetric in this case in order to obtain better zeros.
-    c = np.array([0]*deg + [1])
-    m = hermecompanion(c)
-    x = la.eigvalsh(m)
-
-    # improve roots by one application of Newton
-    dy = _normed_hermite_e_n(x, ideg)
-    df = _normed_hermite_e_n(x, ideg - 1) * np.sqrt(ideg)
-    x -= dy/df
-
-    # compute the weights. We scale the factor to avoid possible numerical
-    # overflow.
-    fm = _normed_hermite_e_n(x, ideg - 1)
-    fm /= np.abs(fm).max()
-    w = 1/(fm * fm)
-
-    # for Hermite_e we can also symmetrize
-    w = (w + w[::-1])/2
-    x = (x - x[::-1])/2
-
-    # scale w to get the right value
-    w *= np.sqrt(2*np.pi) / w.sum()
-
-    return x, w
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.hermite_e.hermegauss', 'hermegauss(deg)', {'pu': pu, 'np': np, 'hermecompanion': hermecompanion, 'la': la, '_normed_hermite_e_n': _normed_hermite_e_n, 'deg': deg}, 2)
 
 def hermeweight(x):
     """Weight function of the Hermite_e polynomials.
 
-    The weight function is :math:`\\exp(-x^2/2)` and the interval of
-    integration is :math:`[-\\inf, \\inf]`. the HermiteE polynomials are
+    The weight function is :math:`\exp(-x^2/2)` and the interval of
+    integration is :math:`[-\inf, \inf]`. the HermiteE polynomials are
     orthogonal, but not normalized, with respect to this weight function.
 
     Parameters
@@ -1639,13 +1380,9 @@ def hermeweight(x):
     .. versionadded:: 1.7.0
 
     """
-    w = np.exp(-.5*x**2)
+    w = np.exp(-0.5 * x**2)
     return w
 
-
-#
-# HermiteE series class
-#
 
 class HermiteE(ABCPolyBase):
     """An HermiteE series class.
@@ -1669,7 +1406,6 @@ class HermiteE(ABCPolyBase):
         .. versionadded:: 1.6.0
 
     """
-    # Virtual Functions
     _add = staticmethod(hermeadd)
     _sub = staticmethod(hermesub)
     _mul = staticmethod(hermemul)
@@ -1682,8 +1418,8 @@ class HermiteE(ABCPolyBase):
     _line = staticmethod(hermeline)
     _roots = staticmethod(hermeroots)
     _fromroots = staticmethod(hermefromroots)
-
-    # Virtual properties
     domain = np.array(hermedomain)
     window = np.array(hermedomain)
     basis_name = 'He'
+
+

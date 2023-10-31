@@ -3,38 +3,36 @@ from .utils import _pair, _quadruple, _ntuple
 from .. import functional as F
 
 
-# TODO: grad_output size asserts in THNN
-
-
 class _ConstantPadNd(Module):
     __constants__ = ['padding', 'value']
-
+    
     def __init__(self, value):
         super(_ConstantPadNd, self).__init__()
         self.value = value
-
+    
     def forward(self, input):
         return F.pad(input, self.padding, 'constant', self.value)
-
+    
     def extra_repr(self):
         return 'padding={}, value={}'.format(self.padding, self.value)
 
 
+
 class ConstantPad1d(_ConstantPadNd):
-    r"""Pads the input tensor boundaries with a constant value.
+    """Pads the input tensor boundaries with a constant value.
 
     For `N`-dimensional padding, use :func:`torch.nn.functional.pad()`.
 
     Args:
         padding (int, tuple): the size of the padding. If is `int`, uses the same
             padding in both boundaries. If a 2-`tuple`, uses
-            (:math:`\text{padding\_left}`, :math:`\text{padding\_right}`)
+            (:math:`	ext{padding\_left}`, :math:`	ext{padding\_right}`)
 
     Shape:
         - Input: :math:`(N, C, W_{in})`
         - Output: :math:`(N, C, W_{out})` where
 
-          :math:`W_{out} = W_{in} + \text{padding\_left} + \text{padding\_right}`
+          :math:`W_{out} = W_{in} + 	ext{padding\_left} + 	ext{padding\_right}`
 
     Examples::
 
@@ -63,29 +61,30 @@ class ConstantPad1d(_ConstantPadNd):
                  [ 3.5000,  3.5000,  3.5000, -3.6372,  0.1182, -1.8652,  3.5000]]])
 
     """
-
+    
     def __init__(self, padding, value):
         super(ConstantPad1d, self).__init__(value)
         self.padding = _pair(padding)
 
 
+
 class ConstantPad2d(_ConstantPadNd):
-    r"""Pads the input tensor boundaries with a constant value.
+    """Pads the input tensor boundaries with a constant value.
 
     For `N`-dimensional padding, use :func:`torch.nn.functional.pad()`.
 
     Args:
         padding (int, tuple): the size of the padding. If is `int`, uses the same
-            padding in all boundaries. If a 4-`tuple`, uses (:math:`\text{padding\_left}`,
-            :math:`\text{padding\_right}`, :math:`\text{padding\_top}`, :math:`\text{padding\_bottom}`)
+            padding in all boundaries. If a 4-`tuple`, uses (:math:`	ext{padding\_left}`,
+            :math:`	ext{padding\_right}`, :math:`	ext{padding\_top}`, :math:`	ext{padding\_bottom}`)
 
     Shape:
         - Input: :math:`(N, C, H_{in}, W_{in})`
         - Output: :math:`(N, C, H_{out}, W_{out})` where
 
-          :math:`H_{out} = H_{in} + \text{padding\_top} + \text{padding\_bottom}`
+          :math:`H_{out} = H_{in} + 	ext{padding\_top} + 	ext{padding\_bottom}`
 
-          :math:`W_{out} = W_{in} + \text{padding\_left} + \text{padding\_right}`
+          :math:`W_{out} = W_{in} + 	ext{padding\_left} + 	ext{padding\_right}`
 
     Examples::
 
@@ -112,33 +111,34 @@ class ConstantPad2d(_ConstantPadNd):
 
     """
     __constants__ = ['padding', 'value']
-
+    
     def __init__(self, padding, value):
         super(ConstantPad2d, self).__init__(value)
         self.padding = _quadruple(padding)
 
 
+
 class ConstantPad3d(_ConstantPadNd):
-    r"""Pads the input tensor boundaries with a constant value.
+    """Pads the input tensor boundaries with a constant value.
 
     For `N`-dimensional padding, use :func:`torch.nn.functional.pad()`.
 
     Args:
         padding (int, tuple): the size of the padding. If is `int`, uses the same
             padding in all boundaries. If a 6-`tuple`, uses
-            (:math:`\text{padding\_left}`, :math:`\text{padding\_right}`,
-            :math:`\text{padding\_top}`, :math:`\text{padding\_bottom}`,
-            :math:`\text{padding\_front}`, :math:`\text{padding\_back}`)
+            (:math:`	ext{padding\_left}`, :math:`	ext{padding\_right}`,
+            :math:`	ext{padding\_top}`, :math:`	ext{padding\_bottom}`,
+            :math:`	ext{padding\_front}`, :math:`	ext{padding\_back}`)
 
     Shape:
         - Input: :math:`(N, C, D_{in}, H_{in}, W_{in})`
         - Output: :math:`(N, C, D_{out}, H_{out}, W_{out})` where
 
-          :math:`D_{out} = D_{in} + \text{padding\_front} + \text{padding\_back}`
+          :math:`D_{out} = D_{in} + 	ext{padding\_front} + 	ext{padding\_back}`
 
-          :math:`H_{out} = H_{in} + \text{padding\_top} + \text{padding\_bottom}`
+          :math:`H_{out} = H_{in} + 	ext{padding\_top} + 	ext{padding\_bottom}`
 
-          :math:`W_{out} = W_{in} + \text{padding\_left} + \text{padding\_right}`
+          :math:`W_{out} = W_{in} + 	ext{padding\_left} + 	ext{padding\_right}`
 
     Examples::
 
@@ -150,37 +150,39 @@ class ConstantPad3d(_ConstantPadNd):
         >>> output = m(input)
 
     """
-
+    
     def __init__(self, padding, value):
         super(ConstantPad3d, self).__init__(value)
         self.padding = _ntuple(6)(padding)
 
 
+
 class _ReflectionPadNd(Module):
     __constants__ = ['padding']
-
+    
     def forward(self, input):
         return F.pad(input, self.padding, 'reflect')
-
+    
     def extra_repr(self):
         return '{}'.format(self.padding)
 
 
+
 class ReflectionPad1d(_ReflectionPadNd):
-    r"""Pads the input tensor using the reflection of the input boundary.
+    """Pads the input tensor using the reflection of the input boundary.
 
     For `N`-dimensional padding, use :func:`torch.nn.functional.pad()`.
 
     Args:
         padding (int, tuple): the size of the padding. If is `int`, uses the same
             padding in all boundaries. If a 2-`tuple`, uses
-            (:math:`\text{padding\_left}`, :math:`\text{padding\_right}`)
+            (:math:`	ext{padding\_left}`, :math:`	ext{padding\_right}`)
 
     Shape:
         - Input: :math:`(N, C, W_{in})`
         - Output: :math:`(N, C, W_{out})` where
 
-          :math:`W_{out} = W_{in} + \text{padding\_left} + \text{padding\_right}`
+          :math:`W_{out} = W_{in} + 	ext{padding\_left} + 	ext{padding\_right}`
 
     Examples::
 
@@ -199,29 +201,30 @@ class ReflectionPad1d(_ReflectionPadNd):
                  [7., 6., 5., 4., 5., 6., 7., 6.]]])
 
     """
-
+    
     def __init__(self, padding):
         super(ReflectionPad1d, self).__init__()
         self.padding = _pair(padding)
 
 
+
 class ReflectionPad2d(_ReflectionPadNd):
-    r"""Pads the input tensor using the reflection of the input boundary.
+    """Pads the input tensor using the reflection of the input boundary.
 
     For `N`-dimensional padding, use :func:`torch.nn.functional.pad()`.
 
     Args:
         padding (int, tuple): the size of the padding. If is `int`, uses the same
-            padding in all boundaries. If a 4-`tuple`, uses (:math:`\text{padding\_left}`,
-            :math:`\text{padding\_right}`, :math:`\text{padding\_top}`, :math:`\text{padding\_bottom}`)
+            padding in all boundaries. If a 4-`tuple`, uses (:math:`	ext{padding\_left}`,
+            :math:`	ext{padding\_right}`, :math:`	ext{padding\_top}`, :math:`	ext{padding\_bottom}`)
 
     Shape:
         - Input: :math:`(N, C, H_{in}, W_{in})`
         - Output: :math:`(N, C, H_{out}, W_{out})` where
 
-          :math:`H_{out} = H_{in} + \text{padding\_top} + \text{padding\_bottom}`
+          :math:`H_{out} = H_{in} + 	ext{padding\_top} + 	ext{padding\_bottom}`
 
-          :math:`W_{out} = W_{in} + \text{padding\_left} + \text{padding\_right}`
+          :math:`W_{out} = W_{in} + 	ext{padding\_left} + 	ext{padding\_right}`
 
     Examples::
 
@@ -249,37 +252,39 @@ class ReflectionPad2d(_ReflectionPadNd):
                   [7., 6., 7., 8., 7.]]]])
 
     """
-
+    
     def __init__(self, padding):
         super(ReflectionPad2d, self).__init__()
         self.padding = _quadruple(padding)
 
 
+
 class _ReplicationPadNd(Module):
     __constants__ = ['padding']
-
+    
     def forward(self, input):
         return F.pad(input, self.padding, 'replicate')
-
+    
     def extra_repr(self):
         return '{}'.format(self.padding)
 
 
+
 class ReplicationPad1d(_ReplicationPadNd):
-    r"""Pads the input tensor using replication of the input boundary.
+    """Pads the input tensor using replication of the input boundary.
 
     For `N`-dimensional padding, use :func:`torch.nn.functional.pad()`.
 
     Args:
         padding (int, tuple): the size of the padding. If is `int`, uses the same
             padding in all boundaries. If a 2-`tuple`, uses
-            (:math:`\text{padding\_left}`, :math:`\text{padding\_right}`)
+            (:math:`	ext{padding\_left}`, :math:`	ext{padding\_right}`)
 
     Shape:
         - Input: :math:`(N, C, W_{in})`
         - Output: :math:`(N, C, W_{out})` where
 
-          :math:`W_{out} = W_{in} + \text{padding\_left} + \text{padding\_right}`
+          :math:`W_{out} = W_{in} + 	ext{padding\_left} + 	ext{padding\_right}`
 
     Examples::
 
@@ -298,29 +303,30 @@ class ReplicationPad1d(_ReplicationPadNd):
                  [4., 4., 4., 4., 5., 6., 7., 7.]]])
 
     """
-
+    
     def __init__(self, padding):
         super(ReplicationPad1d, self).__init__()
         self.padding = _pair(padding)
 
 
+
 class ReplicationPad2d(_ReplicationPadNd):
-    r"""Pads the input tensor using replication of the input boundary.
+    """Pads the input tensor using replication of the input boundary.
 
     For `N`-dimensional padding, use :func:`torch.nn.functional.pad()`.
 
     Args:
         padding (int, tuple): the size of the padding. If is `int`, uses the same
-            padding in all boundaries. If a 4-`tuple`, uses (:math:`\text{padding\_left}`,
-            :math:`\text{padding\_right}`, :math:`\text{padding\_top}`, :math:`\text{padding\_bottom}`)
+            padding in all boundaries. If a 4-`tuple`, uses (:math:`	ext{padding\_left}`,
+            :math:`	ext{padding\_right}`, :math:`	ext{padding\_top}`, :math:`	ext{padding\_bottom}`)
 
     Shape:
         - Input: :math:`(N, C, H_{in}, W_{in})`
         - Output: :math:`(N, C, H_{out}, W_{out})` where
 
-          :math:`H_{out} = H_{in} + \text{padding\_top} + \text{padding\_bottom}`
+          :math:`H_{out} = H_{in} + 	ext{padding\_top} + 	ext{padding\_bottom}`
 
-          :math:`W_{out} = W_{in} + \text{padding\_left} + \text{padding\_right}`
+          :math:`W_{out} = W_{in} + 	ext{padding\_left} + 	ext{padding\_right}`
 
     Examples::
 
@@ -348,33 +354,34 @@ class ReplicationPad2d(_ReplicationPadNd):
                   [6., 6., 7., 8., 8.]]]])
 
     """
-
+    
     def __init__(self, padding):
         super(ReplicationPad2d, self).__init__()
         self.padding = _quadruple(padding)
 
 
+
 class ReplicationPad3d(_ReplicationPadNd):
-    r"""Pads the input tensor using replication of the input boundary.
+    """Pads the input tensor using replication of the input boundary.
 
     For `N`-dimensional padding, use :func:`torch.nn.functional.pad()`.
 
     Args:
         padding (int, tuple): the size of the padding. If is `int`, uses the same
             padding in all boundaries. If a 6-`tuple`, uses
-            (:math:`\text{padding\_left}`, :math:`\text{padding\_right}`,
-            :math:`\text{padding\_top}`, :math:`\text{padding\_bottom}`,
-            :math:`\text{padding\_front}`, :math:`\text{padding\_back}`)
+            (:math:`	ext{padding\_left}`, :math:`	ext{padding\_right}`,
+            :math:`	ext{padding\_top}`, :math:`	ext{padding\_bottom}`,
+            :math:`	ext{padding\_front}`, :math:`	ext{padding\_back}`)
 
     Shape:
         - Input: :math:`(N, C, D_{in}, H_{in}, W_{in})`
         - Output: :math:`(N, C, D_{out}, H_{out}, W_{out})` where
 
-          :math:`D_{out} = D_{in} + \text{padding\_front} + \text{padding\_back}`
+          :math:`D_{out} = D_{in} + 	ext{padding\_front} + 	ext{padding\_back}`
 
-          :math:`H_{out} = H_{in} + \text{padding\_top} + \text{padding\_bottom}`
+          :math:`H_{out} = H_{in} + 	ext{padding\_top} + 	ext{padding\_bottom}`
 
-          :math:`W_{out} = W_{in} + \text{padding\_left} + \text{padding\_right}`
+          :math:`W_{out} = W_{in} + 	ext{padding\_left} + 	ext{padding\_right}`
 
     Examples::
 
@@ -386,29 +393,30 @@ class ReplicationPad3d(_ReplicationPadNd):
         >>> output = m(input)
 
     """
-
+    
     def __init__(self, padding):
         super(ReplicationPad3d, self).__init__()
         self.padding = _ntuple(6)(padding)
 
 
+
 class ZeroPad2d(ConstantPad2d):
-    r"""Pads the input tensor boundaries with zero.
+    """Pads the input tensor boundaries with zero.
 
     For `N`-dimensional padding, use :func:`torch.nn.functional.pad()`.
 
     Args:
         padding (int, tuple): the size of the padding. If is `int`, uses the same
-            padding in all boundaries. If a 4-`tuple`, uses (:math:`\text{padding\_left}`,
-            :math:`\text{padding\_right}`, :math:`\text{padding\_top}`, :math:`\text{padding\_bottom}`)
+            padding in all boundaries. If a 4-`tuple`, uses (:math:`	ext{padding\_left}`,
+            :math:`	ext{padding\_right}`, :math:`	ext{padding\_top}`, :math:`	ext{padding\_bottom}`)
 
     Shape:
         - Input: :math:`(N, C, H_{in}, W_{in})`
         - Output: :math:`(N, C, H_{out}, W_{out})` where
 
-          :math:`H_{out} = H_{in} + \text{padding\_top} + \text{padding\_bottom}`
+          :math:`H_{out} = H_{in} + 	ext{padding\_top} + 	ext{padding\_bottom}`
 
-          :math:`W_{out} = W_{in} + \text{padding\_left} + \text{padding\_right}`
+          :math:`W_{out} = W_{in} + 	ext{padding\_left} + 	ext{padding\_right}`
 
     Examples::
 
@@ -436,6 +444,8 @@ class ZeroPad2d(ConstantPad2d):
                   [ 0.0000, -0.9162, -0.5436, -0.6446,  0.0000]]]])
 
     """
-
+    
     def __init__(self, padding):
-        super(ZeroPad2d, self).__init__(padding, 0.)
+        super(ZeroPad2d, self).__init__(padding, 0.0)
+
+

@@ -2,6 +2,7 @@
 
 Allows fine grained feature control of how the package parses and emits data.
 """
+
 from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
@@ -9,21 +10,14 @@ from __future__ import absolute_import
 from future.builtins import super
 from future.builtins import str
 from future.utils import with_metaclass
-
 import abc
 from future.backports.email import header
 from future.backports.email import charset as _charset
 from future.backports.email.utils import _has_surrogates
-
-__all__ = [
-    'Policy',
-    'Compat32',
-    'compat32',
-    ]
+__all__ = ['Policy', 'Compat32', 'compat32']
 
 
 class _PolicyBase(object):
-
     """Policy Object basic framework.
 
     This class is useless unless subclassed.  A subclass should define
@@ -44,26 +38,23 @@ class _PolicyBase(object):
     those values.
 
     """
-
+    
     def __init__(self, **kw):
         """Create new Policy, possibly overriding some defaults.
 
         See class docstring for a list of overridable attributes.
 
         """
-        for name, value in kw.items():
+        for (name, value) in kw.items():
             if hasattr(self, name):
-                super(_PolicyBase,self).__setattr__(name, value)
+                super(_PolicyBase, self).__setattr__(name, value)
             else:
-                raise TypeError(
-                    "{!r} is an invalid keyword argument for {}".format(
-                        name, self.__class__.__name__))
-
+                raise TypeError('{!r} is an invalid keyword argument for {}'.format(name, self.__class__.__name__))
+    
     def __repr__(self):
-        args = [ "{}={!r}".format(name, value)
-                 for name, value in self.__dict__.items() ]
-        return "{}({})".format(self.__class__.__name__, ', '.join(args))
-
+        args = ['{}={!r}'.format(name, value) for (name, value) in self.__dict__.items()]
+        return '{}({})'.format(self.__class__.__name__, ', '.join(args))
+    
     def clone(self, **kw):
         """Return a new instance with specified attributes changed.
 
@@ -72,23 +63,21 @@ class _PolicyBase(object):
 
         """
         newpolicy = self.__class__.__new__(self.__class__)
-        for attr, value in self.__dict__.items():
+        for (attr, value) in self.__dict__.items():
             object.__setattr__(newpolicy, attr, value)
-        for attr, value in kw.items():
+        for (attr, value) in kw.items():
             if not hasattr(self, attr):
-                raise TypeError(
-                    "{!r} is an invalid keyword argument for {}".format(
-                        attr, self.__class__.__name__))
+                raise TypeError('{!r} is an invalid keyword argument for {}'.format(attr, self.__class__.__name__))
             object.__setattr__(newpolicy, attr, value)
         return newpolicy
-
+    
     def __setattr__(self, name, value):
         if hasattr(self, name):
-            msg = "{!r} object attribute {!r} is read-only"
+            msg = '{!r} object attribute {!r} is read-only'
         else:
-            msg = "{!r} object has no attribute {!r}"
+            msg = '{!r} object has no attribute {!r}'
         raise AttributeError(msg.format(self.__class__.__name__, name))
-
+    
     def __add__(self, other):
         """Non-default values from right operand override those from left.
 
@@ -99,26 +88,16 @@ class _PolicyBase(object):
 
 
 def _append_doc(doc, added_doc):
-    doc = doc.rsplit('\n', 1)[0]
-    added_doc = added_doc.split('\n', 1)[1]
-    return doc + '\n' + added_doc
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('future.backports.email._policybase._append_doc', '_append_doc(doc, added_doc)', {'doc': doc, 'added_doc': added_doc}, 1)
 
 def _extend_docstrings(cls):
-    if cls.__doc__ and cls.__doc__.startswith('+'):
-        cls.__doc__ = _append_doc(cls.__bases__[0].__doc__, cls.__doc__)
-    for name, attr in cls.__dict__.items():
-        if attr.__doc__ and attr.__doc__.startswith('+'):
-            for c in (c for base in cls.__bases__ for c in base.mro()):
-                doc = getattr(getattr(c, name), '__doc__')
-                if doc:
-                    attr.__doc__ = _append_doc(doc, attr.__doc__)
-                    break
-    return cls
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('future.backports.email._policybase._extend_docstrings', '_extend_docstrings(cls)', {'_append_doc': _append_doc, 'cls': cls}, 1)
 
 
 class Policy(with_metaclass(abc.ABCMeta, _PolicyBase)):
-
-    r"""Controls for how messages are interpreted and formatted.
+    """Controls for how messages are interpreted and formatted.
 
     Most of the classes and many of the methods in the email package accept
     Policy objects as parameters.  A Policy object contains a set of values and
@@ -141,7 +120,8 @@ class Policy(with_metaclass(abc.ABCMeta, _PolicyBase)):
                            Default: False.
 
     linesep             -- string containing the value to use as separation
-                           between output lines.  Default '\n'.
+                           between output lines.  Default '
+'.
 
     cte_type            -- Type of allowed content transfer encodings
 
@@ -157,12 +137,11 @@ class Policy(with_metaclass(abc.ABCMeta, _PolicyBase)):
                            wrapping is done.  Default is 78.
 
     """
-
     raise_on_defect = False
     linesep = '\n'
     cte_type = '8bit'
     max_line_length = 78
-
+    
     def handle_defect(self, obj, defect):
         """Based on policy, either raise defect or call register_defect.
 
@@ -181,7 +160,7 @@ class Policy(with_metaclass(abc.ABCMeta, _PolicyBase)):
         if self.raise_on_defect:
             raise defect
         self.register_defect(obj, defect)
-
+    
     def register_defect(self, obj, defect):
         """Record 'defect' on 'obj'.
 
@@ -194,7 +173,7 @@ class Policy(with_metaclass(abc.ABCMeta, _PolicyBase)):
 
         """
         obj.defects.append(defect)
-
+    
     def header_max_count(self, name):
         """Return the maximum allowed number of headers named 'name'.
 
@@ -213,7 +192,7 @@ class Policy(with_metaclass(abc.ABCMeta, _PolicyBase)):
         The default implementation returns None for all header names.
         """
         return None
-
+    
     @abc.abstractmethod
     def header_source_parse(self, sourcelines):
         """Given a list of linesep terminated strings constituting the lines of
@@ -223,14 +202,14 @@ class Policy(with_metaclass(abc.ABCMeta, _PolicyBase)):
         surrogateescaped binary data.
         """
         raise NotImplementedError
-
+    
     @abc.abstractmethod
     def header_store_parse(self, name, value):
         """Given the header name and the value provided by the application
         program, return the (name, value) that should be stored in the model.
         """
         raise NotImplementedError
-
+    
     @abc.abstractmethod
     def header_fetch_parse(self, name, value):
         """Given the header name and the value from the model, return the value
@@ -241,7 +220,7 @@ class Policy(with_metaclass(abc.ABCMeta, _PolicyBase)):
 
         """
         raise NotImplementedError
-
+    
     @abc.abstractmethod
     def fold(self, name, value):
         """Given the header name and the value from the model, return a string
@@ -253,7 +232,7 @@ class Policy(with_metaclass(abc.ABCMeta, _PolicyBase)):
 
         """
         raise NotImplementedError
-
+    
     @abc.abstractmethod
     def fold_binary(self, name, value):
         """Given the header name and the value from the model, return binary
@@ -265,26 +244,22 @@ class Policy(with_metaclass(abc.ABCMeta, _PolicyBase)):
         raise NotImplementedError
 
 
+
 @_extend_docstrings
 class Compat32(Policy):
-
     """+
     This particular policy is the backward compatibility Policy.  It
     replicates the behavior of the email package version 5.1.
     """
-
+    
     def _sanitize_header(self, name, value):
-        # If the header value contains surrogates, return a Header using
-        # the unknown-8bit charset to encode the bytes as encoded words.
         if not isinstance(value, str):
-            # Assume it is already a header object
             return value
         if _has_surrogates(value):
-            return header.Header(value, charset=_charset.UNKNOWN8BIT,
-                                 header_name=name)
+            return header.Header(value, charset=_charset.UNKNOWN8BIT, header_name=name)
         else:
             return value
-
+    
     def header_source_parse(self, sourcelines):
         """+
         The name is parsed as everything up to the ':' and returned unmodified.
@@ -293,23 +268,23 @@ class Compat32(Policy):
         stripping any trailing carriage return or linefeed characters.
 
         """
-        name, value = sourcelines[0].split(':', 1)
+        (name, value) = sourcelines[0].split(':', 1)
         value = value.lstrip(' \t') + ''.join(sourcelines[1:])
         return (name, value.rstrip('\r\n'))
-
+    
     def header_store_parse(self, name, value):
         """+
         The name and value are returned unmodified.
         """
         return (name, value)
-
+    
     def header_fetch_parse(self, name, value):
         """+
         If the value contains binary data, it is converted into a Header object
         using the unknown-8bit charset.  Otherwise it is returned unmodified.
         """
         return self._sanitize_header(name, value)
-
+    
     def fold(self, name, value):
         """+
         Headers are folded using the Header folding algorithm, which preserves
@@ -319,7 +294,7 @@ class Compat32(Policy):
 
         """
         return self._fold(name, value, sanitize=True)
-
+    
     def fold_binary(self, name, value):
         """+
         Headers are folded using the Header folding algorithm, which preserves
@@ -329,37 +304,27 @@ class Compat32(Policy):
         header is used, with its existing line breaks and/or binary data.
 
         """
-        folded = self._fold(name, value, sanitize=self.cte_type=='7bit')
+        folded = self._fold(name, value, sanitize=self.cte_type == '7bit')
         return folded.encode('ascii', 'surrogateescape')
-
+    
     def _fold(self, name, value, sanitize):
         parts = []
         parts.append('%s: ' % name)
         if isinstance(value, str):
             if _has_surrogates(value):
                 if sanitize:
-                    h = header.Header(value,
-                                      charset=_charset.UNKNOWN8BIT,
-                                      header_name=name)
+                    h = header.Header(value, charset=_charset.UNKNOWN8BIT, header_name=name)
                 else:
-                    # If we have raw 8bit data in a byte string, we have no idea
-                    # what the encoding is.  There is no safe way to split this
-                    # string.  If it's ascii-subset, then we could do a normal
-                    # ascii split, but if it's multibyte then we could break the
-                    # string.  There's no way to know so the least harm seems to
-                    # be to not split the string and risk it being too long.
                     parts.append(value)
                     h = None
             else:
                 h = header.Header(value, header_name=name)
         else:
-            # Assume it is a Header-like object.
             h = value
         if h is not None:
-            parts.append(h.encode(linesep=self.linesep,
-                                  maxlinelen=self.max_line_length))
+            parts.append(h.encode(linesep=self.linesep, maxlinelen=self.max_line_length))
         parts.append(self.linesep)
         return ''.join(parts)
 
-
 compat32 = Compat32()
+

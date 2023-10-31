@@ -5,10 +5,8 @@ from argparse import ArgumentParser
 from enum import Enum
 from pathlib import Path
 from typing import Any, Iterable, List, NewType, Optional, Tuple, Union
-
-
-DataClass = NewType("DataClass", Any)
-DataClassType = NewType("DataClassType", Any)
+DataClass = NewType('DataClass', Any)
+DataClassType = NewType('DataClassType', Any)
 
 
 class HfArgumentParser(ArgumentParser):
@@ -20,10 +18,9 @@ class HfArgumentParser(ArgumentParser):
     you can add more (non-dataclass backed) arguments to the parser after initialization
     and you'll get the output back after parsing as an additional namespace.
     """
-
     dataclass_types: Iterable[DataClassType]
-
-    def __init__(self, dataclass_types: Union[DataClassType, Iterable[DataClassType]], **kwargs):
+    
+    def __init__(self, dataclass_types: Union[(DataClassType, Iterable[DataClassType])], **kwargs):
         """
         Args:
             dataclass_types:
@@ -38,59 +35,48 @@ class HfArgumentParser(ArgumentParser):
         self.dataclass_types = dataclass_types
         for dtype in self.dataclass_types:
             self._add_dataclass_arguments(dtype)
-
+    
     def _add_dataclass_arguments(self, dtype: DataClassType):
         for field in dataclasses.fields(dtype):
-            field_name = f"--{field.name}"
+            field_name = f'--{field.name}'
             kwargs = field.metadata.copy()
-            # field.metadata is not used at all by Data Classes,
-            # it is provided as a third-party extension mechanism.
             if isinstance(field.type, str):
-                raise ImportError(
-                    "This implementation is not compatible with Postponed Evaluation of Annotations (PEP 563),"
-                    "which can be opted in from Python 3.7 with `from __future__ import annotations`."
-                    "We will add compatibility when Python 3.9 is released."
-                )
+                raise ImportError('This implementation is not compatible with Postponed Evaluation of Annotations (PEP 563),which can be opted in from Python 3.7 with `from __future__ import annotations`.We will add compatibility when Python 3.9 is released.')
             typestring = str(field.type)
             for prim_type in (int, float, str):
-                for collection in (List,):
-                    if typestring == f"typing.Union[{collection[prim_type]}, NoneType]":
+                for collection in (List, ):
+                    if typestring == f'typing.Union[{collection[prim_type]}, NoneType]':
                         field.type = collection[prim_type]
-                if typestring == f"typing.Union[{prim_type.__name__}, NoneType]":
+                if typestring == f'typing.Union[{prim_type.__name__}, NoneType]':
                     field.type = prim_type
-
-            if isinstance(field.type, type) and issubclass(field.type, Enum):
-                kwargs["choices"] = list(field.type)
-                kwargs["type"] = field.type
+            if (isinstance(field.type, type) and issubclass(field.type, Enum)):
+                kwargs['choices'] = list(field.type)
+                kwargs['type'] = field.type
                 if field.default is not dataclasses.MISSING:
-                    kwargs["default"] = field.default
-            elif field.type is bool or field.type is Optional[bool]:
-                if field.type is bool or (field.default is not None and field.default is not dataclasses.MISSING):
-                    kwargs["action"] = "store_false" if field.default is True else "store_true"
+                    kwargs['default'] = field.default
+            elif (field.type is bool or field.type is Optional[bool]):
+                if (field.type is bool or (field.default is not None and field.default is not dataclasses.MISSING)):
+                    kwargs['action'] = ('store_false' if field.default is True else 'store_true')
                 if field.default is True:
-                    field_name = f"--no-{field.name}"
-                    kwargs["dest"] = field.name
-            elif hasattr(field.type, "__origin__") and issubclass(field.type.__origin__, List):
-                kwargs["nargs"] = "+"
-                kwargs["type"] = field.type.__args__[0]
-                assert all(
-                    x == kwargs["type"] for x in field.type.__args__
-                ), "{} cannot be a List of mixed types".format(field.name)
+                    field_name = f'--no-{field.name}'
+                    kwargs['dest'] = field.name
+            elif (hasattr(field.type, '__origin__') and issubclass(field.type.__origin__, List)):
+                kwargs['nargs'] = '+'
+                kwargs['type'] = field.type.__args__[0]
+                assert all((x == kwargs['type'] for x in field.type.__args__)), '{} cannot be a List of mixed types'.format(field.name)
                 if field.default_factory is not dataclasses.MISSING:
-                    kwargs["default"] = field.default_factory()
+                    kwargs['default'] = field.default_factory()
             else:
-                kwargs["type"] = field.type
+                kwargs['type'] = field.type
                 if field.default is not dataclasses.MISSING:
-                    kwargs["default"] = field.default
+                    kwargs['default'] = field.default
                 elif field.default_factory is not dataclasses.MISSING:
-                    kwargs["default"] = field.default_factory()
+                    kwargs['default'] = field.default_factory()
                 else:
-                    kwargs["required"] = True
+                    kwargs['required'] = True
             self.add_argument(field_name, **kwargs)
-
-    def parse_args_into_dataclasses(
-        self, args=None, return_remaining_strings=False, look_for_args_file=True, args_filename=None
-    ) -> Tuple[DataClass, ...]:
+    
+    def parse_args_into_dataclasses(self, args=None, return_remaining_strings=False, look_for_args_file=True, args_filename=None) -> Tuple[(DataClass, ...)]:
         """
         Parse command-line args into instances of the specified dataclass types.
 
@@ -122,38 +108,33 @@ class HfArgumentParser(ArgumentParser):
                 - The potential list of remaining argument strings.
                   (same as argparse.ArgumentParser.parse_known_args)
         """
-        if args_filename or (look_for_args_file and len(sys.argv)):
+        if (args_filename or (look_for_args_file and len(sys.argv))):
             if args_filename:
                 args_file = Path(args_filename)
             else:
-                args_file = Path(sys.argv[0]).with_suffix(".args")
-
+                args_file = Path(sys.argv[0]).with_suffix('.args')
             if args_file.exists():
                 fargs = args_file.read_text().split()
-                args = fargs + args if args is not None else fargs + sys.argv[1:]
-                # in case of duplicate arguments the first one has precedence
-                # so we append rather than prepend.
-        namespace, remaining_args = self.parse_known_args(args=args)
+                args = (fargs + args if args is not None else fargs + sys.argv[1:])
+        (namespace, remaining_args) = self.parse_known_args(args=args)
         outputs = []
         for dtype in self.dataclass_types:
             keys = {f.name for f in dataclasses.fields(dtype)}
-            inputs = {k: v for k, v in vars(namespace).items() if k in keys}
+            inputs = {k: v for (k, v) in vars(namespace).items() if k in keys}
             for k in keys:
                 delattr(namespace, k)
             obj = dtype(**inputs)
             outputs.append(obj)
         if len(namespace.__dict__) > 0:
-            # additional namespace.
             outputs.append(namespace)
         if return_remaining_strings:
             return (*outputs, remaining_args)
         else:
             if remaining_args:
-                raise ValueError(f"Some specified arguments are not used by the HfArgumentParser: {remaining_args}")
-
-            return (*outputs,)
-
-    def parse_json_file(self, json_file: str) -> Tuple[DataClass, ...]:
+                raise ValueError(f'Some specified arguments are not used by the HfArgumentParser: {remaining_args}')
+            return (*outputs, )
+    
+    def parse_json_file(self, json_file: str) -> Tuple[(DataClass, ...)]:
         """
         Alternative helper method that does not use `argparse` at all,
         instead loading a json file and populating the dataclass types.
@@ -162,12 +143,12 @@ class HfArgumentParser(ArgumentParser):
         outputs = []
         for dtype in self.dataclass_types:
             keys = {f.name for f in dataclasses.fields(dtype)}
-            inputs = {k: v for k, v in data.items() if k in keys}
+            inputs = {k: v for (k, v) in data.items() if k in keys}
             obj = dtype(**inputs)
             outputs.append(obj)
-        return (*outputs,)
-
-    def parse_dict(self, args: dict) -> Tuple[DataClass, ...]:
+        return (*outputs, )
+    
+    def parse_dict(self, args: dict) -> Tuple[(DataClass, ...)]:
         """
         Alternative helper method that does not use `argparse` at all,
         instead uses a dict and populating the dataclass types.
@@ -175,7 +156,9 @@ class HfArgumentParser(ArgumentParser):
         outputs = []
         for dtype in self.dataclass_types:
             keys = {f.name for f in dataclasses.fields(dtype)}
-            inputs = {k: v for k, v in args.items() if k in keys}
+            inputs = {k: v for (k, v) in args.items() if k in keys}
             obj = dtype(**inputs)
             outputs.append(obj)
-        return (*outputs,)
+        return (*outputs, )
+
+

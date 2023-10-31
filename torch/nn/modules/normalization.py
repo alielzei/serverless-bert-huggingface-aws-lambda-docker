@@ -8,13 +8,13 @@ from .. import init
 
 
 class LocalResponseNorm(Module):
-    r"""Applies local response normalization over an input signal composed
+    """Applies local response normalization over an input signal composed
     of several input planes, where channels occupy the second dimension.
     Applies normalization across channels.
 
     .. math::
-        b_{c} = a_{c}\left(k + \frac{\alpha}{n}
-        \sum_{c'=\max(0, c-n/2)}^{\min(N-1,c+n/2)}a_{c'}^2\right)^{-\beta}
+        b_{c} = a_{c}\left(k + rac{lpha}{n}
+        \sum_{c'=\max(0, c-n/2)}^{\min(N-1,c+n/2)}a_{c'}^2ight)^{-eta}
 
     Args:
         size: amount of neighbouring channels used for normalization
@@ -36,50 +36,50 @@ class LocalResponseNorm(Module):
 
     """
     __constants__ = ['size', 'alpha', 'beta', 'k']
-
-    def __init__(self, size, alpha=1e-4, beta=0.75, k=1.):
+    
+    def __init__(self, size, alpha=0.0001, beta=0.75, k=1.0):
         super(LocalResponseNorm, self).__init__()
         self.size = size
         self.alpha = alpha
         self.beta = beta
         self.k = k
-
+    
     def forward(self, input):
-        return F.local_response_norm(input, self.size, self.alpha, self.beta,
-                                     self.k)
-
+        return F.local_response_norm(input, self.size, self.alpha, self.beta, self.k)
+    
     def extra_repr(self):
         return '{size}, alpha={alpha}, beta={beta}, k={k}'.format(**self.__dict__)
 
 
-class CrossMapLRN2d(Module):
 
-    def __init__(self, size, alpha=1e-4, beta=0.75, k=1):
+class CrossMapLRN2d(Module):
+    
+    def __init__(self, size, alpha=0.0001, beta=0.75, k=1):
         super(CrossMapLRN2d, self).__init__()
         self.size = size
         self.alpha = alpha
         self.beta = beta
         self.k = k
-
+    
     def forward(self, input):
-        return _cross_map_lrn2d.apply(input, self.size, self.alpha, self.beta,
-                                      self.k)
-
+        return _cross_map_lrn2d.apply(input, self.size, self.alpha, self.beta, self.k)
+    
     def extra_repr(self):
         return '{size}, alpha={alpha}, beta={beta}, k={k}'.format(**self.__dict__)
 
 
+
 class LayerNorm(Module):
-    r"""Applies Layer Normalization over a mini-batch of inputs as described in
+    """Applies Layer Normalization over a mini-batch of inputs as described in
     the paper `Layer Normalization`_ .
 
     .. math::
-        y = \frac{x - \mathrm{E}[x]}{ \sqrt{\mathrm{Var}[x] + \epsilon}} * \gamma + \beta
+        y = rac{x - \mathrm{E}[x]}{ \sqrt{\mathrm{Var}[x] + \epsilon}} * \gamma + eta
 
     The mean and standard-deviation are calculated separately over the last
     certain number dimensions which have to be of the shape specified by
     :attr:`normalized_shape`.
-    :math:`\gamma` and :math:`\beta` are learnable affine transform parameters of
+    :math:`\gamma` and :math:`eta` are learnable affine transform parameters of
     :attr:`normalized_shape` if :attr:`elementwise_affine` is ``True``.
 
     .. note::
@@ -96,8 +96,8 @@ class LayerNorm(Module):
             of size
 
             .. math::
-                [* \times \text{normalized\_shape}[0] \times \text{normalized\_shape}[1]
-                    \times \ldots \times \text{normalized\_shape}[-1]]
+                [* 	imes 	ext{normalized\_shape}[0] 	imes 	ext{normalized\_shape}[1]
+                    	imes \ldots 	imes 	ext{normalized\_shape}[-1]]
 
             If a single integer is used, it is treated as a singleton list, and this module will
             normalize over the last dimension which is expected to be of that specific size.
@@ -127,11 +127,11 @@ class LayerNorm(Module):
     .. _`Layer Normalization`: https://arxiv.org/abs/1607.06450
     """
     __constants__ = ['normalized_shape', 'eps', 'elementwise_affine']
-
-    def __init__(self, normalized_shape, eps=1e-5, elementwise_affine=True):
+    
+    def __init__(self, normalized_shape, eps=1e-05, elementwise_affine=True):
         super(LayerNorm, self).__init__()
         if isinstance(normalized_shape, numbers.Integral):
-            normalized_shape = (normalized_shape,)
+            normalized_shape = (normalized_shape, )
         self.normalized_shape = tuple(normalized_shape)
         self.eps = eps
         self.elementwise_affine = elementwise_affine
@@ -142,31 +142,30 @@ class LayerNorm(Module):
             self.register_parameter('weight', None)
             self.register_parameter('bias', None)
         self.reset_parameters()
-
+    
     def reset_parameters(self):
         if self.elementwise_affine:
             init.ones_(self.weight)
             init.zeros_(self.bias)
-
+    
     def forward(self, input):
-        return F.layer_norm(
-            input, self.normalized_shape, self.weight, self.bias, self.eps)
-
+        return F.layer_norm(input, self.normalized_shape, self.weight, self.bias, self.eps)
+    
     def extra_repr(self):
-        return '{normalized_shape}, eps={eps}, ' \
-            'elementwise_affine={elementwise_affine}'.format(**self.__dict__)
+        return '{normalized_shape}, eps={eps}, elementwise_affine={elementwise_affine}'.format(**self.__dict__)
+
 
 
 class GroupNorm(Module):
-    r"""Applies Group Normalization over a mini-batch of inputs as described in
+    """Applies Group Normalization over a mini-batch of inputs as described in
     the paper `Group Normalization`_ .
 
     .. math::
-        y = \frac{x - \mathrm{E}[x]}{ \sqrt{\mathrm{Var}[x] + \epsilon}} * \gamma + \beta
+        y = rac{x - \mathrm{E}[x]}{ \sqrt{\mathrm{Var}[x] + \epsilon}} * \gamma + eta
 
     The input channels are separated into :attr:`num_groups` groups, each containing
     ``num_channels / num_groups`` channels. The mean and standard-deviation are calculated
-    separately over the each group. :math:`\gamma` and :math:`\beta` are learnable
+    separately over the each group. :math:`\gamma` and :math:`eta` are learnable
     per-channel affine transform parameter vectors of size :attr:`num_channels` if
     :attr:`affine` is ``True``.
 
@@ -182,7 +181,7 @@ class GroupNorm(Module):
             and zeros (for biases). Default: ``True``.
 
     Shape:
-        - Input: :math:`(N, C, *)` where :math:`C=\text{num\_channels}`
+        - Input: :math:`(N, C, *)` where :math:`C=	ext{num\_channels}`
         - Output: :math:`(N, C, *)` (same shape as input)
 
     Examples::
@@ -200,8 +199,8 @@ class GroupNorm(Module):
     .. _`Group Normalization`: https://arxiv.org/abs/1803.08494
     """
     __constants__ = ['num_groups', 'num_channels', 'eps', 'affine']
-
-    def __init__(self, num_groups, num_channels, eps=1e-5, affine=True):
+    
+    def __init__(self, num_groups, num_channels, eps=1e-05, affine=True):
         super(GroupNorm, self).__init__()
         self.num_groups = num_groups
         self.num_channels = num_channels
@@ -214,21 +213,16 @@ class GroupNorm(Module):
             self.register_parameter('weight', None)
             self.register_parameter('bias', None)
         self.reset_parameters()
-
+    
     def reset_parameters(self):
         if self.affine:
             init.ones_(self.weight)
             init.zeros_(self.bias)
-
+    
     def forward(self, input):
-        return F.group_norm(
-            input, self.num_groups, self.weight, self.bias, self.eps)
-
+        return F.group_norm(input, self.num_groups, self.weight, self.bias, self.eps)
+    
     def extra_repr(self):
-        return '{num_groups}, {num_channels}, eps={eps}, ' \
-            'affine={affine}'.format(**self.__dict__)
+        return '{num_groups}, {num_channels}, eps={eps}, affine={affine}'.format(**self.__dict__)
 
 
-# TODO: ContrastiveNorm2d
-# TODO: DivisiveNorm2d
-# TODO: SubtractiveNorm2d

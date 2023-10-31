@@ -1,13 +1,10 @@
 from __future__ import absolute_import
-
 import email.utils
 import mimetypes
 import re
-
 from .packages import six
 
-
-def guess_content_type(filename, default="application/octet-stream"):
+def guess_content_type(filename, default='application/octet-stream'):
     """
     Guess the "Content-Type" of a file.
 
@@ -16,10 +13,8 @@ def guess_content_type(filename, default="application/octet-stream"):
     :param default:
         If no "Content-Type" can be guessed, default to `default`.
     """
-    if filename:
-        return mimetypes.guess_type(filename)[0] or default
-    return default
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('urllib3.fields.guess_content_type', "guess_content_type(filename, default='application/octet-stream')", {'mimetypes': mimetypes, 'filename': filename, 'default': default}, 1)
 
 def format_header_param_rfc2231(name, value):
     """
@@ -37,60 +32,14 @@ def format_header_param_rfc2231(name, value):
     :ret:
         An RFC-2231-formatted unicode string.
     """
-    if isinstance(value, six.binary_type):
-        value = value.decode("utf-8")
-
-    if not any(ch in value for ch in '"\\\r\n'):
-        result = u'%s="%s"' % (name, value)
-        try:
-            result.encode("ascii")
-        except (UnicodeEncodeError, UnicodeDecodeError):
-            pass
-        else:
-            return result
-
-    if six.PY2:  # Python 2:
-        value = value.encode("utf-8")
-
-    # encode_rfc2231 accepts an encoded string and returns an ascii-encoded
-    # string in Python 2 but accepts and returns unicode strings in Python 3
-    value = email.utils.encode_rfc2231(value, "utf-8")
-    value = "%s*=%s" % (name, value)
-
-    if six.PY2:  # Python 2:
-        value = value.decode("utf-8")
-
-    return value
-
-
-_HTML5_REPLACEMENTS = {
-    u"\u0022": u"%22",
-    # Replace "\" with "\\".
-    u"\u005C": u"\u005C\u005C",
-}
-
-# All control characters from 0x00 to 0x1F *except* 0x1B.
-_HTML5_REPLACEMENTS.update(
-    {
-        six.unichr(cc): u"%{:02X}".format(cc)
-        for cc in range(0x00, 0x1F + 1)
-        if cc not in (0x1B,)
-    }
-)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('urllib3.fields.format_header_param_rfc2231', 'format_header_param_rfc2231(name, value)', {'six': six, 'email': email, 'name': name, 'value': value}, 1)
+_HTML5_REPLACEMENTS = {'"': '%22', '\\': '\\\\'}
+_HTML5_REPLACEMENTS.update({six.unichr(cc): '%{:02X}'.format(cc) for cc in range(0, 31 + 1) if cc not in (27, )})
 
 def _replace_multiple(value, needles_and_replacements):
-    def replacer(match):
-        return needles_and_replacements[match.group(0)]
-
-    pattern = re.compile(
-        r"|".join([re.escape(needle) for needle in needles_and_replacements.keys()])
-    )
-
-    result = pattern.sub(replacer, value)
-
-    return result
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('urllib3.fields._replace_multiple', '_replace_multiple(value, needles_and_replacements)', {'re': re, 'value': value, 'needles_and_replacements': needles_and_replacements}, 1)
 
 def format_header_param_html5(name, value):
     """
@@ -111,15 +60,8 @@ def format_header_param_html5(name, value):
     :ret:
         A unicode string, stripped of troublesome characters.
     """
-    if isinstance(value, six.binary_type):
-        value = value.decode("utf-8")
-
-    value = _replace_multiple(value, _HTML5_REPLACEMENTS)
-
-    return u'%s="%s"' % (name, value)
-
-
-# For backwards-compatibility.
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('urllib3.fields.format_header_param_html5', 'format_header_param_html5(name, value)', {'six': six, '_replace_multiple': _replace_multiple, '_HTML5_REPLACEMENTS': _HTML5_REPLACEMENTS, 'name': name, 'value': value}, 1)
 format_header_param = format_header_param_html5
 
 
@@ -139,15 +81,8 @@ class RequestField(object):
         An optional callable that is used to encode and format the headers. By
         default, this is :func:`format_header_param_html5`.
     """
-
-    def __init__(
-        self,
-        name,
-        data,
-        filename=None,
-        headers=None,
-        header_formatter=format_header_param_html5,
-    ):
+    
+    def __init__(self, name, data, filename=None, headers=None, header_formatter=format_header_param_html5):
         self._name = name
         self._filename = filename
         self.data = data
@@ -155,7 +90,7 @@ class RequestField(object):
         if headers:
             self.headers = dict(headers)
         self.header_formatter = header_formatter
-
+    
     @classmethod
     def from_tuples(cls, fieldname, value, header_formatter=format_header_param_html5):
         """
@@ -176,22 +111,18 @@ class RequestField(object):
         """
         if isinstance(value, tuple):
             if len(value) == 3:
-                filename, data, content_type = value
+                (filename, data, content_type) = value
             else:
-                filename, data = value
+                (filename, data) = value
                 content_type = guess_content_type(filename)
         else:
             filename = None
             content_type = None
             data = value
-
-        request_param = cls(
-            fieldname, data, filename=filename, header_formatter=header_formatter
-        )
+        request_param = cls(fieldname, data, filename=filename, header_formatter=header_formatter)
         request_param.make_multipart(content_type=content_type)
-
         return request_param
-
+    
     def _render_part(self, name, value):
         """
         Overridable helper function to format a single header parameter. By
@@ -202,9 +133,8 @@ class RequestField(object):
         :param value:
             The value of the parameter, provided as a unicode string.
         """
-
         return self.header_formatter(name, value)
-
+    
     def _render_parts(self, header_parts):
         """
         Helper function to format and quote a single header.
@@ -220,35 +150,28 @@ class RequestField(object):
         iterable = header_parts
         if isinstance(header_parts, dict):
             iterable = header_parts.items()
-
-        for name, value in iterable:
+        for (name, value) in iterable:
             if value is not None:
                 parts.append(self._render_part(name, value))
-
-        return u"; ".join(parts)
-
+        return '; '.join(parts)
+    
     def render_headers(self):
         """
         Renders the headers for this request field.
         """
         lines = []
-
-        sort_keys = ["Content-Disposition", "Content-Type", "Content-Location"]
+        sort_keys = ['Content-Disposition', 'Content-Type', 'Content-Location']
         for sort_key in sort_keys:
             if self.headers.get(sort_key, False):
-                lines.append(u"%s: %s" % (sort_key, self.headers[sort_key]))
-
-        for header_name, header_value in self.headers.items():
+                lines.append('%s: %s' % (sort_key, self.headers[sort_key]))
+        for (header_name, header_value) in self.headers.items():
             if header_name not in sort_keys:
                 if header_value:
-                    lines.append(u"%s: %s" % (header_name, header_value))
-
-        lines.append(u"\r\n")
-        return u"\r\n".join(lines)
-
-    def make_multipart(
-        self, content_disposition=None, content_type=None, content_location=None
-    ):
+                    lines.append('%s: %s' % (header_name, header_value))
+        lines.append('\r\n')
+        return '\r\n'.join(lines)
+    
+    def make_multipart(self, content_disposition=None, content_type=None, content_location=None):
         """
         Makes this request field into a multipart request field.
 
@@ -261,14 +184,9 @@ class RequestField(object):
             The 'Content-Location' of the request body.
 
         """
-        self.headers["Content-Disposition"] = content_disposition or u"form-data"
-        self.headers["Content-Disposition"] += u"; ".join(
-            [
-                u"",
-                self._render_parts(
-                    ((u"name", self._name), (u"filename", self._filename))
-                ),
-            ]
-        )
-        self.headers["Content-Type"] = content_type
-        self.headers["Content-Location"] = content_location
+        self.headers['Content-Disposition'] = (content_disposition or 'form-data')
+        self.headers['Content-Disposition'] += '; '.join(['', self._render_parts((('name', self._name), ('filename', self._filename)))])
+        self.headers['Content-Type'] = content_type
+        self.headers['Content-Location'] = content_location
+
+

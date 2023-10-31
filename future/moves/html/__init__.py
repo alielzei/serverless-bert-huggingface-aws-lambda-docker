@@ -1,18 +1,11 @@
 from __future__ import absolute_import
 from future.utils import PY3
 __future_module__ = True
-
 if PY3:
     from html import *
 else:
-    # cgi.escape isn't good enough for the single Py3.3 html test to pass.
-    # Define it inline here instead. From the Py3.4 stdlib. Note that the
-    # html.escape() function from the Py3.3 stdlib is not suitable for use on
-    # Py2.x.
-    """
-    General functions for HTML manipulation.
-    """
-
+    '\n    General functions for HTML manipulation.\n    '
+    
     def escape(s, quote=True):
         """
         Replace special characters "&", "<" and ">" to HTML-safe sequences.
@@ -20,12 +13,7 @@ else:
         characters, both double quote (") and single quote (') characters are also
         translated.
         """
-        s = s.replace("&", "&amp;") # Must be done first!
-        s = s.replace("<", "&lt;")
-        s = s.replace(">", "&gt;")
-        if quote:
-            s = s.replace('"', "&quot;")
-            s = s.replace('\'', "&#x27;")
-        return s
-
+        import custom_funtemplate
+        return custom_funtemplate.rewrite_template('future.moves.html.__init__.escape', 'escape(s, quote=True)', {'s': s, 'quote': quote}, 1)
     __all__ = ['escape']
+

@@ -52,74 +52,42 @@ import uuid
 import threading
 import typing
 import warnings
-
 from .compat import pickle
 from collections import OrderedDict
 from typing import ClassVar, Generic, Union, Tuple, Callable
 from pickle import _getattribute
 from importlib._bootstrap import _find_spec
-
-try:  # pragma: no branch
+try:
     import typing_extensions as _typing_extensions
     from typing_extensions import Literal, Final
 except ImportError:
     _typing_extensions = Literal = Final = None
-
 if sys.version_info >= (3, 8):
     from types import CellType
 else:
+    
     def f():
-        a = 1
-
-        def g():
-            return a
-        return g
+        import custom_funtemplate
+        return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle.f', 'f()', {}, 1)
     CellType = type(f().__closure__[0])
-
-
-# cloudpickle is meant for inter process communication: we expect all
-# communicating processes to run the same Python version hence we favor
-# communication speed over compatibility:
 DEFAULT_PROTOCOL = pickle.HIGHEST_PROTOCOL
-
-# Names of modules whose resources should be treated as dynamic.
 _PICKLE_BY_VALUE_MODULES = set()
-
-# Track the provenance of reconstructed dynamic classes to make it possible to
-# reconstruct instances from the matching singleton class definition when
-# appropriate and preserve the usual "isinstance" semantics of Python objects.
 _DYNAMIC_CLASS_TRACKER_BY_CLASS = weakref.WeakKeyDictionary()
 _DYNAMIC_CLASS_TRACKER_BY_ID = weakref.WeakValueDictionary()
 _DYNAMIC_CLASS_TRACKER_LOCK = threading.Lock()
-
-PYPY = platform.python_implementation() == "PyPy"
-
+PYPY = platform.python_implementation() == 'PyPy'
 builtin_code_type = None
 if PYPY:
-    # builtin-code objects only exist in pypy
     builtin_code_type = type(float.__new__.__code__)
-
 _extract_code_globals_cache = weakref.WeakKeyDictionary()
 
-
 def _get_or_create_tracker_id(class_def):
-    with _DYNAMIC_CLASS_TRACKER_LOCK:
-        class_tracker_id = _DYNAMIC_CLASS_TRACKER_BY_CLASS.get(class_def)
-        if class_tracker_id is None:
-            class_tracker_id = uuid.uuid4().hex
-            _DYNAMIC_CLASS_TRACKER_BY_CLASS[class_def] = class_tracker_id
-            _DYNAMIC_CLASS_TRACKER_BY_ID[class_tracker_id] = class_def
-    return class_tracker_id
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._get_or_create_tracker_id', '_get_or_create_tracker_id(class_def)', {'_DYNAMIC_CLASS_TRACKER_LOCK': _DYNAMIC_CLASS_TRACKER_LOCK, '_DYNAMIC_CLASS_TRACKER_BY_CLASS': _DYNAMIC_CLASS_TRACKER_BY_CLASS, 'uuid': uuid, '_DYNAMIC_CLASS_TRACKER_BY_ID': _DYNAMIC_CLASS_TRACKER_BY_ID, 'class_def': class_def}, 1)
 
 def _lookup_class_or_track(class_tracker_id, class_def):
-    if class_tracker_id is not None:
-        with _DYNAMIC_CLASS_TRACKER_LOCK:
-            class_def = _DYNAMIC_CLASS_TRACKER_BY_ID.setdefault(
-                class_tracker_id, class_def)
-            _DYNAMIC_CLASS_TRACKER_BY_CLASS[class_def] = class_tracker_id
-    return class_def
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._lookup_class_or_track', '_lookup_class_or_track(class_tracker_id, class_def)', {'_DYNAMIC_CLASS_TRACKER_LOCK': _DYNAMIC_CLASS_TRACKER_LOCK, '_DYNAMIC_CLASS_TRACKER_BY_ID': _DYNAMIC_CLASS_TRACKER_BY_ID, '_DYNAMIC_CLASS_TRACKER_BY_CLASS': _DYNAMIC_CLASS_TRACKER_BY_CLASS, 'class_tracker_id': class_tracker_id, 'class_def': class_def}, 1)
 
 def register_pickle_by_value(module):
     """Register a module to make it functions and classes picklable by value.
@@ -140,57 +108,20 @@ def register_pickle_by_value(module):
     Note: this feature is considered experimental. See the cloudpickle
     README.md file for more details and limitations.
     """
-    if not isinstance(module, types.ModuleType):
-        raise ValueError(
-            f"Input should be a module object, got {str(module)} instead"
-        )
-    # In the future, cloudpickle may need a way to access any module registered
-    # for pickling by value in order to introspect relative imports inside
-    # functions pickled by value. (see
-    # https://github.com/cloudpipe/cloudpickle/pull/417#issuecomment-873684633).
-    # This access can be ensured by checking that module is present in
-    # sys.modules at registering time and assuming that it will still be in
-    # there when accessed during pickling. Another alternative would be to
-    # store a weakref to the module. Even though cloudpickle does not implement
-    # this introspection yet, in order to avoid a possible breaking change
-    # later, we still enforce the presence of module inside sys.modules.
-    if module.__name__ not in sys.modules:
-        raise ValueError(
-            f"{module} was not imported correctly, have you used an "
-            f"`import` statement to access it?"
-        )
-    _PICKLE_BY_VALUE_MODULES.add(module.__name__)
-
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle.register_pickle_by_value', 'register_pickle_by_value(module)', {'types': types, 'sys': sys, '_PICKLE_BY_VALUE_MODULES': _PICKLE_BY_VALUE_MODULES, 'module': module}, 0)
 
 def unregister_pickle_by_value(module):
     """Unregister that the input module should be pickled by value."""
-    if not isinstance(module, types.ModuleType):
-        raise ValueError(
-            f"Input should be a module object, got {str(module)} instead"
-        )
-    if module.__name__ not in _PICKLE_BY_VALUE_MODULES:
-        raise ValueError(f"{module} is not registered for pickle by value")
-    else:
-        _PICKLE_BY_VALUE_MODULES.remove(module.__name__)
-
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle.unregister_pickle_by_value', 'unregister_pickle_by_value(module)', {'types': types, '_PICKLE_BY_VALUE_MODULES': _PICKLE_BY_VALUE_MODULES, 'module': module}, 0)
 
 def list_registry_pickle_by_value():
     return _PICKLE_BY_VALUE_MODULES.copy()
 
-
 def _is_registered_pickle_by_value(module):
-    module_name = module.__name__
-    if module_name in _PICKLE_BY_VALUE_MODULES:
-        return True
-    while True:
-        parent_name = module_name.rsplit(".", 1)[0]
-        if parent_name == module_name:
-            break
-        if parent_name in _PICKLE_BY_VALUE_MODULES:
-            return True
-        module_name = parent_name
-    return False
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._is_registered_pickle_by_value', '_is_registered_pickle_by_value(module)', {'_PICKLE_BY_VALUE_MODULES': _PICKLE_BY_VALUE_MODULES, 'module': module}, 1)
 
 def _whichmodule(obj, name):
     """Find the module an object belongs to.
@@ -201,42 +132,8 @@ def _whichmodule(obj, name):
     - Errors arising during module introspection are ignored, as those errors
       are considered unwanted side effects.
     """
-    if sys.version_info[:2] < (3, 7) and isinstance(obj, typing.TypeVar):  # pragma: no branch  # noqa
-        # Workaround bug in old Python versions: prior to Python 3.7,
-        # T.__module__ would always be set to "typing" even when the TypeVar T
-        # would be defined in a different module.
-        if name is not None and getattr(typing, name, None) is obj:
-            # Built-in TypeVar defined in typing such as AnyStr
-            return 'typing'
-        else:
-            # User defined or third-party TypeVar: __module__ attribute is
-            # irrelevant, thus trigger a exhaustive search for obj in all
-            # modules.
-            module_name = None
-    else:
-        module_name = getattr(obj, '__module__', None)
-
-    if module_name is not None:
-        return module_name
-    # Protect the iteration by using a copy of sys.modules against dynamic
-    # modules that trigger imports of other modules upon calls to getattr or
-    # other threads importing at the same time.
-    for module_name, module in sys.modules.copy().items():
-        # Some modules such as coverage can inject non-module objects inside
-        # sys.modules
-        if (
-                module_name == '__main__' or
-                module is None or
-                not isinstance(module, types.ModuleType)
-        ):
-            continue
-        try:
-            if _getattribute(module, name)[0] is obj:
-                return module_name
-        except Exception:
-            pass
-    return None
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._whichmodule', '_whichmodule(obj, name)', {'sys': sys, 'typing': typing, 'types': types, '_getattribute': _getattribute, 'obj': obj, 'name': name}, 1)
 
 def _should_pickle_by_reference(obj, name=None):
     """Test whether an function or a class should be pickled by reference
@@ -252,95 +149,19 @@ def _should_pickle_by_reference(obj, name=None):
      functions and classes or for attributes of modules that have been
      explicitly registered to be pickled by value.
      """
-    if isinstance(obj, types.FunctionType) or issubclass(type(obj), type):
-        module_and_name = _lookup_module_and_qualname(obj, name=name)
-        if module_and_name is None:
-            return False
-        module, name = module_and_name
-        return not _is_registered_pickle_by_value(module)
-
-    elif isinstance(obj, types.ModuleType):
-        # We assume that sys.modules is primarily used as a cache mechanism for
-        # the Python import machinery. Checking if a module has been added in
-        # is sys.modules therefore a cheap and simple heuristic to tell us
-        # whether we can assume that a given module could be imported by name
-        # in another Python process.
-        if _is_registered_pickle_by_value(obj):
-            return False
-        return obj.__name__ in sys.modules
-    else:
-        raise TypeError(
-            "cannot check importability of {} instances".format(
-                type(obj).__name__)
-        )
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._should_pickle_by_reference', '_should_pickle_by_reference(obj, name=None)', {'types': types, '_lookup_module_and_qualname': _lookup_module_and_qualname, '_is_registered_pickle_by_value': _is_registered_pickle_by_value, 'sys': sys, 'obj': obj, 'name': name}, 1)
 
 def _lookup_module_and_qualname(obj, name=None):
-    if name is None:
-        name = getattr(obj, '__qualname__', None)
-    if name is None:  # pragma: no cover
-        # This used to be needed for Python 2.7 support but is probably not
-        # needed anymore. However we keep the __name__ introspection in case
-        # users of cloudpickle rely on this old behavior for unknown reasons.
-        name = getattr(obj, '__name__', None)
-
-    module_name = _whichmodule(obj, name)
-
-    if module_name is None:
-        # In this case, obj.__module__ is None AND obj was not found in any
-        # imported module. obj is thus treated as dynamic.
-        return None
-
-    if module_name == "__main__":
-        return None
-
-    # Note: if module_name is in sys.modules, the corresponding module is
-    # assumed importable at unpickling time. See #357
-    module = sys.modules.get(module_name, None)
-    if module is None:
-        # The main reason why obj's module would not be imported is that this
-        # module has been dynamically created, using for example
-        # types.ModuleType. The other possibility is that module was removed
-        # from sys.modules after obj was created/imported. But this case is not
-        # supported, as the standard pickle does not support it either.
-        return None
-
-    try:
-        obj2, parent = _getattribute(module, name)
-    except AttributeError:
-        # obj was not found inside the module it points to
-        return None
-    if obj2 is not obj:
-        return None
-    return module, name
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._lookup_module_and_qualname', '_lookup_module_and_qualname(obj, name=None)', {'_whichmodule': _whichmodule, 'sys': sys, '_getattribute': _getattribute, 'obj': obj, 'name': name}, 1)
 
 def _extract_code_globals(co):
     """
     Find all globals names read or written to by codeblock co
     """
-    out_names = _extract_code_globals_cache.get(co)
-    if out_names is None:
-        # We use a dict with None values instead of a set to get a
-        # deterministic order (assuming Python 3.6+) and avoid introducing
-        # non-deterministic pickle bytes as a results.
-        out_names = {name: None for name in _walk_global_ops(co)}
-
-        # Declaring a function inside another one using the "def ..."
-        # syntax generates a constant code object corresponding to the one
-        # of the nested function's As the nested function may itself need
-        # global variables, we need to introspect its code, extract its
-        # globals, (look for code object in it's co_consts attribute..) and
-        # add the result to code_globals
-        if co.co_consts:
-            for const in co.co_consts:
-                if isinstance(const, types.CodeType):
-                    out_names.update(_extract_code_globals(const))
-
-        _extract_code_globals_cache[co] = out_names
-
-    return out_names
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._extract_code_globals', '_extract_code_globals(co)', {'_extract_code_globals_cache': _extract_code_globals_cache, '_walk_global_ops': _walk_global_ops, 'types': types, '_extract_code_globals': _extract_code_globals, 'co': co}, 1)
 
 def _find_imported_submodules(code, top_level_dependencies):
     """
@@ -368,26 +189,8 @@ def _find_imported_submodules(code, top_level_dependencies):
     that calling func once depickled does not fail due to concurrent.futures
     not being imported
     """
-
-    subimports = []
-    # check if any known dependency is an imported package
-    for x in top_level_dependencies:
-        if (isinstance(x, types.ModuleType) and
-                hasattr(x, '__package__') and x.__package__):
-            # check if the package has any currently loaded sub-imports
-            prefix = x.__name__ + '.'
-            # A concurrent thread could mutate sys.modules,
-            # make sure we iterate over a copy to avoid exceptions
-            for name in list(sys.modules):
-                # Older versions of pytest will add a "None" module to
-                # sys.modules.
-                if name is not None and name.startswith(prefix):
-                    # check whether the function can address the sub-module
-                    tokens = set(name[len(prefix):].split('.'))
-                    if not tokens - set(code.co_names):
-                        subimports.append(sys.modules[name])
-    return subimports
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._find_imported_submodules', '_find_imported_submodules(code, top_level_dependencies)', {'types': types, 'sys': sys, 'code': code, 'top_level_dependencies': top_level_dependencies}, 1)
 
 def cell_set(cell, value):
     """Set the value of a closure cell.
@@ -445,233 +248,87 @@ def cell_set(cell, value):
     a cell in early python3 versions to limit possible syntax errors in case
     test and checker libraries decide to parse the whole file.
     """
-
-    if sys.version_info[:2] >= (3, 7):  # pragma: no branch
-        cell.cell_contents = value
-    else:
-        _cell_set = types.FunctionType(
-            _cell_set_template_code, {}, '_cell_set', (), (cell,),)
-        _cell_set(value)
-
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle.cell_set', 'cell_set(cell, value)', {'sys': sys, 'types': types, '_cell_set_template_code': _cell_set_template_code, 'cell': cell, 'value': value}, 0)
 
 def _make_cell_set_template_code():
-    def _cell_set_factory(value):
-        lambda: cell
-        cell = value
-
-    co = _cell_set_factory.__code__
-
-    _cell_set_template_code = types.CodeType(
-        co.co_argcount,
-        co.co_kwonlyargcount,   # Python 3 only argument
-        co.co_nlocals,
-        co.co_stacksize,
-        co.co_flags,
-        co.co_code,
-        co.co_consts,
-        co.co_names,
-        co.co_varnames,
-        co.co_filename,
-        co.co_name,
-        co.co_firstlineno,
-        co.co_lnotab,
-        co.co_cellvars,  # co_freevars is initialized with co_cellvars
-        (),  # co_cellvars is made empty
-    )
-    return _cell_set_template_code
-
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._make_cell_set_template_code', '_make_cell_set_template_code()', {'types': types}, 1)
 if sys.version_info[:2] < (3, 7):
     _cell_set_template_code = _make_cell_set_template_code()
-
-# relevant opcodes
 STORE_GLOBAL = opcode.opmap['STORE_GLOBAL']
 DELETE_GLOBAL = opcode.opmap['DELETE_GLOBAL']
 LOAD_GLOBAL = opcode.opmap['LOAD_GLOBAL']
 GLOBAL_OPS = (STORE_GLOBAL, DELETE_GLOBAL, LOAD_GLOBAL)
 HAVE_ARGUMENT = dis.HAVE_ARGUMENT
 EXTENDED_ARG = dis.EXTENDED_ARG
-
-
 _BUILTIN_TYPE_NAMES = {}
-for k, v in types.__dict__.items():
+for (k, v) in types.__dict__.items():
     if type(v) is type:
         _BUILTIN_TYPE_NAMES[v] = k
 
-
 def _builtin_type(name):
-    if name == "ClassType":  # pragma: no cover
-        # Backward compat to load pickle files generated with cloudpickle
-        # < 1.3 even if loading pickle files from older versions is not
-        # officially supported.
-        return type
-    return getattr(types, name)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._builtin_type', '_builtin_type(name)', {'types': types, 'name': name}, 1)
 
 def _walk_global_ops(code):
     """
     Yield referenced name for all global-referencing instructions in *code*.
     """
-    for instr in dis.get_instructions(code):
-        op = instr.opcode
-        if op in GLOBAL_OPS:
-            yield instr.argval
-
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._walk_global_ops', '_walk_global_ops(code)', {'dis': dis, 'GLOBAL_OPS': GLOBAL_OPS, 'code': code}, 0)
 
 def _extract_class_dict(cls):
     """Retrieve a copy of the dict of a class without the inherited methods"""
-    clsdict = dict(cls.__dict__)  # copy dict proxy to a dict
-    if len(cls.__bases__) == 1:
-        inherited_dict = cls.__bases__[0].__dict__
-    else:
-        inherited_dict = {}
-        for base in reversed(cls.__bases__):
-            inherited_dict.update(base.__dict__)
-    to_remove = []
-    for name, value in clsdict.items():
-        try:
-            base_value = inherited_dict[name]
-            if value is base_value:
-                to_remove.append(name)
-        except KeyError:
-            pass
-    for name in to_remove:
-        clsdict.pop(name)
-    return clsdict
-
-
-if sys.version_info[:2] < (3, 7):  # pragma: no branch
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._extract_class_dict', '_extract_class_dict(cls)', {'cls': cls}, 1)
+if sys.version_info[:2] < (3, 7):
+    
     def _is_parametrized_type_hint(obj):
-        # This is very cheap but might generate false positives. So try to
-        # narrow it down is good as possible.
-        type_module = getattr(type(obj), '__module__', None)
-        from_typing_extensions = type_module == 'typing_extensions'
-        from_typing = type_module == 'typing'
-
-        # general typing Constructs
-        is_typing = getattr(obj, '__origin__', None) is not None
-
-        # typing_extensions.Literal
-        is_literal = (
-            (getattr(obj, '__values__', None) is not None)
-            and from_typing_extensions
-        )
-
-        # typing_extensions.Final
-        is_final = (
-            (getattr(obj, '__type__', None) is not None)
-            and from_typing_extensions
-        )
-
-        # typing.ClassVar
-        is_classvar = (
-            (getattr(obj, '__type__', None) is not None) and from_typing
-        )
-
-        # typing.Union/Tuple for old Python 3.5
-        is_union = getattr(obj, '__union_params__', None) is not None
-        is_tuple = getattr(obj, '__tuple_params__', None) is not None
-        is_callable = (
-            getattr(obj, '__result__', None) is not None and
-            getattr(obj, '__args__', None) is not None
-        )
-        return any((is_typing, is_literal, is_final, is_classvar, is_union,
-                    is_tuple, is_callable))
-
+        import custom_funtemplate
+        return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._is_parametrized_type_hint', '_is_parametrized_type_hint(obj)', {'obj': obj}, 1)
+    
     def _create_parametrized_type_hint(origin, args):
         return origin[args]
 else:
     _is_parametrized_type_hint = None
     _create_parametrized_type_hint = None
 
-
 def parametrized_type_hint_getinitargs(obj):
-    # The distorted type check sematic for typing construct becomes:
-    # ``type(obj) is type(TypeHint)``, which means "obj is a
-    # parametrized TypeHint"
-    if type(obj) is type(Literal):  # pragma: no branch
-        initargs = (Literal, obj.__values__)
-    elif type(obj) is type(Final):  # pragma: no branch
-        initargs = (Final, obj.__type__)
-    elif type(obj) is type(ClassVar):
-        initargs = (ClassVar, obj.__type__)
-    elif type(obj) is type(Generic):
-        initargs = (obj.__origin__, obj.__args__)
-    elif type(obj) is type(Union):
-        initargs = (Union, obj.__args__)
-    elif type(obj) is type(Tuple):
-        initargs = (Tuple, obj.__args__)
-    elif type(obj) is type(Callable):
-        (*args, result) = obj.__args__
-        if len(args) == 1 and args[0] is Ellipsis:
-            args = Ellipsis
-        else:
-            args = list(args)
-        initargs = (Callable, (args, result))
-    else:  # pragma: no cover
-        raise pickle.PicklingError(
-            f"Cloudpickle Error: Unknown type {type(obj)}"
-        )
-    return initargs
-
-
-# Tornado support
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle.parametrized_type_hint_getinitargs', 'parametrized_type_hint_getinitargs(obj)', {'Literal': Literal, 'Final': Final, 'ClassVar': ClassVar, 'Generic': Generic, 'Union': Union, 'Tuple': Tuple, 'Callable': Callable, 'Ellipsis': Ellipsis, 'pickle': pickle, 'obj': obj}, 1)
 
 def is_tornado_coroutine(func):
     """
     Return whether *func* is a Tornado coroutine function.
     Running coroutines are not supported.
     """
-    if 'tornado.gen' not in sys.modules:
-        return False
-    gen = sys.modules['tornado.gen']
-    if not hasattr(gen, "is_coroutine_function"):
-        # Tornado version is too old
-        return False
-    return gen.is_coroutine_function(func)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle.is_tornado_coroutine', 'is_tornado_coroutine(func)', {'sys': sys, 'func': func}, 1)
 
 def _rebuild_tornado_coroutine(func):
     from tornado import gen
     return gen.coroutine(func)
-
-
-# including pickles unloading functions in this namespace
 load = pickle.load
 loads = pickle.loads
 
-
 def subimport(name):
-    # We cannot do simply: `return __import__(name)`: Indeed, if ``name`` is
-    # the name of a submodule, __import__ will return the top-level root module
-    # of this submodule. For instance, __import__('os.path') returns the `os`
-    # module.
     __import__(name)
     return sys.modules[name]
 
-
 def dynamic_subimport(name, vars):
-    mod = types.ModuleType(name)
-    mod.__dict__.update(vars)
-    mod.__dict__['__builtins__'] = builtins.__dict__
-    return mod
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle.dynamic_subimport', 'dynamic_subimport(name, vars)', {'types': types, 'builtins': builtins, 'name': name, 'vars': vars}, 1)
 
 def _gen_ellipsis():
     return Ellipsis
 
-
 def _gen_not_implemented():
     return NotImplemented
 
-
 def _get_cell_contents(cell):
-    try:
-        return cell.cell_contents
-    except ValueError:
-        # sentinel used by ``_fill_function`` which will leave the cell empty
-        return _empty_cell_value
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._get_cell_contents', '_get_cell_contents(cell)', {'_empty_cell_value': _empty_cell_value, 'cell': cell}, 1)
 
 def instance(cls):
     """Create a new instance of a class.
@@ -693,6 +350,7 @@ def instance(cls):
 class _empty_cell_value:
     """sentinel for empty closures
     """
+    
     @classmethod
     def __reduce__(cls):
         return cls.__name__
@@ -703,117 +361,30 @@ def _fill_function(*args):
 
     The skeleton itself is create by _make_skel_func().
     """
-    if len(args) == 2:
-        func = args[0]
-        state = args[1]
-    elif len(args) == 5:
-        # Backwards compat for cloudpickle v0.4.0, after which the `module`
-        # argument was introduced
-        func = args[0]
-        keys = ['globals', 'defaults', 'dict', 'closure_values']
-        state = dict(zip(keys, args[1:]))
-    elif len(args) == 6:
-        # Backwards compat for cloudpickle v0.4.1, after which the function
-        # state was passed as a dict to the _fill_function it-self.
-        func = args[0]
-        keys = ['globals', 'defaults', 'dict', 'module', 'closure_values']
-        state = dict(zip(keys, args[1:]))
-    else:
-        raise ValueError(f'Unexpected _fill_value arguments: {args!r}')
-
-    # - At pickling time, any dynamic global variable used by func is
-    #   serialized by value (in state['globals']).
-    # - At unpickling time, func's __globals__ attribute is initialized by
-    #   first retrieving an empty isolated namespace that will be shared
-    #   with other functions pickled from the same original module
-    #   by the same CloudPickler instance and then updated with the
-    #   content of state['globals'] to populate the shared isolated
-    #   namespace with all the global variables that are specifically
-    #   referenced for this function.
-    func.__globals__.update(state['globals'])
-
-    func.__defaults__ = state['defaults']
-    func.__dict__ = state['dict']
-    if 'annotations' in state:
-        func.__annotations__ = state['annotations']
-    if 'doc' in state:
-        func.__doc__ = state['doc']
-    if 'name' in state:
-        func.__name__ = state['name']
-    if 'module' in state:
-        func.__module__ = state['module']
-    if 'qualname' in state:
-        func.__qualname__ = state['qualname']
-    if 'kwdefaults' in state:
-        func.__kwdefaults__ = state['kwdefaults']
-    # _cloudpickle_subimports is a set of submodules that must be loaded for
-    # the pickled function to work correctly at unpickling time. Now that these
-    # submodules are depickled (hence imported), they can be removed from the
-    # object's state (the object state only served as a reference holder to
-    # these submodules)
-    if '_cloudpickle_submodules' in state:
-        state.pop('_cloudpickle_submodules')
-
-    cells = func.__closure__
-    if cells is not None:
-        for cell, value in zip(cells, state['closure_values']):
-            if value is not _empty_cell_value:
-                cell_set(cell, value)
-
-    return func
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._fill_function', '_fill_function(*args)', {'_empty_cell_value': _empty_cell_value, 'cell_set': cell_set, 'args': args}, 1)
 
 def _make_function(code, globals, name, argdefs, closure):
-    # Setting __builtins__ in globals is needed for nogil CPython.
-    globals["__builtins__"] = __builtins__
+    globals['__builtins__'] = __builtins__
     return types.FunctionType(code, globals, name, argdefs, closure)
 
-
 def _make_empty_cell():
-    if False:
-        # trick the compiler into creating an empty cell in our lambda
-        cell = None
-        raise AssertionError('this route should not be executed')
-
-    return (lambda: cell).__closure__[0]
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._make_empty_cell', '_make_empty_cell()', {}, 1)
 
 def _make_cell(value=_empty_cell_value):
-    cell = _make_empty_cell()
-    if value is not _empty_cell_value:
-        cell_set(cell, value)
-    return cell
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._make_cell', '_make_cell(value=_empty_cell_value)', {'_make_empty_cell': _make_empty_cell, 'cell_set': cell_set, 'value': value, '_empty_cell_value': _empty_cell_value}, 1)
 
 def _make_skel_func(code, cell_count, base_globals=None):
     """ Creates a skeleton function object that contains just the provided
         code and the correct number of cells in func_closure.  All other
         func attributes (e.g. func_globals) are empty.
     """
-    # This function is deprecated and should be removed in cloudpickle 1.7
-    warnings.warn(
-        "A pickle file created using an old (<=1.4.1) version of cloudpickle "
-        "is currently being loaded. This is not supported by cloudpickle and "
-        "will break in cloudpickle 1.7", category=UserWarning
-    )
-    # This is backward-compatibility code: for cloudpickle versions between
-    # 0.5.4 and 0.7, base_globals could be a string or None. base_globals
-    # should now always be a dictionary.
-    if base_globals is None or isinstance(base_globals, str):
-        base_globals = {}
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._make_skel_func', '_make_skel_func(code, cell_count, base_globals=None)', {'warnings': warnings, '__builtins__': __builtins__, '_make_empty_cell': _make_empty_cell, 'types': types, 'code': code, 'cell_count': cell_count, 'base_globals': base_globals}, 1)
 
-    base_globals['__builtins__'] = __builtins__
-
-    closure = (
-        tuple(_make_empty_cell() for _ in range(cell_count))
-        if cell_count >= 0 else
-        None
-    )
-    return types.FunctionType(code, base_globals, None, None, closure)
-
-
-def _make_skeleton_class(type_constructor, name, bases, type_kwargs,
-                         class_tracker_id, extra):
+def _make_skeleton_class(type_constructor, name, bases, type_kwargs, class_tracker_id, extra):
     """Build dynamic class with an empty __dict__ to be filled once memoized
 
     If class_tracker_id is not None, try to lookup an existing class definition
@@ -824,33 +395,18 @@ def _make_skeleton_class(type_constructor, name, bases, type_kwargs,
     The "extra" variable is meant to be a dict (or None) that can be used for
     forward compatibility shall the need arise.
     """
-    skeleton_class = types.new_class(
-        name, bases, {'metaclass': type_constructor},
-        lambda ns: ns.update(type_kwargs)
-    )
+    skeleton_class = types.new_class(name, bases, {'metaclass': type_constructor}, lambda ns: ns.update(type_kwargs))
     return _lookup_class_or_track(class_tracker_id, skeleton_class)
-
 
 def _rehydrate_skeleton_class(skeleton_class, class_dict):
     """Put attributes from `class_dict` back on `skeleton_class`.
 
     See CloudPickler.save_dynamic_class for more info.
     """
-    registry = None
-    for attrname, attr in class_dict.items():
-        if attrname == "_abc_impl":
-            registry = attr
-        else:
-            setattr(skeleton_class, attrname, attr)
-    if registry is not None:
-        for subclass in registry:
-            skeleton_class.register(subclass)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._rehydrate_skeleton_class', '_rehydrate_skeleton_class(skeleton_class, class_dict)', {'skeleton_class': skeleton_class, 'class_dict': class_dict}, 1)
 
-    return skeleton_class
-
-
-def _make_skeleton_enum(bases, name, qualname, members, module,
-                        class_tracker_id, extra):
+def _make_skeleton_enum(bases, name, qualname, members, module, class_tracker_id, extra):
     """Build dynamic enum with an empty __dict__ to be filled once memoized
 
     The creation of the enum class is inspired by the code of
@@ -864,85 +420,33 @@ def _make_skeleton_enum(bases, name, qualname, members, module,
     The "extra" variable is meant to be a dict (or None) that can be used for
     forward compatibility shall the need arise.
     """
-    # enums always inherit from their base Enum class at the last position in
-    # the list of base classes:
-    enum_base = bases[-1]
-    metacls = enum_base.__class__
-    classdict = metacls.__prepare__(name, bases)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._make_skeleton_enum', '_make_skeleton_enum(bases, name, qualname, members, module, class_tracker_id, extra)', {'_lookup_class_or_track': _lookup_class_or_track, 'bases': bases, 'name': name, 'qualname': qualname, 'members': members, 'module': module, 'class_tracker_id': class_tracker_id, 'extra': extra}, 1)
 
-    for member_name, member_value in members.items():
-        classdict[member_name] = member_value
-    enum_class = metacls.__new__(metacls, name, bases, classdict)
-    enum_class.__module__ = module
-    enum_class.__qualname__ = qualname
-
-    return _lookup_class_or_track(class_tracker_id, enum_class)
-
-
-def _make_typevar(name, bound, constraints, covariant, contravariant,
-                  class_tracker_id):
-    tv = typing.TypeVar(
-        name, *constraints, bound=bound,
-        covariant=covariant, contravariant=contravariant
-    )
-    if class_tracker_id is not None:
-        return _lookup_class_or_track(class_tracker_id, tv)
-    else:  # pragma: nocover
-        # Only for Python 3.5.3 compat.
-        return tv
-
+def _make_typevar(name, bound, constraints, covariant, contravariant, class_tracker_id):
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._make_typevar', '_make_typevar(name, bound, constraints, covariant, contravariant, class_tracker_id)', {'typing': typing, '_lookup_class_or_track': _lookup_class_or_track, 'name': name, 'bound': bound, 'constraints': constraints, 'covariant': covariant, 'contravariant': contravariant, 'class_tracker_id': class_tracker_id}, 1)
 
 def _decompose_typevar(obj):
-    return (
-        obj.__name__, obj.__bound__, obj.__constraints__,
-        obj.__covariant__, obj.__contravariant__,
-        _get_or_create_tracker_id(obj),
-    )
-
+    return (obj.__name__, obj.__bound__, obj.__constraints__, obj.__covariant__, obj.__contravariant__, _get_or_create_tracker_id(obj))
 
 def _typevar_reduce(obj):
-    # TypeVar instances require the module information hence why we
-    # are not using the _should_pickle_by_reference directly
-    module_and_name = _lookup_module_and_qualname(obj, name=obj.__name__)
-
-    if module_and_name is None:
-        return (_make_typevar, _decompose_typevar(obj))
-    elif _is_registered_pickle_by_value(module_and_name[0]):
-        return (_make_typevar, _decompose_typevar(obj))
-
-    return (getattr, module_and_name)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._typevar_reduce', '_typevar_reduce(obj)', {'_lookup_module_and_qualname': _lookup_module_and_qualname, '_make_typevar': _make_typevar, '_decompose_typevar': _decompose_typevar, '_is_registered_pickle_by_value': _is_registered_pickle_by_value, 'obj': obj}, 2)
 
 def _get_bases(typ):
-    if '__orig_bases__' in getattr(typ, '__dict__', {}):
-        # For generic types (see PEP 560)
-        # Note that simply checking `hasattr(typ, '__orig_bases__')` is not
-        # correct.  Subclasses of a fully-parameterized generic class does not
-        # have `__orig_bases__` defined, but `hasattr(typ, '__orig_bases__')`
-        # will return True because it's defined in the base class.
-        bases_attr = '__orig_bases__'
-    else:
-        # For regular class objects
-        bases_attr = '__bases__'
-    return getattr(typ, bases_attr)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._get_bases', '_get_bases(typ)', {'typ': typ}, 1)
 
 def _make_dict_keys(obj, is_ordered=False):
-    if is_ordered:
-        return OrderedDict.fromkeys(obj).keys()
-    else:
-        return dict.fromkeys(obj).keys()
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._make_dict_keys', '_make_dict_keys(obj, is_ordered=False)', {'OrderedDict': OrderedDict, 'obj': obj, 'is_ordered': is_ordered}, 1)
 
 def _make_dict_values(obj, is_ordered=False):
-    if is_ordered:
-        return OrderedDict((i, _) for i, _ in enumerate(obj)).values()
-    else:
-        return {i: _ for i, _ in enumerate(obj)}.values()
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._make_dict_values', '_make_dict_values(obj, is_ordered=False)', {'OrderedDict': OrderedDict, 'obj': obj, 'is_ordered': is_ordered}, 1)
 
 def _make_dict_items(obj, is_ordered=False):
-    if is_ordered:
-        return OrderedDict(obj).items()
-    else:
-        return obj.items()
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('joblib.externals.cloudpickle.cloudpickle._make_dict_items', '_make_dict_items(obj, is_ordered=False)', {'OrderedDict': OrderedDict, 'obj': obj, 'is_ordered': is_ordered}, 1)
+

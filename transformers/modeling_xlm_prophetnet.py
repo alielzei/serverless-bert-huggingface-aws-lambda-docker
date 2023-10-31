@@ -1,42 +1,15 @@
-# coding=utf-8
-# Copyright 2020 The Microsoft Authors and The HuggingFace Inc. team.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """ PyTorch XLM-ProphetNet model."""
 
 from .configuration_xlm_prophetnet import XLMProphetNetConfig
-from .modeling_prophetnet import (
-    ProphetNetDecoder,
-    ProphetNetEncoder,
-    ProphetNetForCausalLM,
-    ProphetNetForConditionalGeneration,
-    ProphetNetModel,
-)
+from .modeling_prophetnet import ProphetNetDecoder, ProphetNetEncoder, ProphetNetForCausalLM, ProphetNetForConditionalGeneration, ProphetNetModel
 from .utils import logging
-
-
 logger = logging.get_logger(__name__)
-
-_TOKENIZER_FOR_DOC = "XLMProphetNetTokenizer"
-
-XLM_PROPHETNET_PRETRAINED_MODEL_ARCHIVE_LIST = [
-    "microsoft/xprophetnet-large-wiki100-cased",
-    # See all ProphetNet models at https://huggingface.co/models?filter=xprophetnet
-]
+_TOKENIZER_FOR_DOC = 'XLMProphetNetTokenizer'
+XLM_PROPHETNET_PRETRAINED_MODEL_ARCHIVE_LIST = ['microsoft/xprophetnet-large-wiki100-cased']
 
 
 class XLMProphetNetEncoder(ProphetNetEncoder):
-    r"""
+    """
     This class overrides :class:`~transformers.ProphetNetEncoder`. Please check the
     superclass for the appropriate documentation alongside usage examples.
 
@@ -53,12 +26,12 @@ class XLMProphetNetEncoder(ProphetNetEncoder):
 
         >>> last_hidden_states = outputs.last_hidden_state
     """
-
     config_class = XLMProphetNetConfig
 
 
+
 class XLMProphetNetDecoder(ProphetNetDecoder):
-    r"""
+    """
     This class overrides :class:`~transformers.ProphetNetDecoder`. Please check the
     superclass for the appropriate documentation alongside usage examples.
 
@@ -75,12 +48,12 @@ class XLMProphetNetDecoder(ProphetNetDecoder):
 
         >>> last_hidden_states = outputs.last_hidden_state
     """
-
     config_class = XLMProphetNetConfig
 
 
+
 class XLMProphetNetModel(ProphetNetModel):
-    r"""
+    """
     This class overrides :class:`~transformers.ProphetNetModel`. Please check the
     superclass for the appropriate documentation alongside usage examples.
 
@@ -98,12 +71,12 @@ class XLMProphetNetModel(ProphetNetModel):
         >>> last_hidden_states = outputs.last_hidden_state  # main stream hidden states
             >>> last_hidden_states_ngram = outputs.last_hidden_state_ngram  # predict hidden states
     """
-
     config_class = XLMProphetNetConfig
 
 
+
 class XLMProphetNetForConditionalGeneration(ProphetNetForConditionalGeneration):
-    r"""
+    """
     This class overrides :class:`~transformers.ProphetNetForConditionalGeneration`. Please check the
     superclass for the appropriate documentation alongside usage examples.
 
@@ -121,12 +94,12 @@ class XLMProphetNetForConditionalGeneration(ProphetNetForConditionalGeneration):
         >>> logits_next_token = outputs.logits  # logits to predict next token as usual
         >>> logits_ngram_next_tokens = outputs.logits_ngram  # logits to predict 2nd, 3rd, ... next tokens
     """
-
     config_class = XLMProphetNetConfig
 
 
+
 class XLMProphetNetForCausalLM(ProphetNetForCausalLM):
-    r"""
+    """
     This class overrides :class:`~transformers.ProphetNetForCausalLM`. Please check the
     superclass for the appropriate documentation alongside usage examples.
 
@@ -155,5 +128,6 @@ class XLMProphetNetForCausalLM(ProphetNetForCausalLM):
 
         >>> loss = outputs.loss
     """
-
     config_class = XLMProphetNetConfig
+
+

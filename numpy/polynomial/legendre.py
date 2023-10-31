@@ -79,23 +79,14 @@ See also
 numpy.polynomial
 
 """
+
 import numpy as np
 import numpy.linalg as la
 from numpy.core.multiarray import normalize_axis_index
-
 from . import polyutils as pu
 from ._polybase import ABCPolyBase
-
-__all__ = [
-    'legzero', 'legone', 'legx', 'legdomain', 'legline', 'legadd',
-    'legsub', 'legmulx', 'legmul', 'legdiv', 'legpow', 'legval', 'legder',
-    'legint', 'leg2poly', 'poly2leg', 'legfromroots', 'legvander',
-    'legfit', 'legtrim', 'legroots', 'Legendre', 'legval2d', 'legval3d',
-    'leggrid2d', 'leggrid3d', 'legvander2d', 'legvander3d', 'legcompanion',
-    'leggauss', 'legweight']
-
+__all__ = ['legzero', 'legone', 'legx', 'legdomain', 'legline', 'legadd', 'legsub', 'legmulx', 'legmul', 'legdiv', 'legpow', 'legval', 'legder', 'legint', 'leg2poly', 'poly2leg', 'legfromroots', 'legvander', 'legfit', 'legtrim', 'legroots', 'Legendre', 'legval2d', 'legval3d', 'leggrid2d', 'leggrid3d', 'legvander2d', 'legvander3d', 'legcompanion', 'leggauss', 'legweight']
 legtrim = pu.trimcoef
-
 
 def poly2leg(pol):
     """
@@ -137,13 +128,8 @@ def poly2leg(pol):
     Legendre([ 1.  ,  3.25,  1.  ,  0.75], domain=[-1,  1], window=[-1,  1]) # may vary
 
     """
-    [pol] = pu.as_series([pol])
-    deg = len(pol) - 1
-    res = 0
-    for i in range(deg, -1, -1):
-        res = legadd(legmulx(res), pol[i])
-    return res
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.legendre.poly2leg', 'poly2leg(pol)', {'pu': pu, 'legadd': legadd, 'legmulx': legmulx, 'pol': pol}, 1)
 
 def leg2poly(c):
     """
@@ -190,39 +176,12 @@ def leg2poly(c):
 
 
     """
-    from .polynomial import polyadd, polysub, polymulx
-
-    [c] = pu.as_series([c])
-    n = len(c)
-    if n < 3:
-        return c
-    else:
-        c0 = c[-2]
-        c1 = c[-1]
-        # i is the current degree of c1
-        for i in range(n - 1, 1, -1):
-            tmp = c0
-            c0 = polysub(c[i - 2], (c1*(i - 1))/i)
-            c1 = polyadd(tmp, (polymulx(c1)*(2*i - 1))/i)
-        return polyadd(c0, polymulx(c1))
-
-#
-# These are constant arrays are of integer type so as to be compatible
-# with the widest range of other types, such as Decimal.
-#
-
-# Legendre
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.legendre.leg2poly', 'leg2poly(c)', {'pu': pu, 'c': c}, 1)
 legdomain = np.array([-1, 1])
-
-# Legendre coefficients representing zero.
 legzero = np.array([0])
-
-# Legendre coefficients representing one.
 legone = np.array([1])
-
-# Legendre coefficients representing the identity x.
 legx = np.array([0, 1])
-
 
 def legline(off, scl):
     """
@@ -258,11 +217,8 @@ def legline(off, scl):
     -3.0
 
     """
-    if scl != 0:
-        return np.array([off, scl])
-    else:
-        return np.array([off])
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.legendre.legline', 'legline(off, scl)', {'np': np, 'off': off, 'scl': scl}, 1)
 
 def legfromroots(roots):
     """
@@ -318,7 +274,6 @@ def legfromroots(roots):
     """
     return pu._fromroots(legline, legmul, roots)
 
-
 def legadd(c1, c2):
     """
     Add one Legendre series to another.
@@ -359,7 +314,6 @@ def legadd(c1, c2):
 
     """
     return pu._add(c1, c2)
-
 
 def legsub(c1, c2):
     """
@@ -404,7 +358,6 @@ def legsub(c1, c2):
     """
     return pu._sub(c1, c2)
 
-
 def legmulx(c):
     """Multiply a Legendre series by x.
 
@@ -443,23 +396,8 @@ def legmulx(c):
     array([ 0.66666667, 2.2, 1.33333333, 1.8]) # may vary
 
     """
-    # c is a trimmed copy
-    [c] = pu.as_series([c])
-    # The zero series needs special treatment
-    if len(c) == 1 and c[0] == 0:
-        return c
-
-    prd = np.empty(len(c) + 1, dtype=c.dtype)
-    prd[0] = c[0]*0
-    prd[1] = c[0]
-    for i in range(1, len(c)):
-        j = i + 1
-        k = i - 1
-        s = i + j
-        prd[j] = (c[i]*j)/s
-        prd[k] += (c[i]*i)/s
-    return prd
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.legendre.legmulx', 'legmulx(c)', {'pu': pu, 'np': np, 'c': c}, 1)
 
 def legmul(c1, c2):
     """
@@ -501,33 +439,8 @@ def legmul(c1, c2):
     array([  4.33333333,  10.4       ,  11.66666667,   3.6       ]) # may vary
 
     """
-    # s1, s2 are trimmed copies
-    [c1, c2] = pu.as_series([c1, c2])
-
-    if len(c1) > len(c2):
-        c = c2
-        xs = c1
-    else:
-        c = c1
-        xs = c2
-
-    if len(c) == 1:
-        c0 = c[0]*xs
-        c1 = 0
-    elif len(c) == 2:
-        c0 = c[0]*xs
-        c1 = c[1]*xs
-    else:
-        nd = len(c)
-        c0 = c[-2]*xs
-        c1 = c[-1]*xs
-        for i in range(3, len(c) + 1):
-            tmp = c0
-            nd = nd - 1
-            c0 = legsub(c[-i]*xs, (c1*(nd - 1))/nd)
-            c1 = legadd(tmp, (legmulx(c1)*(2*nd - 1))/nd)
-    return legadd(c0, legmulx(c1))
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.legendre.legmul', 'legmul(c1, c2)', {'pu': pu, 'legsub': legsub, 'legadd': legadd, 'legmulx': legmulx, 'c1': c1, 'c2': c2}, 1)
 
 def legdiv(c1, c2):
     """
@@ -577,7 +490,6 @@ def legdiv(c1, c2):
     """
     return pu._div(legmul, c1, c2)
 
-
 def legpow(c, pow, maxpower=16):
     """Raise a Legendre series to a power.
 
@@ -607,7 +519,6 @@ def legpow(c, pow, maxpower=16):
 
     """
     return pu._pow(legmul, c, pow, maxpower)
-
 
 def legder(c, m=1, scl=1, axis=0):
     """
@@ -669,37 +580,8 @@ def legder(c, m=1, scl=1, axis=0):
     array([  9.,  60.])
 
     """
-    c = np.array(c, ndmin=1, copy=True)
-    if c.dtype.char in '?bBhHiIlLqQpP':
-        c = c.astype(np.double)
-    cnt = pu._deprecate_as_int(m, "the order of derivation")
-    iaxis = pu._deprecate_as_int(axis, "the axis")
-    if cnt < 0:
-        raise ValueError("The order of derivation must be non-negative")
-    iaxis = normalize_axis_index(iaxis, c.ndim)
-
-    if cnt == 0:
-        return c
-
-    c = np.moveaxis(c, iaxis, 0)
-    n = len(c)
-    if cnt >= n:
-        c = c[:1]*0
-    else:
-        for i in range(cnt):
-            n = n - 1
-            c *= scl
-            der = np.empty((n,) + c.shape[1:], dtype=c.dtype)
-            for j in range(n, 2, -1):
-                der[j - 1] = (2*j - 1)*c[j]
-                c[j - 2] += c[j]
-            if n > 1:
-                der[1] = 3*c[2]
-            der[0] = c[1]
-            c = der
-    c = np.moveaxis(c, 0, iaxis)
-    return c
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.legendre.legder', 'legder(c, m=1, scl=1, axis=0)', {'np': np, 'pu': pu, 'normalize_axis_index': normalize_axis_index, 'c': c, 'm': m, 'scl': scl, 'axis': axis}, 1)
 
 def legint(c, m=1, k=[], lbnd=0, scl=1, axis=0):
     """
@@ -786,48 +668,8 @@ def legint(c, m=1, k=[], lbnd=0, scl=1, axis=0):
     array([ 0.66666667,  0.8       ,  1.33333333,  1.2       ]) # may vary
 
     """
-    c = np.array(c, ndmin=1, copy=True)
-    if c.dtype.char in '?bBhHiIlLqQpP':
-        c = c.astype(np.double)
-    if not np.iterable(k):
-        k = [k]
-    cnt = pu._deprecate_as_int(m, "the order of integration")
-    iaxis = pu._deprecate_as_int(axis, "the axis")
-    if cnt < 0:
-        raise ValueError("The order of integration must be non-negative")
-    if len(k) > cnt:
-        raise ValueError("Too many integration constants")
-    if np.ndim(lbnd) != 0:
-        raise ValueError("lbnd must be a scalar.")
-    if np.ndim(scl) != 0:
-        raise ValueError("scl must be a scalar.")
-    iaxis = normalize_axis_index(iaxis, c.ndim)
-
-    if cnt == 0:
-        return c
-
-    c = np.moveaxis(c, iaxis, 0)
-    k = list(k) + [0]*(cnt - len(k))
-    for i in range(cnt):
-        n = len(c)
-        c *= scl
-        if n == 1 and np.all(c[0] == 0):
-            c[0] += k[i]
-        else:
-            tmp = np.empty((n + 1,) + c.shape[1:], dtype=c.dtype)
-            tmp[0] = c[0]*0
-            tmp[1] = c[0]
-            if n > 1:
-                tmp[2] = c[1]/3
-            for j in range(2, n):
-                t = c[j]/(2*j + 1)
-                tmp[j + 1] = t
-                tmp[j - 1] -= t
-            tmp[0] += k[i] - legval(lbnd, tmp)
-            c = tmp
-    c = np.moveaxis(c, 0, iaxis)
-    return c
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.legendre.legint', 'legint(c, m=1, k=[], lbnd=0, scl=1, axis=0)', {'np': np, 'pu': pu, 'normalize_axis_index': normalize_axis_index, 'legval': legval, 'c': c, 'm': m, 'k': k, 'lbnd': lbnd, 'scl': scl, 'axis': axis}, 1)
 
 def legval(x, c, tensor=True):
     """
@@ -888,31 +730,8 @@ def legval(x, c, tensor=True):
     The evaluation uses Clenshaw recursion, aka synthetic division.
 
     """
-    c = np.array(c, ndmin=1, copy=False)
-    if c.dtype.char in '?bBhHiIlLqQpP':
-        c = c.astype(np.double)
-    if isinstance(x, (tuple, list)):
-        x = np.asarray(x)
-    if isinstance(x, np.ndarray) and tensor:
-        c = c.reshape(c.shape + (1,)*x.ndim)
-
-    if len(c) == 1:
-        c0 = c[0]
-        c1 = 0
-    elif len(c) == 2:
-        c0 = c[0]
-        c1 = c[1]
-    else:
-        nd = len(c)
-        c0 = c[-2]
-        c1 = c[-1]
-        for i in range(3, len(c) + 1):
-            tmp = c0
-            nd = nd - 1
-            c0 = c[-i] - (c1*(nd - 1))/nd
-            c1 = tmp + (c1*x*(2*nd - 1))/nd
-    return c0 + c1*x
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.legendre.legval', 'legval(x, c, tensor=True)', {'np': np, 'x': x, 'c': c, 'tensor': tensor}, 1)
 
 def legval2d(x, y, c):
     """
@@ -920,7 +739,7 @@ def legval2d(x, y, c):
 
     This function returns the values:
 
-    .. math:: p(x,y) = \\sum_{i,j} c_{i,j} * L_i(x) * L_j(y)
+    .. math:: p(x,y) = \sum_{i,j} c_{i,j} * L_i(x) * L_j(y)
 
     The parameters `x` and `y` are converted to arrays only if they are
     tuples or a lists, otherwise they are treated as a scalars and they
@@ -962,14 +781,13 @@ def legval2d(x, y, c):
     """
     return pu._valnd(legval, c, x, y)
 
-
 def leggrid2d(x, y, c):
     """
     Evaluate a 2-D Legendre series on the Cartesian product of x and y.
 
     This function returns the values:
 
-    .. math:: p(a,b) = \\sum_{i,j} c_{i,j} * L_i(a) * L_j(b)
+    .. math:: p(a,b) = \sum_{i,j} c_{i,j} * L_i(a) * L_j(b)
 
     where the points `(a, b)` consist of all pairs formed by taking
     `a` from `x` and `b` from `y`. The resulting points form a grid with
@@ -1015,14 +833,13 @@ def leggrid2d(x, y, c):
     """
     return pu._gridnd(legval, c, x, y)
 
-
 def legval3d(x, y, z, c):
     """
     Evaluate a 3-D Legendre series at points (x, y, z).
 
     This function returns the values:
 
-    .. math:: p(x,y,z) = \\sum_{i,j,k} c_{i,j,k} * L_i(x) * L_j(y) * L_k(z)
+    .. math:: p(x,y,z) = \sum_{i,j,k} c_{i,j,k} * L_i(x) * L_j(y) * L_k(z)
 
     The parameters `x`, `y`, and `z` are converted to arrays only if
     they are tuples or a lists, otherwise they are treated as a scalars and
@@ -1066,14 +883,13 @@ def legval3d(x, y, z, c):
     """
     return pu._valnd(legval, c, x, y, z)
 
-
 def leggrid3d(x, y, z, c):
     """
     Evaluate a 3-D Legendre series on the Cartesian product of x, y, and z.
 
     This function returns the values:
 
-    .. math:: p(a,b,c) = \\sum_{i,j,k} c_{i,j,k} * L_i(a) * L_j(b) * L_k(c)
+    .. math:: p(a,b,c) = \sum_{i,j,k} c_{i,j,k} * L_i(a) * L_j(b) * L_k(c)
 
     where the points `(a, b, c)` consist of all triples formed by taking
     `a` from `x`, `b` from `y`, and `c` from `z`. The resulting points form
@@ -1122,7 +938,6 @@ def leggrid3d(x, y, z, c):
     """
     return pu._gridnd(legval, c, x, y, z)
 
-
 def legvander(x, deg):
     """Pseudo-Vandermonde matrix of given degree.
 
@@ -1158,23 +973,8 @@ def legvander(x, deg):
         the converted `x`.
 
     """
-    ideg = pu._deprecate_as_int(deg, "deg")
-    if ideg < 0:
-        raise ValueError("deg must be non-negative")
-
-    x = np.array(x, copy=False, ndmin=1) + 0.0
-    dims = (ideg + 1,) + x.shape
-    dtyp = x.dtype
-    v = np.empty(dims, dtype=dtyp)
-    # Use forward recursion to generate the entries. This is not as accurate
-    # as reverse recursion in this application but it is more efficient.
-    v[0] = x*0 + 1
-    if ideg > 0:
-        v[1] = x
-        for i in range(2, ideg + 1):
-            v[i] = (v[i-1]*x*(2*i - 1) - v[i-2]*(i - 1))/i
-    return np.moveaxis(v, 0, -1)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.legendre.legvander', 'legvander(x, deg)', {'pu': pu, 'np': np, 'x': x, 'deg': deg}, 1)
 
 def legvander2d(x, y, deg):
     """Pseudo-Vandermonde matrix of given degrees.
@@ -1228,7 +1028,6 @@ def legvander2d(x, y, deg):
     """
     return pu._vander_nd_flat((legvander, legvander), (x, y), deg)
 
-
 def legvander3d(x, y, z, deg):
     """Pseudo-Vandermonde matrix of given degrees.
 
@@ -1281,7 +1080,6 @@ def legvander3d(x, y, z, deg):
 
     """
     return pu._vander_nd_flat((legvander, legvander, legvander), (x, y, z), deg)
-
 
 def legfit(x, y, deg, rcond=None, full=False, w=None):
     """
@@ -1376,7 +1174,7 @@ def legfit(x, y, deg, rcond=None, full=False, w=None):
     The solution is the coefficients of the Legendre series `p` that
     minimizes the sum of the weighted squared errors
 
-    .. math:: E = \\sum_j w_j^2 * |y_j - p(x_j)|^2,
+    .. math:: E = \sum_j w_j^2 * |y_j - p(x_j)|^2,
 
     where :math:`w_j` are the weights. This problem is solved by setting up
     as the (typically) overdetermined matrix equation
@@ -1411,7 +1209,6 @@ def legfit(x, y, deg, rcond=None, full=False, w=None):
     """
     return pu._fit(legvander, x, y, deg, rcond, full, w)
 
-
 def legcompanion(c):
     """Return the scaled companion matrix of c.
 
@@ -1438,23 +1235,8 @@ def legcompanion(c):
     .. versionadded:: 1.7.0
 
     """
-    # c is a trimmed copy
-    [c] = pu.as_series([c])
-    if len(c) < 2:
-        raise ValueError('Series must have maximum degree of at least 1.')
-    if len(c) == 2:
-        return np.array([[-c[0]/c[1]]])
-
-    n = len(c) - 1
-    mat = np.zeros((n, n), dtype=c.dtype)
-    scl = 1./np.sqrt(2*np.arange(n) + 1)
-    top = mat.reshape(-1)[1::n+1]
-    bot = mat.reshape(-1)[n::n+1]
-    top[...] = np.arange(1, n)*scl[:n-1]*scl[1:n]
-    bot[...] = top
-    mat[:, -1] -= (c[:-1]/c[-1])*(scl/scl[-1])*(n/(2*n - 1))
-    return mat
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.legendre.legcompanion', 'legcompanion(c)', {'pu': pu, 'np': np, 'c': c}, 1)
 
 def legroots(c):
     """
@@ -1462,7 +1244,7 @@ def legroots(c):
 
     Return the roots (a.k.a. "zeros") of the polynomial
 
-    .. math:: p(x) = \\sum_i c[i] * L_i(x).
+    .. math:: p(x) = \sum_i c[i] * L_i(x).
 
     Parameters
     ----------
@@ -1503,19 +1285,8 @@ def legroots(c):
     array([-0.85099543, -0.11407192,  0.51506735]) # may vary
 
     """
-    # c is a trimmed copy
-    [c] = pu.as_series([c])
-    if len(c) < 2:
-        return np.array([], dtype=c.dtype)
-    if len(c) == 2:
-        return np.array([-c[0]/c[1]])
-
-    # rotated companion matrix reduces error
-    m = legcompanion(c)[::-1,::-1]
-    r = la.eigvals(m)
-    r.sort()
-    return r
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.legendre.legroots', 'legroots(c)', {'pu': pu, 'np': np, 'legcompanion': legcompanion, 'la': la, 'c': c}, 1)
 
 def leggauss(deg):
     """
@@ -1553,37 +1324,8 @@ def leggauss(deg):
     the right value when integrating 1.
 
     """
-    ideg = pu._deprecate_as_int(deg, "deg")
-    if ideg <= 0:
-        raise ValueError("deg must be a positive integer")
-
-    # first approximation of roots. We use the fact that the companion
-    # matrix is symmetric in this case in order to obtain better zeros.
-    c = np.array([0]*deg + [1])
-    m = legcompanion(c)
-    x = la.eigvalsh(m)
-
-    # improve roots by one application of Newton
-    dy = legval(x, c)
-    df = legval(x, legder(c))
-    x -= dy/df
-
-    # compute the weights. We scale the factor to avoid possible numerical
-    # overflow.
-    fm = legval(x, c[1:])
-    fm /= np.abs(fm).max()
-    df /= np.abs(df).max()
-    w = 1/(fm * df)
-
-    # for Legendre we can also symmetrize
-    w = (w + w[::-1])/2
-    x = (x - x[::-1])/2
-
-    # scale w to get the right value
-    w *= 2. / w.sum()
-
-    return x, w
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.legendre.leggauss', 'leggauss(deg)', {'pu': pu, 'np': np, 'legcompanion': legcompanion, 'la': la, 'legval': legval, 'legder': legder, 'deg': deg}, 2)
 
 def legweight(x):
     """
@@ -1609,12 +1351,9 @@ def legweight(x):
     .. versionadded:: 1.7.0
 
     """
-    w = x*0.0 + 1.0
+    w = x * 0.0 + 1.0
     return w
 
-#
-# Legendre series class
-#
 
 class Legendre(ABCPolyBase):
     """A Legendre series class.
@@ -1638,7 +1377,6 @@ class Legendre(ABCPolyBase):
         .. versionadded:: 1.6.0
 
     """
-    # Virtual Functions
     _add = staticmethod(legadd)
     _sub = staticmethod(legsub)
     _mul = staticmethod(legmul)
@@ -1651,8 +1389,8 @@ class Legendre(ABCPolyBase):
     _line = staticmethod(legline)
     _roots = staticmethod(legroots)
     _fromroots = staticmethod(legfromroots)
-
-    # Virtual properties
     domain = np.array(legdomain)
     window = np.array(legdomain)
     basis_name = 'P'
+
+

@@ -2,16 +2,12 @@ try:
     from urllib.parse import urlparse, urlunparse
 except ImportError:
     from urlparse import urlparse, urlunparse
-
 import torch._six as six
 import numbers
 import os
 from . import FileStore, TCPStore
 from .constants import default_pg_timeout
-
-
 _rendezvous_handlers = {}
-
 
 def register_rendezvous_handler(scheme, handler):
     """Registers a new rendezvous handler.
@@ -36,146 +32,28 @@ def register_rendezvous_handler(scheme, handler):
             the corresponding scheme. It must be a generator function
             that yields the triplet.
     """
-    global _rendezvous_handlers
-    if scheme in _rendezvous_handlers:
-        raise RuntimeError(
-            "Rendezvous handler for {}:// already registered".format(scheme)
-        )
-    _rendezvous_handlers[scheme] = handler
-
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('torch.distributed.rendezvous.register_rendezvous_handler', 'register_rendezvous_handler(scheme, handler)', {'_rendezvous_handlers': _rendezvous_handlers, 'scheme': scheme, 'handler': handler}, 0)
 
 def rendezvous(url, rank=-1, world_size=-1, **kwargs):
-    if not isinstance(url, six.string_classes):
-        raise RuntimeError("`url` must be a string. {}: {}".format(type(url), url))
-
-    if not isinstance(rank, numbers.Integral):
-        raise RuntimeError("`rank` must be an integer. {}".format(rank))
-
-    if not isinstance(world_size, numbers.Integral):
-        raise RuntimeError("`world_size` must be an integer. {}".format(world_size))
-
-    # Append node-specific arguments.
-    result = urlparse(url)
-    if rank != -1 or world_size != -1:
-        query_dict = dict(
-            pair.split("=") for pair in filter(None, result.query.split("&"))
-        )
-        assert (
-            "rank" not in query_dict and "world_size" not in query_dict
-        ), "The url: {url} has node-specific arguments(rank, world_size) already.".format(
-            url=url
-        )
-        if rank != -1:
-            query_dict["rank"] = rank
-        if world_size != -1:
-            query_dict["world_size"] = world_size
-
-        result = result._replace(
-            query="{}".format("&".join(["{}={}".format(k, v) for k, v in query_dict.items()]))
-        )
-        url = urlunparse(result)
-
-    if result.scheme not in _rendezvous_handlers:
-        raise RuntimeError("No rendezvous handler for {}://".format(result.scheme))
-    return _rendezvous_handlers[result.scheme](url, **kwargs)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.rendezvous.rendezvous', 'rendezvous(url, rank=-1, world_size=-1, **kwargs)', {'six': six, 'numbers': numbers, 'urlparse': urlparse, 'urlunparse': urlunparse, '_rendezvous_handlers': _rendezvous_handlers, 'url': url, 'rank': rank, 'world_size': world_size, 'kwargs': kwargs}, 1)
 
 def _rendezvous_error(msg):
-    return ValueError("Error initializing torch.distributed using " + msg)
-
+    return ValueError('Error initializing torch.distributed using ' + msg)
 
 def _file_rendezvous_handler(url, **kwargs):
-    def _error(msg):
-        return _rendezvous_error("file:// rendezvous: " + msg)
-
-    result = urlparse(url)
-    path = result.path
-    if not path:
-        raise _error("path missing")
-    query = dict(pair.split("=") for pair in filter(None, result.query.split("&")))
-    if "rank" not in query:
-        raise _error("rank parameter missing")
-    if "world_size" not in query:
-        raise _error("world size parameter missing")
-
-    rank = int(query["rank"])
-    world_size = int(query["world_size"])
-    store = FileStore(path, world_size)
-    yield (store, rank, world_size)
-
-    # If this configuration is invalidated, there is nothing we can do about it
-    raise RuntimeError("Unable to perform rerendezvous using file:// method")
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.rendezvous._file_rendezvous_handler', '_file_rendezvous_handler(url, **kwargs)', {'_rendezvous_error': _rendezvous_error, 'urlparse': urlparse, 'FileStore': FileStore, 'url': url, 'kwargs': kwargs}, 1)
 
 def _tcp_rendezvous_handler(url, timeout=default_pg_timeout, **kwargs):
-    def _error(msg):
-        return _rendezvous_error("tcp:// rendezvous: " + msg)
-
-    result = urlparse(url)
-    if not result.port:
-        raise _error("port number missing")
-    query = dict(pair.split("=") for pair in filter(None, result.query.split("&")))
-    if "rank" not in query:
-        raise _error("rank parameter missing")
-    if "world_size" not in query:
-        raise _error("world size parameter missing")
-
-    rank = int(query["rank"])
-    world_size = int(query["world_size"])
-    start_daemon = rank == 0
-    store = TCPStore(result.hostname, result.port, world_size, start_daemon, timeout)
-    yield (store, rank, world_size)
-
-    # If this configuration is invalidated, there is nothing we can do about it
-    raise RuntimeError("Unable to perform rerendezvous using tcp:// method")
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.rendezvous._tcp_rendezvous_handler', '_tcp_rendezvous_handler(url, timeout=default_pg_timeout, **kwargs)', {'_rendezvous_error': _rendezvous_error, 'urlparse': urlparse, 'TCPStore': TCPStore, 'url': url, 'timeout': timeout, 'default_pg_timeout': default_pg_timeout, 'kwargs': kwargs}, 1)
 
 def _env_rendezvous_handler(url, timeout=default_pg_timeout, **kwargs):
-    def _error(msg):
-        return _rendezvous_error("env:// rendezvous: " + msg)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.rendezvous._env_rendezvous_handler', '_env_rendezvous_handler(url, timeout=default_pg_timeout, **kwargs)', {'_rendezvous_error': _rendezvous_error, 'urlparse': urlparse, 'os': os, 'TCPStore': TCPStore, 'url': url, 'timeout': timeout, 'default_pg_timeout': default_pg_timeout, 'kwargs': kwargs}, 1)
+register_rendezvous_handler('file', _file_rendezvous_handler)
+register_rendezvous_handler('tcp', _tcp_rendezvous_handler)
+register_rendezvous_handler('env', _env_rendezvous_handler)
 
-    def _env_error(var):
-        return _error("environment variable %s expected, but not set" % var)
-
-    result = urlparse(url)
-    query = dict(pair.split("=") for pair in filter(None, result.query.split("&")))
-
-    if "rank" in query:
-        rank = int(query["rank"])
-    else:
-        rank = os.environ.get("RANK", None)
-        if rank is None:
-            raise _env_error("RANK")
-
-    if "world_size" in query:
-        world_size = int(query["world_size"])
-    else:
-        world_size = os.environ.get("WORLD_SIZE", None)
-        if world_size is None:
-            raise _env_error("WORLD_SIZE")
-
-    master_addr = os.environ.get("MASTER_ADDR", None)
-    if master_addr is None:
-        raise _env_error("MASTER_ADDR")
-
-    master_port = os.environ.get("MASTER_PORT", None)
-    if master_port is None:
-        raise _env_error("MASTER_PORT")
-
-    # Converting before creating the store
-    rank = int(rank)
-    world_size = int(world_size)
-    master_port = int(master_port)
-
-    # Now start the TCP store daemon on the rank 0
-    start_daemon = rank == 0
-    store = TCPStore(master_addr, master_port, world_size, start_daemon, timeout)
-    yield (store, rank, world_size)
-
-    # If this configuration is invalidated, there is nothing we can do about it
-    raise RuntimeError("Unable to perform rerendezvous using env:// method")
-
-
-register_rendezvous_handler("file", _file_rendezvous_handler)
-register_rendezvous_handler("tcp", _tcp_rendezvous_handler)
-register_rendezvous_handler("env", _env_rendezvous_handler)

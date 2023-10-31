@@ -3,7 +3,7 @@ from .optimizer import Optimizer, required
 
 
 class SGD(Optimizer):
-    r"""Implements stochastic gradient descent (optionally with momentum).
+    """Implements stochastic gradient descent (optionally with momentum).
 
     Nesterov momentum is based on the formula from
     `On the importance of initialization and momentum in deep learning`__.
@@ -32,9 +32,9 @@ class SGD(Optimizer):
         Considering the specific case of Momentum, the update can be written as
 
         .. math::
-            \begin{aligned}
-                v_{t+1} & = \mu * v_{t} + g_{t+1}, \\
-                p_{t+1} & = p_{t} - \text{lr} * v_{t+1},
+            egin{aligned}
+                v_{t+1} & = \mu * v_{t} + g_{t+1}, \
+                p_{t+1} & = p_{t} - 	ext{lr} * v_{t+1},
             \end{aligned}
 
         where :math:`p`, :math:`g`, :math:`v` and :math:`\mu` denote the 
@@ -44,34 +44,31 @@ class SGD(Optimizer):
         other frameworks which employ an update of the form
 
         .. math::
-            \begin{aligned}
-                v_{t+1} & = \mu * v_{t} + \text{lr} * g_{t+1}, \\
+            egin{aligned}
+                v_{t+1} & = \mu * v_{t} + 	ext{lr} * g_{t+1}, \
                 p_{t+1} & = p_{t} - v_{t+1}.
             \end{aligned}
 
         The Nesterov version is analogously modified.
     """
-
-    def __init__(self, params, lr=required, momentum=0, dampening=0,
-                 weight_decay=0, nesterov=False):
-        if lr is not required and lr < 0.0:
-            raise ValueError("Invalid learning rate: {}".format(lr))
+    
+    def __init__(self, params, lr=required, momentum=0, dampening=0, weight_decay=0, nesterov=False):
+        if (lr is not required and lr < 0.0):
+            raise ValueError('Invalid learning rate: {}'.format(lr))
         if momentum < 0.0:
-            raise ValueError("Invalid momentum value: {}".format(momentum))
+            raise ValueError('Invalid momentum value: {}'.format(momentum))
         if weight_decay < 0.0:
-            raise ValueError("Invalid weight_decay value: {}".format(weight_decay))
-
-        defaults = dict(lr=lr, momentum=momentum, dampening=dampening,
-                        weight_decay=weight_decay, nesterov=nesterov)
-        if nesterov and (momentum <= 0 or dampening != 0):
-            raise ValueError("Nesterov momentum requires a momentum and zero dampening")
+            raise ValueError('Invalid weight_decay value: {}'.format(weight_decay))
+        defaults = dict(lr=lr, momentum=momentum, dampening=dampening, weight_decay=weight_decay, nesterov=nesterov)
+        if (nesterov and ((momentum <= 0 or dampening != 0))):
+            raise ValueError('Nesterov momentum requires a momentum and zero dampening')
         super(SGD, self).__init__(params, defaults)
-
+    
     def __setstate__(self, state):
         super(SGD, self).__setstate__(state)
         for group in self.param_groups:
             group.setdefault('nesterov', False)
-
+    
     @torch.no_grad()
     def step(self, closure=None):
         """Performs a single optimization step.
@@ -84,13 +81,11 @@ class SGD(Optimizer):
         if closure is not None:
             with torch.enable_grad():
                 loss = closure()
-
         for group in self.param_groups:
             weight_decay = group['weight_decay']
             momentum = group['momentum']
             dampening = group['dampening']
             nesterov = group['nesterov']
-
             for p in group['params']:
                 if p.grad is None:
                     continue
@@ -108,7 +103,7 @@ class SGD(Optimizer):
                         d_p = d_p.add(buf, alpha=momentum)
                     else:
                         d_p = buf
-
                 p.add_(d_p, alpha=-group['lr'])
-
         return loss
+
+

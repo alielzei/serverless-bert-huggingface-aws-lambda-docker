@@ -4,58 +4,23 @@ import operator
 import sys
 import warnings
 import numbers
-
 import numpy as np
 from . import multiarray
-from .multiarray import (
-    fastCopyAndTranspose, ALLOW_THREADS,
-    BUFSIZE, CLIP, MAXDIMS, MAY_SHARE_BOUNDS, MAY_SHARE_EXACT, RAISE,
-    WRAP, arange, array, asarray, asanyarray, ascontiguousarray,
-    asfortranarray, broadcast, can_cast, compare_chararrays,
-    concatenate, copyto, dot, dtype, empty,
-    empty_like, flatiter, frombuffer, from_dlpack, fromfile, fromiter,
-    fromstring, inner, lexsort, matmul, may_share_memory,
-    min_scalar_type, ndarray, nditer, nested_iters, promote_types,
-    putmask, result_type, set_numeric_ops, shares_memory, vdot, where,
-    zeros, normalize_axis_index, _get_promotion_state, _set_promotion_state)
-
+from .multiarray import fastCopyAndTranspose, ALLOW_THREADS, BUFSIZE, CLIP, MAXDIMS, MAY_SHARE_BOUNDS, MAY_SHARE_EXACT, RAISE, WRAP, arange, array, asarray, asanyarray, ascontiguousarray, asfortranarray, broadcast, can_cast, compare_chararrays, concatenate, copyto, dot, dtype, empty, empty_like, flatiter, frombuffer, from_dlpack, fromfile, fromiter, fromstring, inner, lexsort, matmul, may_share_memory, min_scalar_type, ndarray, nditer, nested_iters, promote_types, putmask, result_type, set_numeric_ops, shares_memory, vdot, where, zeros, normalize_axis_index, _get_promotion_state, _set_promotion_state
 from . import overrides
 from . import umath
 from . import shape_base
 from .overrides import set_array_function_like_doc, set_module
-from .umath import (multiply, invert, sin, PINF, NAN)
+from .umath import multiply, invert, sin, PINF, NAN
 from . import numerictypes
 from .numerictypes import longlong, intc, int_, float_, complex_, bool_
 from ._exceptions import TooHardError, AxisError
 from ._ufunc_config import errstate, _no_nep50_warning
-
 bitwise_not = invert
 ufunc = type(sin)
 newaxis = None
-
-array_function_dispatch = functools.partial(
-    overrides.array_function_dispatch, module='numpy')
-
-
-__all__ = [
-    'newaxis', 'ndarray', 'flatiter', 'nditer', 'nested_iters', 'ufunc',
-    'arange', 'array', 'asarray', 'asanyarray', 'ascontiguousarray',
-    'asfortranarray', 'zeros', 'count_nonzero', 'empty', 'broadcast', 'dtype',
-    'fromstring', 'fromfile', 'frombuffer', 'from_dlpack', 'where',
-    'argwhere', 'copyto', 'concatenate', 'fastCopyAndTranspose', 'lexsort',
-    'set_numeric_ops', 'can_cast', 'promote_types', 'min_scalar_type',
-    'result_type', 'isfortran', 'empty_like', 'zeros_like', 'ones_like',
-    'correlate', 'convolve', 'inner', 'dot', 'outer', 'vdot', 'roll',
-    'rollaxis', 'moveaxis', 'cross', 'tensordot', 'little_endian',
-    'fromiter', 'array_equal', 'array_equiv', 'indices', 'fromfunction',
-    'isclose', 'isscalar', 'binary_repr', 'base_repr', 'ones',
-    'identity', 'allclose', 'compare_chararrays', 'putmask',
-    'flatnonzero', 'Inf', 'inf', 'infty', 'Infinity', 'nan', 'NaN',
-    'False_', 'True_', 'bitwise_not', 'CLIP', 'RAISE', 'WRAP', 'MAXDIMS',
-    'BUFSIZE', 'ALLOW_THREADS', 'ComplexWarning', 'full', 'full_like',
-    'matmul', 'shares_memory', 'may_share_memory', 'MAY_SHARE_BOUNDS',
-    'MAY_SHARE_EXACT', 'TooHardError', 'AxisError',
-    '_get_promotion_state', '_set_promotion_state']
+array_function_dispatch = functools.partial(overrides.array_function_dispatch, module='numpy')
+__all__ = ['newaxis', 'ndarray', 'flatiter', 'nditer', 'nested_iters', 'ufunc', 'arange', 'array', 'asarray', 'asanyarray', 'ascontiguousarray', 'asfortranarray', 'zeros', 'count_nonzero', 'empty', 'broadcast', 'dtype', 'fromstring', 'fromfile', 'frombuffer', 'from_dlpack', 'where', 'argwhere', 'copyto', 'concatenate', 'fastCopyAndTranspose', 'lexsort', 'set_numeric_ops', 'can_cast', 'promote_types', 'min_scalar_type', 'result_type', 'isfortran', 'empty_like', 'zeros_like', 'ones_like', 'correlate', 'convolve', 'inner', 'dot', 'outer', 'vdot', 'roll', 'rollaxis', 'moveaxis', 'cross', 'tensordot', 'little_endian', 'fromiter', 'array_equal', 'array_equiv', 'indices', 'fromfunction', 'isclose', 'isscalar', 'binary_repr', 'base_repr', 'ones', 'identity', 'allclose', 'compare_chararrays', 'putmask', 'flatnonzero', 'Inf', 'inf', 'infty', 'Infinity', 'nan', 'NaN', 'False_', 'True_', 'bitwise_not', 'CLIP', 'RAISE', 'WRAP', 'MAXDIMS', 'BUFSIZE', 'ALLOW_THREADS', 'ComplexWarning', 'full', 'full_like', 'matmul', 'shares_memory', 'may_share_memory', 'MAY_SHARE_BOUNDS', 'MAY_SHARE_EXACT', 'TooHardError', 'AxisError', '_get_promotion_state', '_set_promotion_state']
 
 
 @set_module('numpy')
@@ -71,8 +36,7 @@ class ComplexWarning(RuntimeWarning):
 
 
 def _zeros_like_dispatcher(a, dtype=None, order=None, subok=None, shape=None):
-    return (a,)
-
+    return (a, )
 
 @array_function_dispatch(_zeros_like_dispatcher)
 def zeros_like(a, dtype=None, order='K', subok=True, shape=None):
@@ -137,15 +101,12 @@ def zeros_like(a, dtype=None, order='K', subok=True, shape=None):
 
     """
     res = empty_like(a, dtype=dtype, order=order, subok=subok, shape=shape)
-    # needed instead of a 0 to get same result as zeros for string dtypes
     z = zeros(1, dtype=res.dtype)
     multiarray.copyto(res, z, casting='unsafe')
     return res
 
-
 def _ones_dispatcher(shape, dtype=None, order=None, *, like=None):
-    return(like,)
-
+    return (like, )
 
 @set_array_function_like_doc
 @set_module('numpy')
@@ -201,20 +162,13 @@ def ones(shape, dtype=None, order='C', *, like=None):
     """
     if like is not None:
         return _ones_with_like(shape, dtype=dtype, order=order, like=like)
-
     a = empty(shape, dtype, order)
     multiarray.copyto(a, 1, casting='unsafe')
     return a
-
-
-_ones_with_like = array_function_dispatch(
-    _ones_dispatcher, use_like=True
-)(ones)
-
+_ones_with_like = array_function_dispatch(_ones_dispatcher, use_like=True)(ones)
 
 def _ones_like_dispatcher(a, dtype=None, order=None, subok=None, shape=None):
-    return (a,)
-
+    return (a, )
 
 @array_function_dispatch(_ones_like_dispatcher)
 def ones_like(a, dtype=None, order='K', subok=True, shape=None):
@@ -282,10 +236,8 @@ def ones_like(a, dtype=None, order='K', subok=True, shape=None):
     multiarray.copyto(res, 1, casting='unsafe')
     return res
 
-
 def _full_dispatcher(shape, fill_value, dtype=None, order=None, *, like=None):
-    return(like,)
-
+    return (like, )
 
 @set_array_function_like_doc
 @set_module('numpy')
@@ -337,23 +289,16 @@ def full(shape, fill_value, dtype=None, order='C', *, like=None):
     """
     if like is not None:
         return _full_with_like(shape, fill_value, dtype=dtype, order=order, like=like)
-
     if dtype is None:
         fill_value = asarray(fill_value)
         dtype = fill_value.dtype
     a = empty(shape, dtype, order)
     multiarray.copyto(a, fill_value, casting='unsafe')
     return a
-
-
-_full_with_like = array_function_dispatch(
-    _full_dispatcher, use_like=True
-)(full)
-
+_full_with_like = array_function_dispatch(_full_dispatcher, use_like=True)(full)
 
 def _full_like_dispatcher(a, fill_value, dtype=None, order=None, subok=None, shape=None):
-    return (a,)
-
+    return (a, )
 
 @array_function_dispatch(_full_like_dispatcher)
 def full_like(a, fill_value, dtype=None, order='K', subok=True, shape=None):
@@ -424,10 +369,8 @@ def full_like(a, fill_value, dtype=None, order='K', subok=True, shape=None):
     multiarray.copyto(res, fill_value, casting='unsafe')
     return res
 
-
 def _count_nonzero_dispatcher(a, axis=None, *, keepdims=None):
-    return (a,)
-
+    return (a, )
 
 @array_function_dispatch(_count_nonzero_dispatcher)
 def count_nonzero(a, axis=None, *, keepdims=False):
@@ -489,19 +432,8 @@ def count_nonzero(a, axis=None, *, keepdims=False):
     array([[2],
            [3]])
     """
-    if axis is None and not keepdims:
-        return multiarray.count_nonzero(a)
-
-    a = asanyarray(a)
-
-    # TODO: this works around .astype(bool) not working properly (gh-9847)
-    if np.issubdtype(a.dtype, np.character):
-        a_bool = a != a.dtype.type()
-    else:
-        a_bool = a.astype(np.bool_, copy=False)
-
-    return a_bool.sum(axis=axis, dtype=np.intp, keepdims=keepdims)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.core.numeric.count_nonzero', 'count_nonzero(a, axis=None, keepdims=False)', {'multiarray': multiarray, 'asanyarray': asanyarray, 'np': np, 'array_function_dispatch': array_function_dispatch, '_count_nonzero_dispatcher': _count_nonzero_dispatcher, 'a': a, 'axis': axis, 'keepdims': keepdims}, 1)
 
 @set_module('numpy')
 def isfortran(a):
@@ -570,10 +502,8 @@ def isfortran(a):
     """
     return a.flags.fnc
 
-
 def _argwhere_dispatcher(a):
-    return (a,)
-
+    return (a, )
 
 @array_function_dispatch(_argwhere_dispatcher)
 def argwhere(a):
@@ -617,17 +547,11 @@ def argwhere(a):
            [1, 2]])
 
     """
-    # nonzero does not behave well on 0d, so promote to 1d
-    if np.ndim(a) == 0:
-        a = shape_base.atleast_1d(a)
-        # then remove the added dimension
-        return argwhere(a)[:,:0]
-    return transpose(nonzero(a))
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.core.numeric.argwhere', 'argwhere(a)', {'np': np, 'shape_base': shape_base, 'argwhere': argwhere, 'transpose': transpose, 'nonzero': nonzero, 'array_function_dispatch': array_function_dispatch, '_argwhere_dispatcher': _argwhere_dispatcher, 'a': a}, 1)
 
 def _flatnonzero_dispatcher(a):
-    return (a,)
-
+    return (a, )
 
 @array_function_dispatch(_flatnonzero_dispatcher)
 def flatnonzero(a):
@@ -669,14 +593,12 @@ def flatnonzero(a):
     """
     return np.nonzero(np.ravel(a))[0]
 
-
 def _correlate_dispatcher(a, v, mode=None):
     return (a, v)
 
-
 @array_function_dispatch(_correlate_dispatcher)
 def correlate(a, v, mode='valid'):
-    r"""
+    """
     Cross-correlation of two 1-dimensional sequences.
 
     This function computes the correlation as generally defined in signal
@@ -721,7 +643,7 @@ def correlate(a, v, mode='valid'):
     `numpy.correlate` may perform slowly in large arrays (i.e. n = 1e5) because it does
     not use the FFT to compute the convolution; in that case, `scipy.signal.correlate` might
     be preferable.
-    
+
 
     Examples
     --------
@@ -747,10 +669,8 @@ def correlate(a, v, mode='valid'):
     """
     return multiarray.correlate2(a, v, mode)
 
-
 def _convolve_dispatcher(a, v, mode=None):
     return (a, v)
-
 
 @array_function_dispatch(_convolve_dispatcher)
 def convolve(a, v, mode='full'):
@@ -805,7 +725,7 @@ def convolve(a, v, mode='full'):
     -----
     The discrete convolution operation is defined as
 
-    .. math:: (a * v)_n = \\sum_{m = -\\infty}^{\\infty} a_m v_{n - m}
+    .. math:: (a * v)_n = \sum_{m = -\infty}^{\infty} a_m v_{n - m}
 
     It can be shown that a convolution :math:`x(t) * y(t)` in time/space
     is equivalent to the multiplication :math:`X(f) Y(f)` in the Fourier
@@ -841,19 +761,17 @@ def convolve(a, v, mode='full'):
     array([2.5])
 
     """
-    a, v = array(a, copy=False, ndmin=1), array(v, copy=False, ndmin=1)
-    if (len(v) > len(a)):
-        a, v = v, a
+    (a, v) = (array(a, copy=False, ndmin=1), array(v, copy=False, ndmin=1))
+    if len(v) > len(a):
+        (a, v) = (v, a)
     if len(a) == 0:
         raise ValueError('a cannot be empty')
     if len(v) == 0:
         raise ValueError('v cannot be empty')
     return multiarray.correlate(a, v[::-1], mode)
 
-
 def _outer_dispatcher(a, b, out=None):
     return (a, b, out)
-
 
 @array_function_dispatch(_outer_dispatcher)
 def outer(a, b, out=None):
@@ -942,10 +860,8 @@ def outer(a, b, out=None):
     b = asarray(b)
     return multiply(a.ravel()[:, newaxis], b.ravel()[newaxis, :], out)
 
-
 def _tensordot_dispatcher(a, b, axes=None):
     return (a, b)
-
 
 @array_function_dispatch(_tensordot_dispatcher)
 def tensordot(a, b, axes=2):
@@ -984,8 +900,8 @@ def tensordot(a, b, axes=2):
     Notes
     -----
     Three common use cases are:
-        * ``axes = 0`` : tensor product :math:`a\\otimes b`
-        * ``axes = 1`` : tensor dot product :math:`a\\cdot b`
+        * ``axes = 0`` : tensor product :math:`a\otimes b`
+        * ``axes = 1`` : tensor dot product :math:`a\cdot b`
         * ``axes = 2`` : (default) tensor double contraction :math:`a:b`
 
     When `axes` is integer_like, the sequence for evaluation will be: first
@@ -1029,7 +945,7 @@ def tensordot(a, b, axes=2):
            [ True,  True],
            [ True,  True]])
 
-    An extended example taking advantage of the overloading of + and \\*:
+    An extended example taking advantage of the overloading of + and \*:
 
     >>> a = np.array(range(1, 9))
     >>> a.shape = (2, 2, 2)
@@ -1082,7 +998,7 @@ def tensordot(a, b, axes=2):
         axes_a = list(range(-axes, 0))
         axes_b = list(range(0, axes))
     else:
-        axes_a, axes_b = axes
+        (axes_a, axes_b) = axes
     try:
         na = len(axes_a)
         axes_a = list(axes_a)
@@ -1095,8 +1011,7 @@ def tensordot(a, b, axes=2):
     except TypeError:
         axes_b = [axes_b]
         nb = 1
-
-    a, b = asarray(a), asarray(b)
+    (a, b) = (asarray(a), asarray(b))
     as_ = a.shape
     nda = a.ndim
     bs = b.shape
@@ -1114,10 +1029,7 @@ def tensordot(a, b, axes=2):
             if axes_b[k] < 0:
                 axes_b[k] += ndb
     if not equal:
-        raise ValueError("shape-mismatch for sum")
-
-    # Move the axes to sum over to the end of "a"
-    # and to the front of "b"
+        raise ValueError('shape-mismatch for sum')
     notin = [k for k in range(nda) if k not in axes_a]
     newaxes_a = notin + axes_a
     N2 = 1
@@ -1125,7 +1037,6 @@ def tensordot(a, b, axes=2):
         N2 *= as_[axis]
     newshape_a = (int(multiply.reduce([as_[ax] for ax in notin])), N2)
     olda = [as_[axis] for axis in notin]
-
     notin = [k for k in range(ndb) if k not in axes_b]
     newaxes_b = axes_b + notin
     N2 = 1
@@ -1133,16 +1044,13 @@ def tensordot(a, b, axes=2):
         N2 *= bs[axis]
     newshape_b = (N2, int(multiply.reduce([bs[ax] for ax in notin])))
     oldb = [bs[axis] for axis in notin]
-
     at = a.transpose(newaxes_a).reshape(newshape_a)
     bt = b.transpose(newaxes_b).reshape(newshape_b)
     res = dot(at, bt)
     return res.reshape(olda + oldb)
 
-
 def _roll_dispatcher(a, shift, axis=None):
-    return (a,)
-
+    return (a, )
 
 @array_function_dispatch(_roll_dispatcher)
 def roll(a, shift, axis=None):
@@ -1224,36 +1132,27 @@ def roll(a, shift, axis=None):
     a = asanyarray(a)
     if axis is None:
         return roll(a.ravel(), shift, 0).reshape(a.shape)
-
     else:
         axis = normalize_axis_tuple(axis, a.ndim, allow_duplicate=True)
         broadcasted = broadcast(shift, axis)
         if broadcasted.ndim > 1:
-            raise ValueError(
-                "'shift' and 'axis' should be scalars or 1D sequences")
+            raise ValueError("'shift' and 'axis' should be scalars or 1D sequences")
         shifts = {ax: 0 for ax in range(a.ndim)}
-        for sh, ax in broadcasted:
+        for (sh, ax) in broadcasted:
             shifts[ax] += sh
-
-        rolls = [((slice(None), slice(None)),)] * a.ndim
-        for ax, offset in shifts.items():
-            offset %= a.shape[ax] or 1  # If `a` is empty, nothing matters.
+        rolls = [((slice(None), slice(None)), )] * a.ndim
+        for (ax, offset) in shifts.items():
+            offset %= (a.shape[ax] or 1)
             if offset:
-                # (original, result), (original, result)
-                rolls[ax] = ((slice(None, -offset), slice(offset, None)),
-                             (slice(-offset, None), slice(None, offset)))
-
+                rolls[ax] = ((slice(None, -offset), slice(offset, None)), (slice(-offset, None), slice(None, offset)))
         result = empty_like(a)
         for indices in itertools.product(*rolls):
-            arr_index, res_index = zip(*indices)
+            (arr_index, res_index) = zip(*indices)
             result[res_index] = a[arr_index]
-
         return result
 
-
 def _rollaxis_dispatcher(a, axis, start=None):
-    return (a,)
-
+    return (a, )
 
 @array_function_dispatch(_rollaxis_dispatcher)
 def rollaxis(a, axis, start=0):
@@ -1300,7 +1199,7 @@ def rollaxis(a, axis, start=0):
            +-------------------+----------------------+
            | ``arr.ndim + 1``  | raise ``AxisError``  |
            +-------------------+----------------------+
-           
+
         .. |vdots|   unicode:: U+22EE .. Vertical Ellipsis
 
     Returns
@@ -1327,23 +1226,8 @@ def rollaxis(a, axis, start=0):
     (3, 5, 6, 4)
 
     """
-    n = a.ndim
-    axis = normalize_axis_index(axis, n)
-    if start < 0:
-        start += n
-    msg = "'%s' arg requires %d <= %s < %d, but %d was passed in"
-    if not (0 <= start < n + 1):
-        raise AxisError(msg % ('start', -n, 'start', n + 1, start))
-    if axis < start:
-        # it's been removed
-        start -= 1
-    if axis == start:
-        return a[...]
-    axes = list(range(0, n))
-    axes.remove(axis)
-    axes.insert(start, axis)
-    return a.transpose(axes)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.core.numeric.rollaxis', 'rollaxis(a, axis, start=0)', {'normalize_axis_index': normalize_axis_index, 'AxisError': AxisError, 'array_function_dispatch': array_function_dispatch, '_rollaxis_dispatcher': _rollaxis_dispatcher, 'a': a, 'axis': axis, 'start': start}, 1)
 
 def normalize_axis_tuple(axis, ndim, argname=None, allow_duplicate=False):
     """
@@ -1388,25 +1272,21 @@ def normalize_axis_tuple(axis, ndim, argname=None, allow_duplicate=False):
     --------
     normalize_axis_index : normalizing a single scalar axis
     """
-    # Optimization to speed-up the most common cases.
     if type(axis) not in (tuple, list):
         try:
             axis = [operator.index(axis)]
         except TypeError:
             pass
-    # Going via an iterator directly is slower than via list comprehension.
     axis = tuple([normalize_axis_index(ax, ndim, argname) for ax in axis])
-    if not allow_duplicate and len(set(axis)) != len(axis):
+    if (not allow_duplicate and len(set(axis)) != len(axis)):
         if argname:
             raise ValueError('repeated axis in `{}` argument'.format(argname))
         else:
             raise ValueError('repeated axis')
     return axis
 
-
 def _moveaxis_dispatcher(a, source, destination):
-    return (a,)
-
+    return (a, )
 
 @array_function_dispatch(_moveaxis_dispatcher)
 def moveaxis(a, source, destination):
@@ -1458,30 +1338,22 @@ def moveaxis(a, source, destination):
 
     """
     try:
-        # allow duck-array types if they define transpose
         transpose = a.transpose
     except AttributeError:
         a = asarray(a)
         transpose = a.transpose
-
     source = normalize_axis_tuple(source, a.ndim, 'source')
     destination = normalize_axis_tuple(destination, a.ndim, 'destination')
     if len(source) != len(destination):
-        raise ValueError('`source` and `destination` arguments must have '
-                         'the same number of elements')
-
+        raise ValueError('`source` and `destination` arguments must have the same number of elements')
     order = [n for n in range(a.ndim) if n not in source]
-
-    for dest, src in sorted(zip(destination, source)):
+    for (dest, src) in sorted(zip(destination, source)):
         order.insert(dest, src)
-
     result = transpose(order)
     return result
 
-
 def _cross_dispatcher(a, b, axisa=None, axisb=None, axisc=None, axis=None):
     return (a, b)
-
 
 @array_function_dispatch(_cross_dispatcher)
 def cross(a, b, axisa=-1, axisb=-1, axisc=-1, axis=None):
@@ -1597,96 +1469,9 @@ def cross(a, b, axisa=-1, axisb=-1, axisc=-1, axis=None):
            [-36,  72, -36]])
 
     """
-    if axis is not None:
-        axisa, axisb, axisc = (axis,) * 3
-    a = asarray(a)
-    b = asarray(b)
-    # Check axisa and axisb are within bounds
-    axisa = normalize_axis_index(axisa, a.ndim, msg_prefix='axisa')
-    axisb = normalize_axis_index(axisb, b.ndim, msg_prefix='axisb')
-
-    # Move working axis to the end of the shape
-    a = moveaxis(a, axisa, -1)
-    b = moveaxis(b, axisb, -1)
-    msg = ("incompatible dimensions for cross product\n"
-           "(dimension must be 2 or 3)")
-    if a.shape[-1] not in (2, 3) or b.shape[-1] not in (2, 3):
-        raise ValueError(msg)
-
-    # Create the output array
-    shape = broadcast(a[..., 0], b[..., 0]).shape
-    if a.shape[-1] == 3 or b.shape[-1] == 3:
-        shape += (3,)
-        # Check axisc is within bounds
-        axisc = normalize_axis_index(axisc, len(shape), msg_prefix='axisc')
-    dtype = promote_types(a.dtype, b.dtype)
-    cp = empty(shape, dtype)
-
-    # recast arrays as dtype
-    a = a.astype(dtype)
-    b = b.astype(dtype)
-
-    # create local aliases for readability
-    a0 = a[..., 0]
-    a1 = a[..., 1]
-    if a.shape[-1] == 3:
-        a2 = a[..., 2]
-    b0 = b[..., 0]
-    b1 = b[..., 1]
-    if b.shape[-1] == 3:
-        b2 = b[..., 2]
-    if cp.ndim != 0 and cp.shape[-1] == 3:
-        cp0 = cp[..., 0]
-        cp1 = cp[..., 1]
-        cp2 = cp[..., 2]
-
-    if a.shape[-1] == 2:
-        if b.shape[-1] == 2:
-            # a0 * b1 - a1 * b0
-            multiply(a0, b1, out=cp)
-            cp -= a1 * b0
-            return cp
-        else:
-            assert b.shape[-1] == 3
-            # cp0 = a1 * b2 - 0  (a2 = 0)
-            # cp1 = 0 - a0 * b2  (a2 = 0)
-            # cp2 = a0 * b1 - a1 * b0
-            multiply(a1, b2, out=cp0)
-            multiply(a0, b2, out=cp1)
-            negative(cp1, out=cp1)
-            multiply(a0, b1, out=cp2)
-            cp2 -= a1 * b0
-    else:
-        assert a.shape[-1] == 3
-        if b.shape[-1] == 3:
-            # cp0 = a1 * b2 - a2 * b1
-            # cp1 = a2 * b0 - a0 * b2
-            # cp2 = a0 * b1 - a1 * b0
-            multiply(a1, b2, out=cp0)
-            tmp = array(a2 * b1)
-            cp0 -= tmp
-            multiply(a2, b0, out=cp1)
-            multiply(a0, b2, out=tmp)
-            cp1 -= tmp
-            multiply(a0, b1, out=cp2)
-            multiply(a1, b0, out=tmp)
-            cp2 -= tmp
-        else:
-            assert b.shape[-1] == 2
-            # cp0 = 0 - a2 * b1  (b2 = 0)
-            # cp1 = a2 * b0 - 0  (b2 = 0)
-            # cp2 = a0 * b1 - a1 * b0
-            multiply(a2, b1, out=cp0)
-            negative(cp0, out=cp0)
-            multiply(a2, b0, out=cp1)
-            multiply(a0, b1, out=cp2)
-            cp2 -= a1 * b0
-
-    return moveaxis(cp, -1, axisc)
-
-
-little_endian = (sys.byteorder == 'little')
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.core.numeric.cross', 'cross(a, b, axisa=-1, axisb=-1, axisc=-1, axis=None)', {'asarray': asarray, 'normalize_axis_index': normalize_axis_index, 'moveaxis': moveaxis, 'broadcast': broadcast, 'promote_types': promote_types, 'empty': empty, 'multiply': multiply, 'negative': negative, 'array': array, 'array_function_dispatch': array_function_dispatch, '_cross_dispatcher': _cross_dispatcher, 'a': a, 'b': b, 'axisa': axisa, 'axisb': axisb, 'axisc': axisc, 'axis': axis}, 1)
+little_endian = sys.byteorder == 'little'
 
 @set_module('numpy')
 def indices(dimensions, dtype=int, sparse=False):
@@ -1775,25 +1560,21 @@ def indices(dimensions, dtype=int, sparse=False):
     """
     dimensions = tuple(dimensions)
     N = len(dimensions)
-    shape = (1,)*N
+    shape = (1, ) * N
     if sparse:
         res = tuple()
     else:
-        res = empty((N,)+dimensions, dtype=dtype)
-    for i, dim in enumerate(dimensions):
-        idx = arange(dim, dtype=dtype).reshape(
-            shape[:i] + (dim,) + shape[i+1:]
-        )
+        res = empty((N, ) + dimensions, dtype=dtype)
+    for (i, dim) in enumerate(dimensions):
+        idx = arange(dim, dtype=dtype).reshape(shape[:i] + (dim, ) + shape[i + 1:])
         if sparse:
-            res = res + (idx,)
+            res = res + (idx, )
         else:
             res[i] = idx
     return res
 
-
 def _fromfunction_dispatcher(function, shape, *, dtype=None, like=None, **kwargs):
-    return (like,)
-
+    return (like, )
 
 @set_array_function_like_doc
 @set_module('numpy')
@@ -1843,11 +1624,11 @@ def fromfunction(function, shape, *, dtype=float, like=None, **kwargs):
     >>> np.fromfunction(lambda i, j: i, (2, 2), dtype=float)
     array([[0., 0.],
            [1., 1.]])
-           
+
     >>> np.fromfunction(lambda i, j: j, (2, 2), dtype=float)    
     array([[0., 1.],
            [0., 1.]])
-           
+
     >>> np.fromfunction(lambda i, j: i == j, (3, 3), dtype=int)
     array([[ True, False, False],
            [False,  True, False],
@@ -1861,19 +1642,12 @@ def fromfunction(function, shape, *, dtype=float, like=None, **kwargs):
     """
     if like is not None:
         return _fromfunction_with_like(function, shape, dtype=dtype, like=like, **kwargs)
-
     args = indices(shape, dtype=dtype)
     return function(*args, **kwargs)
-
-
-_fromfunction_with_like = array_function_dispatch(
-    _fromfunction_dispatcher, use_like=True
-)(fromfunction)
-
+_fromfunction_with_like = array_function_dispatch(_fromfunction_dispatcher, use_like=True)(fromfunction)
 
 def _frombuffer(buf, dtype, shape, order):
     return frombuffer(buf, dtype=dtype).reshape(shape, order=order)
-
 
 @set_module('numpy')
 def isscalar(element):
@@ -1951,10 +1725,7 @@ def isscalar(element):
     True
 
     """
-    return (isinstance(element, generic)
-            or type(element) in ScalarType
-            or isinstance(element, numbers.Number))
-
+    return (isinstance(element, generic) or type(element) in ScalarType or isinstance(element, numbers.Number))
 
 @set_module('numpy')
 def binary_repr(num, width=None):
@@ -2028,48 +1799,8 @@ def binary_repr(num, width=None):
     '11101'
 
     """
-    def warn_if_insufficient(width, binwidth):
-        if width is not None and width < binwidth:
-            warnings.warn(
-                "Insufficient bit width provided. This behavior "
-                "will raise an error in the future.", DeprecationWarning,
-                stacklevel=3)
-
-    # Ensure that num is a Python integer to avoid overflow or unwanted
-    # casts to floating point.
-    num = operator.index(num)
-
-    if num == 0:
-        return '0' * (width or 1)
-
-    elif num > 0:
-        binary = bin(num)[2:]
-        binwidth = len(binary)
-        outwidth = (binwidth if width is None
-                    else max(binwidth, width))
-        warn_if_insufficient(width, binwidth)
-        return binary.zfill(outwidth)
-
-    else:
-        if width is None:
-            return '-' + bin(-num)[2:]
-
-        else:
-            poswidth = len(bin(-num)[2:])
-
-            # See gh-8679: remove extra digit
-            # for numbers at boundaries.
-            if 2**(poswidth - 1) == -num:
-                poswidth -= 1
-
-            twocomp = 2**(poswidth + 1) + num
-            binary = bin(twocomp)[2:]
-            binwidth = len(binary)
-
-            outwidth = max(binwidth, width)
-            warn_if_insufficient(width, binwidth)
-            return '1' * (outwidth - binwidth) + binary
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.core.numeric.binary_repr', 'binary_repr(num, width=None)', {'warnings': warnings, 'operator': operator, 'set_module': set_module, 'num': num, 'width': width}, 1)
 
 @set_module('numpy')
 def base_repr(number, base=2, padding=0):
@@ -2110,42 +1841,15 @@ def base_repr(number, base=2, padding=0):
     '20'
 
     """
-    digits = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    if base > len(digits):
-        raise ValueError("Bases greater than 36 not handled in base_repr.")
-    elif base < 2:
-        raise ValueError("Bases less than 2 not handled in base_repr.")
-
-    num = abs(number)
-    res = []
-    while num:
-        res.append(digits[num % base])
-        num //= base
-    if padding:
-        res.append('0' * padding)
-    if number < 0:
-        res.append('-')
-    return ''.join(reversed(res or '0'))
-
-
-# These are all essentially abbreviations
-# These might wind up in a special abbreviations module
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.core.numeric.base_repr', 'base_repr(number, base=2, padding=0)', {'set_module': set_module, 'number': number, 'base': base, 'padding': padding}, 1)
 
 def _maketup(descr, val):
-    dt = dtype(descr)
-    # Place val in all scalar tuples:
-    fields = dt.fields
-    if fields is None:
-        return val
-    else:
-        res = [_maketup(fields[name][0], val) for name in dt.names]
-        return tuple(res)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.core.numeric._maketup', '_maketup(descr, val)', {'dtype': dtype, '_maketup': _maketup, 'descr': descr, 'val': val}, 1)
 
 def _identity_dispatcher(n, dtype=None, *, like=None):
-    return (like,)
-
+    return (like, )
 
 @set_array_function_like_doc
 @set_module('numpy')
@@ -2182,22 +1886,15 @@ def identity(n, dtype=None, *, like=None):
     """
     if like is not None:
         return _identity_with_like(n, dtype=dtype, like=like)
-
     from numpy import eye
     return eye(n, dtype=dtype, like=like)
-
-
-_identity_with_like = array_function_dispatch(
-    _identity_dispatcher, use_like=True
-)(identity)
-
+_identity_with_like = array_function_dispatch(_identity_dispatcher, use_like=True)(identity)
 
 def _allclose_dispatcher(a, b, rtol=None, atol=None, equal_nan=None):
     return (a, b)
 
-
 @array_function_dispatch(_allclose_dispatcher)
-def allclose(a, b, rtol=1.e-5, atol=1.e-8, equal_nan=False):
+def allclose(a, b, rtol=1e-05, atol=1e-08, equal_nan=False):
     """
     Returns True if two arrays are element-wise equal within a tolerance.
 
@@ -2270,13 +1967,11 @@ def allclose(a, b, rtol=1.e-5, atol=1.e-8, equal_nan=False):
     res = all(isclose(a, b, rtol=rtol, atol=atol, equal_nan=equal_nan))
     return bool(res)
 
-
 def _isclose_dispatcher(a, b, rtol=None, atol=None, equal_nan=None):
     return (a, b)
 
-
 @array_function_dispatch(_isclose_dispatcher)
-def isclose(a, b, rtol=1.e-5, atol=1.e-8, equal_nan=False):
+def isclose(a, b, rtol=1e-05, atol=1e-08, equal_nan=False):
     """
     Returns a boolean array where two arrays are element-wise equal within a
     tolerance.
@@ -2356,53 +2051,33 @@ def isclose(a, b, rtol=1.e-5, atol=1.e-8, equal_nan=False):
     >>> np.isclose([1e-10, 1e-10], [1e-20, 0.999999e-10], atol=0.0)
     array([False,  True])
     """
+    
     def within_tol(x, y, atol, rtol):
         with errstate(invalid='ignore'), _no_nep50_warning():
-            return less_equal(abs(x-y), atol + rtol * abs(y))
-
+            return less_equal(abs(x - y), atol + rtol * abs(y))
     x = asanyarray(a)
     y = asanyarray(b)
-
-    # Make sure y is an inexact type to avoid bad behavior on abs(MIN_INT).
-    # This will cause casting of x later. Also, make sure to allow subclasses
-    # (e.g., for numpy.ma).
-    # NOTE: We explicitly allow timedelta, which used to work. This could
-    #       possibly be deprecated. See also gh-18286.
-    #       timedelta works if `atol` is an integer or also a timedelta.
-    #       Although, the default tolerances are unlikely to be useful
-    if y.dtype.kind != "m":
-        dt = multiarray.result_type(y, 1.)
+    if y.dtype.kind != 'm':
+        dt = multiarray.result_type(y, 1.0)
         y = asanyarray(y, dtype=dt)
-
     xfin = isfinite(x)
     yfin = isfinite(y)
-    if all(xfin) and all(yfin):
+    if (all(xfin) and all(yfin)):
         return within_tol(x, y, atol, rtol)
     else:
         finite = xfin & yfin
         cond = zeros_like(finite, subok=True)
-        # Because we're using boolean indexing, x & y must be the same shape.
-        # Ideally, we'd just do x, y = broadcast_arrays(x, y). It's in
-        # lib.stride_tricks, though, so we can't import it here.
         x = x * ones_like(cond)
         y = y * ones_like(cond)
-        # Avoid subtraction with infinite/nan values...
         cond[finite] = within_tol(x[finite], y[finite], atol, rtol)
-        # Check for equality of infinite values...
-        cond[~finite] = (x[~finite] == y[~finite])
+        cond[~finite] = x[~finite] == y[~finite]
         if equal_nan:
-            # Make NaN == NaN
             both_nan = isnan(x) & isnan(y)
-
-            # Needed to treat masked arrays correctly. = True would not work.
             cond[both_nan] = both_nan[both_nan]
-
-        return cond[()]  # Flatten 0d arrays to scalars
-
+        return cond[()]
 
 def _array_equal_dispatcher(a1, a2, equal_nan=None):
     return (a1, a2)
-
 
 @array_function_dispatch(_array_equal_dispatcher)
 def array_equal(a1, a2, equal_nan=False):
@@ -2458,26 +2133,11 @@ def array_equal(a1, a2, equal_nan=False):
     >>> np.array_equal(a, b, equal_nan=True)
     True
     """
-    try:
-        a1, a2 = asarray(a1), asarray(a2)
-    except Exception:
-        return False
-    if a1.shape != a2.shape:
-        return False
-    if not equal_nan:
-        return bool(asarray(a1 == a2).all())
-    # Handling NaN values if equal_nan is True
-    a1nan, a2nan = isnan(a1), isnan(a2)
-    # NaN's occur at different locations
-    if not (a1nan == a2nan).all():
-        return False
-    # Shapes of a1, a2 and masks are guaranteed to be consistent by this point
-    return bool(asarray(a1[~a1nan] == a2[~a1nan]).all())
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.core.numeric.array_equal', 'array_equal(a1, a2, equal_nan=False)', {'asarray': asarray, 'isnan': isnan, 'array_function_dispatch': array_function_dispatch, '_array_equal_dispatcher': _array_equal_dispatcher, 'a1': a1, 'a2': a2, 'equal_nan': equal_nan}, 1)
 
 def _array_equiv_dispatcher(a1, a2):
     return (a1, a2)
-
 
 @array_function_dispatch(_array_equiv_dispatcher)
 def array_equiv(a1, a2):
@@ -2515,23 +2175,12 @@ def array_equiv(a1, a2):
     False
 
     """
-    try:
-        a1, a2 = asarray(a1), asarray(a2)
-    except Exception:
-        return False
-    try:
-        multiarray.broadcast(a1, a2)
-    except Exception:
-        return False
-
-    return bool(asarray(a1 == a2).all())
-
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.core.numeric.array_equiv', 'array_equiv(a1, a2)', {'asarray': asarray, 'multiarray': multiarray, 'array_function_dispatch': array_function_dispatch, '_array_equiv_dispatcher': _array_equiv_dispatcher, 'a1': a1, 'a2': a2}, 1)
 Inf = inf = infty = Infinity = PINF
 nan = NaN = NAN
 False_ = bool_(False)
 True_ = bool_(True)
-
 
 def extend_all(module):
     existing = set(__all__)
@@ -2539,8 +2188,6 @@ def extend_all(module):
     for a in mall:
         if a not in existing:
             __all__.append(a)
-
-
 from .umath import *
 from .numerictypes import *
 from . import fromnumeric
@@ -2557,3 +2204,4 @@ extend_all(numerictypes)
 extend_all(arrayprint)
 extend_all(_asarray)
 extend_all(_ufunc_config)
+

@@ -2,21 +2,23 @@ import torch
 import functools
 import inspect
 
+
 class _DecoratorContextManager:
     """Allow a context manager to be used as a decorator"""
-
+    
     def __call__(self, func):
         if inspect.isgeneratorfunction(func):
             return self._wrap_generator(func)
-
+        
         @functools.wraps(func)
         def decorate_context(*args, **kwargs):
             with self:
                 return func(*args, **kwargs)
         return decorate_context
-
+    
     def _wrap_generator(self, func):
         """Wrap each generator invocation with the context manager"""
+        
         @functools.wraps(func)
         def generator_context(*args, **kwargs):
             gen = func(*args, **kwargs)
@@ -30,8 +32,9 @@ class _DecoratorContextManager:
         return generator_context
 
 
+
 class no_grad(_DecoratorContextManager):
-    r"""Context-manager that disabled gradient calculation.
+    """Context-manager that disabled gradient calculation.
 
     Disabling gradient calculation is useful for inference, when you are sure
     that you will not call :meth:`Tensor.backward()`. It will reduce memory
@@ -62,17 +65,19 @@ class no_grad(_DecoratorContextManager):
         >>> z.requires_grad
         False
     """
+    
     def __enter__(self):
         self.prev = torch.is_grad_enabled()
         torch._C.set_grad_enabled(False)
-
+    
     def __exit__(self, *args):
         torch.set_grad_enabled(self.prev)
         return False
 
 
+
 class enable_grad(_DecoratorContextManager):
-    r"""Context-manager that enables gradient calculation.
+    """Context-manager that enables gradient calculation.
 
     Enables gradient calculation, if it has been disabled via :class:`~no_grad`
     or :class:`~set_grad_enabled`.
@@ -102,17 +107,19 @@ class enable_grad(_DecoratorContextManager):
         True
 
     """
+    
     def __enter__(self):
         self.prev = torch.is_grad_enabled()
         torch._C.set_grad_enabled(True)
-
+    
     def __exit__(self, *args):
         torch.set_grad_enabled(self.prev)
         return False
 
 
+
 class set_grad_enabled(object):
-    r"""Context-manager that sets gradient calculation to on or off.
+    """Context-manager that sets gradient calculation to on or off.
 
     ``set_grad_enabled`` will enable or disable grads based on its argument :attr:`mode`.
     It can be used as a context-manager or as a function.
@@ -147,14 +154,16 @@ class set_grad_enabled(object):
         False
 
     """
-
+    
     def __init__(self, mode):
         self.prev = torch.is_grad_enabled()
         torch._C.set_grad_enabled(mode)
-
+    
     def __enter__(self):
         pass
-
+    
     def __exit__(self, *args):
         torch.set_grad_enabled(self.prev)
         return False
+
+

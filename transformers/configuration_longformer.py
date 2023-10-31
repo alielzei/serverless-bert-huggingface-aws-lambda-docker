@@ -1,38 +1,14 @@
-# coding=utf-8
-# Copyright 2020 The Allen Institute for AI team and The HuggingFace Inc. team.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """ Longformer configuration """
 
 from typing import List, Union
-
 from .configuration_roberta import RobertaConfig
 from .utils import logging
-
-
 logger = logging.get_logger(__name__)
-
-LONGFORMER_PRETRAINED_CONFIG_ARCHIVE_MAP = {
-    "allenai/longformer-base-4096": "https://s3.amazonaws.com/models.huggingface.co/bert/allenai/longformer-base-4096/config.json",
-    "allenai/longformer-large-4096": "https://s3.amazonaws.com/models.huggingface.co/bert/allenai/longformer-large-4096/config.json",
-    "allenai/longformer-large-4096-finetuned-triviaqa": "https://s3.amazonaws.com/models.huggingface.co/bert/allenai/longformer-large-4096-finetuned-triviaqa/config.json",
-    "allenai/longformer-base-4096-extra.pos.embd.only": "https://s3.amazonaws.com/models.huggingface.co/bert/allenai/longformer-base-4096-extra.pos.embd.only/config.json",
-    "allenai/longformer-large-4096-extra.pos.embd.only": "https://s3.amazonaws.com/models.huggingface.co/bert/allenai/longformer-large-4096-extra.pos.embd.only/config.json",
-}
+LONGFORMER_PRETRAINED_CONFIG_ARCHIVE_MAP = {'allenai/longformer-base-4096': 'https://s3.amazonaws.com/models.huggingface.co/bert/allenai/longformer-base-4096/config.json', 'allenai/longformer-large-4096': 'https://s3.amazonaws.com/models.huggingface.co/bert/allenai/longformer-large-4096/config.json', 'allenai/longformer-large-4096-finetuned-triviaqa': 'https://s3.amazonaws.com/models.huggingface.co/bert/allenai/longformer-large-4096-finetuned-triviaqa/config.json', 'allenai/longformer-base-4096-extra.pos.embd.only': 'https://s3.amazonaws.com/models.huggingface.co/bert/allenai/longformer-base-4096-extra.pos.embd.only/config.json', 'allenai/longformer-large-4096-extra.pos.embd.only': 'https://s3.amazonaws.com/models.huggingface.co/bert/allenai/longformer-large-4096-extra.pos.embd.only/config.json'}
 
 
 class LongformerConfig(RobertaConfig):
-    r"""
+    """
     This is the configuration class to store the configuration of a :class:`~transformers.LongformerModel` or a
     :class:`~transformers.TFLongformerModel`. It is used to instantiate a Longformer model according to the specified
     arguments, defining the model architecture.
@@ -64,8 +40,10 @@ class LongformerConfig(RobertaConfig):
         >>> # Accessing the model configuration
         >>> configuration = model.config
     """
-    model_type = "longformer"
-
-    def __init__(self, attention_window: Union[List[int], int] = 512, sep_token_id: int = 2, **kwargs):
+    model_type = 'longformer'
+    
+    def __init__(self, attention_window: Union[(List[int], int)] = 512, sep_token_id: int = 2, **kwargs):
         super().__init__(sep_token_id=sep_token_id, **kwargs)
         self.attention_window = attention_window
+
+

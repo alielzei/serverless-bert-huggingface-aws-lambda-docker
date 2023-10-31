@@ -9,53 +9,46 @@ import tempfile
 import torch
 import warnings
 import zipfile
-
 if sys.version_info[0] == 2:
     from urlparse import urlparse
-    from urllib2 import urlopen  # noqa f811
+    from urllib2 import urlopen
 else:
     from urllib.request import urlopen
-    from urllib.parse import urlparse  # noqa: F401
-
+    from urllib.parse import urlparse
 try:
-    from tqdm.auto import tqdm  # automatically select proper tqdm submodule if available
+    from tqdm.auto import tqdm
 except ImportError:
     try:
         from tqdm import tqdm
     except ImportError:
-        # fake tqdm if it's not installed
+        
+        
         class tqdm(object):
-
-            def __init__(self, total=None, disable=False,
-                         unit=None, unit_scale=None, unit_divisor=None):
+            
+            def __init__(self, total=None, disable=False, unit=None, unit_scale=None, unit_divisor=None):
                 self.total = total
                 self.disable = disable
                 self.n = 0
-                # ignore unit, unit_scale, unit_divisor; they're just for real tqdm
-
+            
             def update(self, n):
                 if self.disable:
                     return
-
                 self.n += n
                 if self.total is None:
-                    sys.stderr.write("\r{0:.1f} bytes".format(self.n))
+                    sys.stderr.write('\r{0:.1f} bytes'.format(self.n))
                 else:
-                    sys.stderr.write("\r{0:.1f}%".format(100 * self.n / float(self.total)))
+                    sys.stderr.write('\r{0:.1f}%'.format(100 * self.n / float(self.total)))
                 sys.stderr.flush()
-
+            
             def __enter__(self):
                 return self
-
+            
             def __exit__(self, exc_type, exc_val, exc_tb):
                 if self.disable:
                     return
-
                 sys.stderr.write('\n')
-
-# matches bfd8deac from resnet18-bfd8deac.pth
-HASH_REGEX = re.compile(r'-([a-f0-9]*)\.')
-
+        
+HASH_REGEX = re.compile('-([a-f0-9]*)\\.')
 MASTER_BRANCH = 'master'
 ENV_TORCH_HOME = 'TORCH_HOME'
 ENV_XDG_CACHE_HOME = 'XDG_CACHE_HOME'
@@ -65,185 +58,51 @@ MODULE_HUBCONF = 'hubconf.py'
 READ_DATA_CHUNK = 8192
 hub_dir = None
 
-
-# Copied from tools/shared/module_loader to be included in torch package
 def import_module(name, path):
-    if sys.version_info >= (3, 5):
-        import importlib.util
-        spec = importlib.util.spec_from_file_location(name, path)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module
-    elif sys.version_info >= (3, 0):
-        from importlib.machinery import SourceFileLoader
-        return SourceFileLoader(name, path).load_module()
-    else:
-        import imp
-        return imp.load_source(name, path)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.hub.import_module', 'import_module(name, path)', {'sys': sys, 'importlib': importlib, 'name': name, 'path': path}, 1)
 
 def _remove_if_exists(path):
-    if os.path.exists(path):
-        if os.path.isfile(path):
-            os.remove(path)
-        else:
-            shutil.rmtree(path)
-
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('torch.hub._remove_if_exists', '_remove_if_exists(path)', {'os': os, 'shutil': shutil, 'path': path}, 0)
 
 def _git_archive_link(repo_owner, repo_name, branch):
     return 'https://github.com/{}/{}/archive/{}.zip'.format(repo_owner, repo_name, branch)
 
-
 def _load_attr_from_module(module, func_name):
-    # Check if callable is defined in the module
-    if func_name not in dir(module):
-        return None
-    return getattr(module, func_name)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.hub._load_attr_from_module', '_load_attr_from_module(module, func_name)', {'module': module, 'func_name': func_name}, 1)
 
 def _get_torch_home():
-    torch_home = hub_dir
-    if torch_home is None:
-        torch_home = os.path.expanduser(
-            os.getenv(ENV_TORCH_HOME,
-                      os.path.join(os.getenv(ENV_XDG_CACHE_HOME,
-                                             DEFAULT_CACHE_DIR), 'torch')))
-    return torch_home
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.hub._get_torch_home', '_get_torch_home()', {'hub_dir': hub_dir, 'os': os, 'ENV_TORCH_HOME': ENV_TORCH_HOME, 'ENV_XDG_CACHE_HOME': ENV_XDG_CACHE_HOME, 'DEFAULT_CACHE_DIR': DEFAULT_CACHE_DIR}, 1)
 
 def _setup_hubdir():
-    global hub_dir
-    # Issue warning to move data if old env is set
-    if os.getenv('TORCH_HUB'):
-        warnings.warn('TORCH_HUB is deprecated, please use env TORCH_HOME instead')
-
-    if hub_dir is None:
-        torch_home = _get_torch_home()
-        hub_dir = os.path.join(torch_home, 'hub')
-
-    if not os.path.exists(hub_dir):
-        os.makedirs(hub_dir)
-
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('torch.hub._setup_hubdir', '_setup_hubdir()', {'os': os, 'warnings': warnings, '_get_torch_home': _get_torch_home}, 0)
 
 def _parse_repo_info(github):
-    branch = MASTER_BRANCH
-    if ':' in github:
-        repo_info, branch = github.split(':')
-    else:
-        repo_info = github
-    repo_owner, repo_name = repo_info.split('/')
-    return repo_owner, repo_name, branch
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.hub._parse_repo_info', '_parse_repo_info(github)', {'MASTER_BRANCH': MASTER_BRANCH, 'github': github}, 3)
 
 def _get_cache_or_reload(github, force_reload, verbose=True):
-    # Parse github repo information
-    repo_owner, repo_name, branch = _parse_repo_info(github)
-    # Github allows branch name with slash '/',
-    # this causes confusion with path on both Linux and Windows.
-    # Backslash is not allowed in Github branch name so no need to
-    # to worry about it.
-    normalized_br = branch.replace('/', '_')
-    # Github renames folder repo-v1.x.x to repo-1.x.x
-    # We don't know the repo name before downloading the zip file
-    # and inspect name from it.
-    # To check if cached repo exists, we need to normalize folder names.
-    repo_dir = os.path.join(hub_dir, '_'.join([repo_owner, repo_name, normalized_br]))
-
-    use_cache = (not force_reload) and os.path.exists(repo_dir)
-
-    if use_cache:
-        if verbose:
-            sys.stderr.write('Using cache found in {}\n'.format(repo_dir))
-    else:
-        cached_file = os.path.join(hub_dir, normalized_br + '.zip')
-        _remove_if_exists(cached_file)
-
-        url = _git_archive_link(repo_owner, repo_name, branch)
-        sys.stderr.write('Downloading: \"{}\" to {}\n'.format(url, cached_file))
-        download_url_to_file(url, cached_file, progress=False)
-
-        with zipfile.ZipFile(cached_file) as cached_zipfile:
-            extraced_repo_name = cached_zipfile.infolist()[0].filename
-            extracted_repo = os.path.join(hub_dir, extraced_repo_name)
-            _remove_if_exists(extracted_repo)
-            # Unzip the code and rename the base folder
-            cached_zipfile.extractall(hub_dir)
-
-        _remove_if_exists(cached_file)
-        _remove_if_exists(repo_dir)
-        shutil.move(extracted_repo, repo_dir)  # rename the repo
-
-    return repo_dir
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.hub._get_cache_or_reload', '_get_cache_or_reload(github, force_reload, verbose=True)', {'_parse_repo_info': _parse_repo_info, 'os': os, 'hub_dir': hub_dir, 'sys': sys, '_remove_if_exists': _remove_if_exists, '_git_archive_link': _git_archive_link, 'download_url_to_file': download_url_to_file, 'zipfile': zipfile, 'shutil': shutil, 'github': github, 'force_reload': force_reload, 'verbose': verbose}, 1)
 
 def _check_module_exists(name):
-    if sys.version_info >= (3, 4):
-        import importlib.util
-        return importlib.util.find_spec(name) is not None
-    elif sys.version_info >= (3, 3):
-        # Special case for python3.3
-        import importlib.find_loader
-        return importlib.find_loader(name) is not None
-    else:
-        # NB: Python2.7 imp.find_module() doesn't respect PEP 302,
-        #     it cannot find a package installed as .egg(zip) file.
-        #     Here we use workaround from:
-        #     https://stackoverflow.com/questions/28962344/imp-find-module-which-supports-zipped-eggs?lq=1
-        #     Also imp doesn't handle hierarchical module names (names contains dots).
-        try:
-            # 1. Try imp.find_module(), which searches sys.path, but does
-            # not respect PEP 302 import hooks.
-            import imp
-            result = imp.find_module(name)
-            if result:
-                return True
-        except ImportError:
-            pass
-        path = sys.path
-        for item in path:
-            # 2. Scan path for import hooks. sys.path_importer_cache maps
-            # path items to optional "importer" objects, that implement
-            # find_module() etc.  Note that path must be a subset of
-            # sys.path for this to work.
-            importer = sys.path_importer_cache.get(item)
-            if importer:
-                try:
-                    result = importer.find_module(name, [item])
-                    if result:
-                        return True
-                except ImportError:
-                    pass
-        return False
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.hub._check_module_exists', '_check_module_exists(name)', {'sys': sys, 'importlib': importlib, 'name': name}, 1)
 
 def _check_dependencies(m):
-    dependencies = _load_attr_from_module(m, VAR_DEPENDENCY)
-
-    if dependencies is not None:
-        missing_deps = [pkg for pkg in dependencies if not _check_module_exists(pkg)]
-        if len(missing_deps):
-            raise RuntimeError('Missing dependencies: {}'.format(', '.join(missing_deps)))
-
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('torch.hub._check_dependencies', '_check_dependencies(m)', {'_load_attr_from_module': _load_attr_from_module, 'VAR_DEPENDENCY': VAR_DEPENDENCY, '_check_module_exists': _check_module_exists, 'm': m}, 0)
 
 def _load_entry_from_hubconf(m, model):
-    if not isinstance(model, str):
-        raise ValueError('Invalid input: model should be a string of function name')
-
-    # Note that if a missing dependency is imported at top level of hubconf, it will
-    # throw before this function. It's a chicken and egg situation where we have to
-    # load hubconf to know what're the dependencies, but to import hubconf it requires
-    # a missing package. This is fine, Python will throw proper error message for users.
-    _check_dependencies(m)
-
-    func = _load_attr_from_module(m, model)
-
-    if func is None or not callable(func):
-        raise RuntimeError('Cannot find callable {} in hubconf'.format(model))
-
-    return func
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.hub._load_entry_from_hubconf', '_load_entry_from_hubconf(m, model)', {'_check_dependencies': _check_dependencies, '_load_attr_from_module': _load_attr_from_module, 'm': m, 'model': model}, 1)
 
 def set_dir(d):
-    r"""
+    """
     Optionally set hub_dir to a local dir to save downloaded models & weights.
 
     If ``set_dir`` is not called, default path is ``$TORCH_HOME/hub`` where
@@ -259,9 +118,8 @@ def set_dir(d):
     global hub_dir
     hub_dir = d
 
-
 def list(github, force_reload=False):
-    r"""
+    """
     List all entrypoints available in `github` hubconf.
 
     Args:
@@ -276,25 +134,11 @@ def list(github, force_reload=False):
     Example:
         >>> entrypoints = torch.hub.list('pytorch/vision', force_reload=True)
     """
-    # Setup hub_dir to save downloaded files
-    _setup_hubdir()
-
-    repo_dir = _get_cache_or_reload(github, force_reload, True)
-
-    sys.path.insert(0, repo_dir)
-
-    hub_module = import_module(MODULE_HUBCONF, repo_dir + '/' + MODULE_HUBCONF)
-
-    sys.path.remove(repo_dir)
-
-    # We take functions starts with '_' as internal helper functions
-    entrypoints = [f for f in dir(hub_module) if callable(getattr(hub_module, f)) and not f.startswith('_')]
-
-    return entrypoints
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.hub.list', 'list(github, force_reload=False)', {'_setup_hubdir': _setup_hubdir, '_get_cache_or_reload': _get_cache_or_reload, 'sys': sys, 'import_module': import_module, 'MODULE_HUBCONF': MODULE_HUBCONF, 'github': github, 'force_reload': force_reload}, 1)
 
 def help(github, model, force_reload=False):
-    r"""
+    """
     Show the docstring of entrypoint `model`.
 
     Args:
@@ -307,28 +151,11 @@ def help(github, model, force_reload=False):
     Example:
         >>> print(torch.hub.help('pytorch/vision', 'resnet18', force_reload=True))
     """
-    # Setup hub_dir to save downloaded files
-    _setup_hubdir()
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.hub.help', 'help(github, model, force_reload=False)', {'_setup_hubdir': _setup_hubdir, '_get_cache_or_reload': _get_cache_or_reload, 'sys': sys, 'import_module': import_module, 'MODULE_HUBCONF': MODULE_HUBCONF, '_load_entry_from_hubconf': _load_entry_from_hubconf, 'github': github, 'model': model, 'force_reload': force_reload}, 1)
 
-    repo_dir = _get_cache_or_reload(github, force_reload, True)
-
-    sys.path.insert(0, repo_dir)
-
-    hub_module = import_module(MODULE_HUBCONF, repo_dir + '/' + MODULE_HUBCONF)
-
-    sys.path.remove(repo_dir)
-
-    entry = _load_entry_from_hubconf(hub_module, model)
-
-    return entry.__doc__
-
-
-# Ideally this should be `def load(github, model, *args, forece_reload=False, **kwargs):`,
-# but Python2 complains syntax error for it. We have to skip force_reload in function
-# signature here but detect it in kwargs instead.
-# TODO: fix it after Python2 EOL
 def load(github, model, *args, **kwargs):
-    r"""
+    """
     Load a model from a github repo, with pretrained weights.
 
     Args:
@@ -350,31 +177,11 @@ def load(github, model, *args, **kwargs):
     Example:
         >>> model = torch.hub.load('pytorch/vision', 'resnet50', pretrained=True)
     """
-    # Setup hub_dir to save downloaded files
-    _setup_hubdir()
-
-    force_reload = kwargs.get('force_reload', False)
-    kwargs.pop('force_reload', None)
-    verbose = kwargs.get('verbose', True)
-    kwargs.pop('verbose', None)
-
-    repo_dir = _get_cache_or_reload(github, force_reload, verbose)
-
-    sys.path.insert(0, repo_dir)
-
-    hub_module = import_module(MODULE_HUBCONF, repo_dir + '/' + MODULE_HUBCONF)
-
-    entry = _load_entry_from_hubconf(hub_module, model)
-
-    model = entry(*args, **kwargs)
-
-    sys.path.remove(repo_dir)
-
-    return model
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.hub.load', 'load(github, model, *args, **kwargs)', {'_setup_hubdir': _setup_hubdir, '_get_cache_or_reload': _get_cache_or_reload, 'sys': sys, 'import_module': import_module, 'MODULE_HUBCONF': MODULE_HUBCONF, '_load_entry_from_hubconf': _load_entry_from_hubconf, 'github': github, 'model': model, 'args': args, 'kwargs': kwargs}, 1)
 
 def download_url_to_file(url, dst, hash_prefix=None, progress=True):
-    r"""Download object at the given URL to a local path.
+    """Download object at the given URL to a local path.
 
     Args:
         url (string): URL of the object to download
@@ -388,59 +195,15 @@ def download_url_to_file(url, dst, hash_prefix=None, progress=True):
         >>> torch.hub.download_url_to_file('https://s3.amazonaws.com/pytorch/models/resnet18-5c106cde.pth', '/tmp/temporary_file')
 
     """
-    file_size = None
-    # We use a different API for python2 since urllib(2) doesn't recognize the CA
-    # certificates in older Python
-    u = urlopen(url)
-    meta = u.info()
-    if hasattr(meta, 'getheaders'):
-        content_length = meta.getheaders("Content-Length")
-    else:
-        content_length = meta.get_all("Content-Length")
-    if content_length is not None and len(content_length) > 0:
-        file_size = int(content_length[0])
-
-    # We deliberately save it in a temp file and move it after
-    # download is complete. This prevents a local working checkpoint
-    # being overridden by a broken download.
-    dst = os.path.expanduser(dst)
-    dst_dir = os.path.dirname(dst)
-    f = tempfile.NamedTemporaryFile(delete=False, dir=dst_dir)
-
-    try:
-        if hash_prefix is not None:
-            sha256 = hashlib.sha256()
-        with tqdm(total=file_size, disable=not progress,
-                  unit='B', unit_scale=True, unit_divisor=1024) as pbar:
-            while True:
-                buffer = u.read(8192)
-                if len(buffer) == 0:
-                    break
-                f.write(buffer)
-                if hash_prefix is not None:
-                    sha256.update(buffer)
-                pbar.update(len(buffer))
-
-        f.close()
-        if hash_prefix is not None:
-            digest = sha256.hexdigest()
-            if digest[:len(hash_prefix)] != hash_prefix:
-                raise RuntimeError('invalid hash value (expected "{}", got "{}")'
-                                   .format(hash_prefix, digest))
-        shutil.move(f.name, dst)
-    finally:
-        f.close()
-        if os.path.exists(f.name):
-            os.remove(f.name)
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('torch.hub.download_url_to_file', 'download_url_to_file(url, dst, hash_prefix=None, progress=True)', {'urlopen': urlopen, 'os': os, 'tempfile': tempfile, 'hashlib': hashlib, 'tqdm': tqdm, 'shutil': shutil, 'url': url, 'dst': dst, 'hash_prefix': hash_prefix, 'progress': progress}, 0)
 
 def _download_url_to_file(url, dst, hash_prefix=None, progress=True):
-    warnings.warn('torch.hub._download_url_to_file has been renamed to\
-            torch.hub.download_url_to_file to be a public API,\
-            _download_url_to_file will be removed in after 1.3 release')
+    warnings.warn('torch.hub._download_url_to_file has been renamed to            torch.hub.download_url_to_file to be a public API,            _download_url_to_file will be removed in after 1.3 release')
     download_url_to_file(url, dst, hash_prefix, progress)
 
 def load_state_dict_from_url(url, model_dir=None, map_location=None, progress=True, check_hash=False):
-    r"""Loads the Torch serialized object at the given URL.
+    """Loads the Torch serialized object at the given URL.
 
     If downloaded file is a zip file, it will be automatically
     decompressed.
@@ -468,42 +231,6 @@ def load_state_dict_from_url(url, model_dir=None, map_location=None, progress=Tr
         >>> state_dict = torch.hub.load_state_dict_from_url('https://s3.amazonaws.com/pytorch/models/resnet18-5c106cde.pth')
 
     """
-    # Issue warning to move data if old env is set
-    if os.getenv('TORCH_MODEL_ZOO'):
-        warnings.warn('TORCH_MODEL_ZOO is deprecated, please use env TORCH_HOME instead')
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.hub.load_state_dict_from_url', 'load_state_dict_from_url(url, model_dir=None, map_location=None, progress=True, check_hash=False)', {'os': os, 'warnings': warnings, '_get_torch_home': _get_torch_home, 'errno': errno, 'urlparse': urlparse, 'sys': sys, 'HASH_REGEX': HASH_REGEX, 'download_url_to_file': download_url_to_file, 'zipfile': zipfile, 'torch': torch, 'url': url, 'model_dir': model_dir, 'map_location': map_location, 'progress': progress, 'check_hash': check_hash}, 1)
 
-    if model_dir is None:
-        torch_home = _get_torch_home()
-        model_dir = os.path.join(torch_home, 'checkpoints')
-
-    try:
-        os.makedirs(model_dir)
-    except OSError as e:
-        if e.errno == errno.EEXIST:
-            # Directory already exists, ignore.
-            pass
-        else:
-            # Unexpected OSError, re-raise.
-            raise
-
-    parts = urlparse(url)
-    filename = os.path.basename(parts.path)
-    cached_file = os.path.join(model_dir, filename)
-    if not os.path.exists(cached_file):
-        sys.stderr.write('Downloading: "{}" to {}\n'.format(url, cached_file))
-        hash_prefix = HASH_REGEX.search(filename).group(1) if check_hash else None
-        download_url_to_file(url, cached_file, hash_prefix, progress=progress)
-
-    # Note: extractall() defaults to overwrite file if exists. No need to clean up beforehand.
-    #       We deliberately don't handle tarfile here since our legacy serialization format was in tar.
-    #       E.g. resnet18-5c106cde.pth which is widely used.
-    if zipfile.is_zipfile(cached_file):
-        with zipfile.ZipFile(cached_file) as cached_zipfile:
-            members = cached_zipfile.infolist()
-            if len(members) != 1:
-                raise RuntimeError('Only one file(not dir) is allowed in the zipfile')
-            cached_zipfile.extractall(model_dir)
-            extraced_name = members[0].filename
-            cached_file = os.path.join(model_dir, extraced_name)
-
-    return torch.load(cached_file, map_location=map_location)

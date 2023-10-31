@@ -1,38 +1,13 @@
-# coding=utf-8
-# Copyright 2019-present, the HuggingFace Inc. team, The Google AI Language Team and Facebook, Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """ DistilBERT model configuration """
 
 from .configuration_utils import PretrainedConfig
 from .utils import logging
-
-
 logger = logging.get_logger(__name__)
-
-DISTILBERT_PRETRAINED_CONFIG_ARCHIVE_MAP = {
-    "distilbert-base-uncased": "https://s3.amazonaws.com/models.huggingface.co/bert/distilbert-base-uncased-config.json",
-    "distilbert-base-uncased-distilled-squad": "https://s3.amazonaws.com/models.huggingface.co/bert/distilbert-base-uncased-distilled-squad-config.json",
-    "distilbert-base-cased": "https://s3.amazonaws.com/models.huggingface.co/bert/distilbert-base-cased-config.json",
-    "distilbert-base-cased-distilled-squad": "https://s3.amazonaws.com/models.huggingface.co/bert/distilbert-base-cased-distilled-squad-config.json",
-    "distilbert-base-german-cased": "https://s3.amazonaws.com/models.huggingface.co/bert/distilbert-base-german-cased-config.json",
-    "distilbert-base-multilingual-cased": "https://s3.amazonaws.com/models.huggingface.co/bert/distilbert-base-multilingual-cased-config.json",
-    "distilbert-base-uncased-finetuned-sst-2-english": "https://s3.amazonaws.com/models.huggingface.co/bert/distilbert-base-uncased-finetuned-sst-2-english-config.json",
-}
+DISTILBERT_PRETRAINED_CONFIG_ARCHIVE_MAP = {'distilbert-base-uncased': 'https://s3.amazonaws.com/models.huggingface.co/bert/distilbert-base-uncased-config.json', 'distilbert-base-uncased-distilled-squad': 'https://s3.amazonaws.com/models.huggingface.co/bert/distilbert-base-uncased-distilled-squad-config.json', 'distilbert-base-cased': 'https://s3.amazonaws.com/models.huggingface.co/bert/distilbert-base-cased-config.json', 'distilbert-base-cased-distilled-squad': 'https://s3.amazonaws.com/models.huggingface.co/bert/distilbert-base-cased-distilled-squad-config.json', 'distilbert-base-german-cased': 'https://s3.amazonaws.com/models.huggingface.co/bert/distilbert-base-german-cased-config.json', 'distilbert-base-multilingual-cased': 'https://s3.amazonaws.com/models.huggingface.co/bert/distilbert-base-multilingual-cased-config.json', 'distilbert-base-uncased-finetuned-sst-2-english': 'https://s3.amazonaws.com/models.huggingface.co/bert/distilbert-base-uncased-finetuned-sst-2-english-config.json'}
 
 
 class DistilBertConfig(PretrainedConfig):
-    r"""
+    """
     This is the configuration class to store the configuration of a :class:`~transformers.DistilBertModel` or a
     :class:`~transformers.TFDistilBertModel`. It is used to instantiate a DistilBERT model according to the specified
     arguments, defining the model architecture. Instantiating a configuration with the defaults will yield a similar
@@ -90,26 +65,9 @@ class DistilBertConfig(PretrainedConfig):
         >>> # Accessing the model configuration
         >>> configuration = model.config
     """
-    model_type = "distilbert"
-
-    def __init__(
-        self,
-        vocab_size=30522,
-        max_position_embeddings=512,
-        sinusoidal_pos_embds=False,
-        n_layers=6,
-        n_heads=12,
-        dim=768,
-        hidden_dim=4 * 768,
-        dropout=0.1,
-        attention_dropout=0.1,
-        activation="gelu",
-        initializer_range=0.02,
-        qa_dropout=0.1,
-        seq_classif_dropout=0.2,
-        pad_token_id=0,
-        **kwargs
-    ):
+    model_type = 'distilbert'
+    
+    def __init__(self, vocab_size=30522, max_position_embeddings=512, sinusoidal_pos_embds=False, n_layers=6, n_heads=12, dim=768, hidden_dim=4 * 768, dropout=0.1, attention_dropout=0.1, activation='gelu', initializer_range=0.02, qa_dropout=0.1, seq_classif_dropout=0.2, pad_token_id=0, **kwargs):
         super().__init__(**kwargs, pad_token_id=pad_token_id)
         self.vocab_size = vocab_size
         self.max_position_embeddings = max_position_embeddings
@@ -124,15 +82,17 @@ class DistilBertConfig(PretrainedConfig):
         self.initializer_range = initializer_range
         self.qa_dropout = qa_dropout
         self.seq_classif_dropout = seq_classif_dropout
-
+    
     @property
     def hidden_size(self):
         return self.dim
-
+    
     @property
     def num_attention_heads(self):
         return self.n_heads
-
+    
     @property
     def num_hidden_layers(self):
         return self.n_layers
+
+

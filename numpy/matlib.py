@@ -1,24 +1,10 @@
 import warnings
-
-# 2018-05-29, PendingDeprecationWarning added to matrix.__new__
-# 2020-01-23, numpy 1.19.0 PendingDeprecatonWarning
-warnings.warn("Importing from numpy.matlib is deprecated since 1.19.0. "
-              "The matrix subclass is not the recommended way to represent "
-              "matrices or deal with linear algebra (see "
-              "https://docs.scipy.org/doc/numpy/user/numpy-for-matlab-users.html). "
-              "Please adjust your code to use regular ndarray. ",
-              PendingDeprecationWarning, stacklevel=2)
-
+warnings.warn('Importing from numpy.matlib is deprecated since 1.19.0. The matrix subclass is not the recommended way to represent matrices or deal with linear algebra (see https://docs.scipy.org/doc/numpy/user/numpy-for-matlab-users.html). Please adjust your code to use regular ndarray. ', PendingDeprecationWarning, stacklevel=2)
 import numpy as np
 from numpy.matrixlib.defmatrix import matrix, asmatrix
-# Matlib.py contains all functions in the numpy namespace with a few
-# replacements. See doc/source/reference/routines.matlib.rst for details.
-# Need * as we're copying the numpy namespace.
-from numpy import *  # noqa: F403
-
+from numpy import *
 __version__ = np.__version__
-
-__all__ = np.__all__[:] # copy numpy namespace
+__all__ = np.__all__[:]
 __all__ += ['rand', 'randn', 'repmat']
 
 def empty(shape, dtype=None, order='C'):
@@ -100,9 +86,8 @@ def ones(shape, dtype=None, order='C'):
     matrix([[1.,  1.]])
 
     """
-    a = ndarray.__new__(matrix, shape, dtype, order=order)
-    a.fill(1)
-    return a
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.matlib.ones', "ones(shape, dtype=None, order='C')", {'ndarray': ndarray, 'matrix': matrix, 'shape': shape, 'dtype': dtype, 'order': order}, 1)
 
 def zeros(shape, dtype=None, order='C'):
     """
@@ -144,11 +129,10 @@ def zeros(shape, dtype=None, order='C'):
     matrix([[0.,  0.]])
 
     """
-    a = ndarray.__new__(matrix, shape, dtype, order=order)
-    a.fill(0)
-    return a
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.matlib.zeros', "zeros(shape, dtype=None, order='C')", {'ndarray': ndarray, 'matrix': matrix, 'shape': shape, 'dtype': dtype, 'order': order}, 1)
 
-def identity(n,dtype=None):
+def identity(n, dtype=None):
     """
     Returns the square identity matrix of given size.
 
@@ -179,12 +163,10 @@ def identity(n,dtype=None):
             [0, 0, 1]])
 
     """
-    a = array([1]+n*[0], dtype=dtype)
-    b = empty((n, n), dtype=dtype)
-    b.flat = a
-    return b
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.matlib.identity', 'identity(n, dtype=None)', {'array': array, 'empty': empty, 'n': n, 'dtype': dtype}, 1)
 
-def eye(n,M=None, k=0, dtype=float, order='C'):
+def eye(n, M=None, k=0, dtype=float, order='C'):
     """
     Return a matrix with ones on the diagonal and zeros elsewhere.
 
@@ -237,7 +219,7 @@ def rand(*args):
 
     Parameters
     ----------
-    \\*args : Arguments
+    \*args : Arguments
         Shape of the output.
         If given as N integers, each integer specifies the size of one
         dimension.
@@ -246,7 +228,7 @@ def rand(*args):
     Returns
     -------
     out : ndarray
-        The matrix of random values with shape given by `\\*args`.
+        The matrix of random values with shape given by `\*args`.
 
     See Also
     --------
@@ -283,7 +265,7 @@ def randn(*args):
 
     Parameters
     ----------
-    \\*args : Arguments
+    \*args : Arguments
         Shape of the output.
         If given as N integers, each integer specifies the size of one
         dimension. If given as a tuple, this tuple gives the complete shape.
@@ -364,15 +346,6 @@ def repmat(a, m, n):
             [3, 4, 5, 3, 4, 5, 3, 4, 5]])
 
     """
-    a = asanyarray(a)
-    ndim = a.ndim
-    if ndim == 0:
-        origrows, origcols = (1, 1)
-    elif ndim == 1:
-        origrows, origcols = (1, a.shape[0])
-    else:
-        origrows, origcols = a.shape
-    rows = origrows * m
-    cols = origcols * n
-    c = a.reshape(1, a.size).repeat(m, 0).reshape(rows, origcols).repeat(n, 0)
-    return c.reshape(rows, cols)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.matlib.repmat', 'repmat(a, m, n)', {'asanyarray': asanyarray, 'a': a, 'm': m, 'n': n}, 1)
+

@@ -10,7 +10,6 @@ This module implements the Requests API.
 
 from . import sessions
 
-
 def request(method, url, **kwargs):
     """Constructs and sends a :class:`Request <Request>`.
 
@@ -51,16 +50,11 @@ def request(method, url, **kwargs):
       >>> req
       <Response [200]>
     """
-
-    # By using the 'with' statement we are sure the session is closed, thus we
-    # avoid leaving sockets open which can trigger a ResourceWarning in some
-    # cases, and look like a memory leak in others.
     with sessions.Session() as session:
         return session.request(method=method, url=url, **kwargs)
 
-
 def get(url, params=None, **kwargs):
-    r"""Sends a GET request.
+    """Sends a GET request.
 
     :param url: URL for the new :class:`Request` object.
     :param params: (optional) Dictionary, list of tuples or bytes to send
@@ -69,24 +63,20 @@ def get(url, params=None, **kwargs):
     :return: :class:`Response <Response>` object
     :rtype: requests.Response
     """
-
-    return request("get", url, params=params, **kwargs)
-
+    return request('get', url, params=params, **kwargs)
 
 def options(url, **kwargs):
-    r"""Sends an OPTIONS request.
+    """Sends an OPTIONS request.
 
     :param url: URL for the new :class:`Request` object.
     :param \*\*kwargs: Optional arguments that ``request`` takes.
     :return: :class:`Response <Response>` object
     :rtype: requests.Response
     """
-
-    return request("options", url, **kwargs)
-
+    return request('options', url, **kwargs)
 
 def head(url, **kwargs):
-    r"""Sends a HEAD request.
+    """Sends a HEAD request.
 
     :param url: URL for the new :class:`Request` object.
     :param \*\*kwargs: Optional arguments that ``request`` takes. If
@@ -95,13 +85,11 @@ def head(url, **kwargs):
     :return: :class:`Response <Response>` object
     :rtype: requests.Response
     """
-
-    kwargs.setdefault("allow_redirects", False)
-    return request("head", url, **kwargs)
-
+    kwargs.setdefault('allow_redirects', False)
+    return request('head', url, **kwargs)
 
 def post(url, data=None, json=None, **kwargs):
-    r"""Sends a POST request.
+    """Sends a POST request.
 
     :param url: URL for the new :class:`Request` object.
     :param data: (optional) Dictionary, list of tuples, bytes, or file-like
@@ -111,12 +99,10 @@ def post(url, data=None, json=None, **kwargs):
     :return: :class:`Response <Response>` object
     :rtype: requests.Response
     """
-
-    return request("post", url, data=data, json=json, **kwargs)
-
+    return request('post', url, data=data, json=json, **kwargs)
 
 def put(url, data=None, **kwargs):
-    r"""Sends a PUT request.
+    """Sends a PUT request.
 
     :param url: URL for the new :class:`Request` object.
     :param data: (optional) Dictionary, list of tuples, bytes, or file-like
@@ -126,12 +112,10 @@ def put(url, data=None, **kwargs):
     :return: :class:`Response <Response>` object
     :rtype: requests.Response
     """
-
-    return request("put", url, data=data, **kwargs)
-
+    return request('put', url, data=data, **kwargs)
 
 def patch(url, data=None, **kwargs):
-    r"""Sends a PATCH request.
+    """Sends a PATCH request.
 
     :param url: URL for the new :class:`Request` object.
     :param data: (optional) Dictionary, list of tuples, bytes, or file-like
@@ -141,17 +125,15 @@ def patch(url, data=None, **kwargs):
     :return: :class:`Response <Response>` object
     :rtype: requests.Response
     """
-
-    return request("patch", url, data=data, **kwargs)
-
+    return request('patch', url, data=data, **kwargs)
 
 def delete(url, **kwargs):
-    r"""Sends a DELETE request.
+    """Sends a DELETE request.
 
     :param url: URL for the new :class:`Request` object.
     :param \*\*kwargs: Optional arguments that ``request`` takes.
     :return: :class:`Response <Response>` object
     :rtype: requests.Response
     """
+    return request('delete', url, **kwargs)
 
-    return request("delete", url, **kwargs)

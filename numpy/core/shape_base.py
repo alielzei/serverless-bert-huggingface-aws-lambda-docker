@@ -1,24 +1,16 @@
-__all__ = ['atleast_1d', 'atleast_2d', 'atleast_3d', 'block', 'hstack',
-           'stack', 'vstack']
-
+__all__ = ['atleast_1d', 'atleast_2d', 'atleast_3d', 'block', 'hstack', 'stack', 'vstack']
 import functools
 import itertools
 import operator
 import warnings
-
 from . import numeric as _nx
 from . import overrides
 from .multiarray import array, asanyarray, normalize_axis_index
 from . import fromnumeric as _from_nx
-
-
-array_function_dispatch = functools.partial(
-    overrides.array_function_dispatch, module='numpy')
-
+array_function_dispatch = functools.partial(overrides.array_function_dispatch, module='numpy')
 
 def _atleast_1d_dispatcher(*arys):
     return arys
-
 
 @array_function_dispatch(_atleast_1d_dispatcher)
 def atleast_1d(*arys):
@@ -73,10 +65,8 @@ def atleast_1d(*arys):
     else:
         return res
 
-
 def _atleast_2d_dispatcher(*arys):
     return arys
-
 
 @array_function_dispatch(_atleast_2d_dispatcher)
 def atleast_2d(*arys):
@@ -131,10 +121,8 @@ def atleast_2d(*arys):
     else:
         return res
 
-
 def _atleast_3d_dispatcher(*arys):
     return arys
-
 
 @array_function_dispatch(_atleast_3d_dispatcher)
 def atleast_3d(*arys):
@@ -186,42 +174,20 @@ def atleast_3d(*arys):
     [[[1 2]]] (1, 1, 2)
 
     """
-    res = []
-    for ary in arys:
-        ary = asanyarray(ary)
-        if ary.ndim == 0:
-            result = ary.reshape(1, 1, 1)
-        elif ary.ndim == 1:
-            result = ary[_nx.newaxis, :, _nx.newaxis]
-        elif ary.ndim == 2:
-            result = ary[:, :, _nx.newaxis]
-        else:
-            result = ary
-        res.append(result)
-    if len(res) == 1:
-        return res[0]
-    else:
-        return res
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.core.shape_base.atleast_3d', 'atleast_3d(*arys)', {'asanyarray': asanyarray, '_nx': _nx, 'array_function_dispatch': array_function_dispatch, '_atleast_3d_dispatcher': _atleast_3d_dispatcher, 'arys': arys}, 1)
 
 def _arrays_for_stack_dispatcher(arrays, stacklevel=4):
-    if not hasattr(arrays, '__getitem__') and hasattr(arrays, '__iter__'):
-        warnings.warn('arrays to stack must be passed as a "sequence" type '
-                      'such as list or tuple. Support for non-sequence '
-                      'iterables such as generators is deprecated as of '
-                      'NumPy 1.16 and will raise an error in the future.',
-                      FutureWarning, stacklevel=stacklevel)
+    if (not hasattr(arrays, '__getitem__') and hasattr(arrays, '__iter__')):
+        warnings.warn('arrays to stack must be passed as a "sequence" type such as list or tuple. Support for non-sequence iterables such as generators is deprecated as of NumPy 1.16 and will raise an error in the future.', FutureWarning, stacklevel=stacklevel)
         return ()
     return arrays
 
-
-def _vhstack_dispatcher(tup, *, 
-                        dtype=None, casting=None):
+def _vhstack_dispatcher(tup, *, dtype=None, casting=None):
     return _arrays_for_stack_dispatcher(tup)
 
-
 @array_function_dispatch(_vhstack_dispatcher)
-def vstack(tup, *, dtype=None, casting="same_kind"):
+def vstack(tup, *, dtype=None, casting='same_kind'):
     """
     Stack arrays in sequence vertically (row wise).
 
@@ -288,16 +254,14 @@ def vstack(tup, *, dtype=None, casting="same_kind"):
 
     """
     if not overrides.ARRAY_FUNCTION_ENABLED:
-        # raise warning if necessary
         _arrays_for_stack_dispatcher(tup, stacklevel=2)
     arrs = atleast_2d(*tup)
     if not isinstance(arrs, list):
         arrs = [arrs]
     return _nx.concatenate(arrs, 0, dtype=dtype, casting=casting)
 
-
 @array_function_dispatch(_vhstack_dispatcher)
-def hstack(tup, *, dtype=None, casting="same_kind"):
+def hstack(tup, *, dtype=None, casting='same_kind'):
     """
     Stack arrays in sequence horizontally (column wise).
 
@@ -357,31 +321,24 @@ def hstack(tup, *, dtype=None, casting="same_kind"):
 
     """
     if not overrides.ARRAY_FUNCTION_ENABLED:
-        # raise warning if necessary
         _arrays_for_stack_dispatcher(tup, stacklevel=2)
-
     arrs = atleast_1d(*tup)
     if not isinstance(arrs, list):
         arrs = [arrs]
-    # As a special case, dimension 0 of 1-dimensional arrays is "horizontal"
-    if arrs and arrs[0].ndim == 1:
+    if (arrs and arrs[0].ndim == 1):
         return _nx.concatenate(arrs, 0, dtype=dtype, casting=casting)
     else:
         return _nx.concatenate(arrs, 1, dtype=dtype, casting=casting)
 
-
-def _stack_dispatcher(arrays, axis=None, out=None, *,
-                      dtype=None, casting=None):
+def _stack_dispatcher(arrays, axis=None, out=None, *, dtype=None, casting=None):
     arrays = _arrays_for_stack_dispatcher(arrays, stacklevel=6)
     if out is not None:
-        # optimize for the typical case where only arrays is provided
         arrays = list(arrays)
         arrays.append(out)
     return arrays
 
-
 @array_function_dispatch(_stack_dispatcher)
-def stack(arrays, axis=0, out=None, *, dtype=None, casting="same_kind"):
+def stack(arrays, axis=0, out=None, *, dtype=None, casting='same_kind'):
     """
     Join a sequence of arrays along a new axis.
 
@@ -452,42 +409,28 @@ def stack(arrays, axis=0, out=None, *, dtype=None, casting="same_kind"):
 
     """
     if not overrides.ARRAY_FUNCTION_ENABLED:
-        # raise warning if necessary
         _arrays_for_stack_dispatcher(arrays, stacklevel=2)
-
     arrays = [asanyarray(arr) for arr in arrays]
     if not arrays:
         raise ValueError('need at least one array to stack')
-
     shapes = {arr.shape for arr in arrays}
     if len(shapes) != 1:
         raise ValueError('all input arrays must have the same shape')
-
     result_ndim = arrays[0].ndim + 1
     axis = normalize_axis_index(axis, result_ndim)
-
-    sl = (slice(None),) * axis + (_nx.newaxis,)
+    sl = (slice(None), ) * axis + (_nx.newaxis, )
     expanded_arrays = [arr[sl] for arr in arrays]
-    return _nx.concatenate(expanded_arrays, axis=axis, out=out,
-                           dtype=dtype, casting=casting)
-
-
-# Internal functions to eliminate the overhead of repeated dispatch in one of
-# the two possible paths inside np.block.
-# Use getattr to protect against __array_function__ being disabled.
+    return _nx.concatenate(expanded_arrays, axis=axis, out=out, dtype=dtype, casting=casting)
 _size = getattr(_from_nx.size, '__wrapped__', _from_nx.size)
 _ndim = getattr(_from_nx.ndim, '__wrapped__', _from_nx.ndim)
-_concatenate = getattr(_from_nx.concatenate,
-                       '__wrapped__', _from_nx.concatenate)
-
+_concatenate = getattr(_from_nx.concatenate, '__wrapped__', _from_nx.concatenate)
 
 def _block_format_index(index):
     """
     Convert a list of indices ``[0, 1, 2]`` into ``"arrays[0][1][2]"``.
     """
-    idx_str = ''.join('[{}]'.format(i) for i in index if i is not None)
+    idx_str = ''.join(('[{}]'.format(i) for i in index if i is not None))
     return 'arrays' + idx_str
-
 
 def _block_check_depths_match(arrays, parent_index=[]):
     """
@@ -520,60 +463,14 @@ def _block_check_depths_match(arrays, parent_index=[]):
         the choice of algorithm used using benchmarking wisdom.
 
     """
-    if type(arrays) is tuple:
-        # not strictly necessary, but saves us from:
-        #  - more than one way to do things - no point treating tuples like
-        #    lists
-        #  - horribly confusing behaviour that results when tuples are
-        #    treated like ndarray
-        raise TypeError(
-            '{} is a tuple. '
-            'Only lists can be used to arrange blocks, and np.block does '
-            'not allow implicit conversion from tuple to ndarray.'.format(
-                _block_format_index(parent_index)
-            )
-        )
-    elif type(arrays) is list and len(arrays) > 0:
-        idxs_ndims = (_block_check_depths_match(arr, parent_index + [i])
-                      for i, arr in enumerate(arrays))
-
-        first_index, max_arr_ndim, final_size = next(idxs_ndims)
-        for index, ndim, size in idxs_ndims:
-            final_size += size
-            if ndim > max_arr_ndim:
-                max_arr_ndim = ndim
-            if len(index) != len(first_index):
-                raise ValueError(
-                    "List depths are mismatched. First element was at depth "
-                    "{}, but there is an element at depth {} ({})".format(
-                        len(first_index),
-                        len(index),
-                        _block_format_index(index)
-                    )
-                )
-            # propagate our flag that indicates an empty list at the bottom
-            if index[-1] is None:
-                first_index = index
-
-        return first_index, max_arr_ndim, final_size
-    elif type(arrays) is list and len(arrays) == 0:
-        # We've 'bottomed out' on an empty list
-        return parent_index + [None], 0, 0
-    else:
-        # We've 'bottomed out' - arrays is either a scalar or an array
-        size = _size(arrays)
-        return parent_index, _ndim(arrays), size
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.core.shape_base._block_check_depths_match', '_block_check_depths_match(arrays, parent_index=[])', {'_block_format_index': _block_format_index, '_block_check_depths_match': _block_check_depths_match, '_size': _size, '_ndim': _ndim, 'arrays': arrays, 'parent_index': parent_index}, 3)
 
 def _atleast_nd(a, ndim):
-    # Ensures `a` has at least `ndim` dimensions by prepending
-    # ones to `a.shape` as necessary
     return array(a, ndmin=ndim, copy=False, subok=True)
-
 
 def _accumulate(values):
     return list(itertools.accumulate(values))
-
 
 def _concatenate_shapes(shapes, axis):
     """Given array shapes, return the resulting shape and slices prefixes.
@@ -610,27 +507,8 @@ def _concatenate_shapes(shapes, axis):
         to existing slice tuple without creating a new tuple every time.
 
     """
-    # Cache a result that will be reused.
-    shape_at_axis = [shape[axis] for shape in shapes]
-
-    # Take a shape, any shape
-    first_shape = shapes[0]
-    first_shape_pre = first_shape[:axis]
-    first_shape_post = first_shape[axis+1:]
-
-    if any(shape[:axis] != first_shape_pre or
-           shape[axis+1:] != first_shape_post for shape in shapes):
-        raise ValueError(
-            'Mismatched array shapes in block along axis {}.'.format(axis))
-
-    shape = (first_shape_pre + (sum(shape_at_axis),) + first_shape[axis+1:])
-
-    offsets_at_axis = _accumulate(shape_at_axis)
-    slice_prefixes = [(slice(start, end),)
-                      for start, end in zip([0] + offsets_at_axis,
-                                            offsets_at_axis)]
-    return shape, slice_prefixes
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.core.shape_base._concatenate_shapes', '_concatenate_shapes(shapes, axis)', {'_accumulate': _accumulate, 'shapes': shapes, 'axis': axis}, 2)
 
 def _block_info_recursion(arrays, max_depth, result_ndim, depth=0):
     """
@@ -659,31 +537,8 @@ def _block_info_recursion(arrays, max_depth, result_ndim, depth=0):
         The data to assign to each slice of the full array
 
     """
-    if depth < max_depth:
-        shapes, slices, arrays = zip(
-            *[_block_info_recursion(arr, max_depth, result_ndim, depth+1)
-              for arr in arrays])
-
-        axis = result_ndim - max_depth + depth
-        shape, slice_prefixes = _concatenate_shapes(shapes, axis)
-
-        # Prepend the slice prefix and flatten the slices
-        slices = [slice_prefix + the_slice
-                  for slice_prefix, inner_slices in zip(slice_prefixes, slices)
-                  for the_slice in inner_slices]
-
-        # Flatten the array list
-        arrays = functools.reduce(operator.add, arrays)
-
-        return shape, slices, arrays
-    else:
-        # We've 'bottomed out' - arrays is either a scalar or an array
-        # type(arrays) is not list
-        # Return the slice and the array inside a list to be consistent with
-        # the recursive case.
-        arr = _atleast_nd(arrays, result_ndim)
-        return arr.shape, [()], [arr]
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.core.shape_base._block_info_recursion', '_block_info_recursion(arrays, max_depth, result_ndim, depth=0)', {'_block_info_recursion': _block_info_recursion, '_concatenate_shapes': _concatenate_shapes, 'functools': functools, 'operator': operator, '_atleast_nd': _atleast_nd, 'arrays': arrays, 'max_depth': max_depth, 'result_ndim': result_ndim, 'depth': depth}, 3)
 
 def _block(arrays, max_depth, result_ndim, depth=0):
     """
@@ -694,26 +549,12 @@ def _block(arrays, max_depth, result_ndim, depth=0):
     `arrays` and the depth of the lists in `arrays` (see block docstring
     for details).
     """
-    if depth < max_depth:
-        arrs = [_block(arr, max_depth, result_ndim, depth+1)
-                for arr in arrays]
-        return _concatenate(arrs, axis=-(max_depth-depth))
-    else:
-        # We've 'bottomed out' - arrays is either a scalar or an array
-        # type(arrays) is not list
-        return _atleast_nd(arrays, result_ndim)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.core.shape_base._block', '_block(arrays, max_depth, result_ndim, depth=0)', {'_block': _block, '_concatenate': _concatenate, '_atleast_nd': _atleast_nd, 'arrays': arrays, 'max_depth': max_depth, 'result_ndim': result_ndim, 'depth': depth}, 1)
 
 def _block_dispatcher(arrays):
-    # Use type(...) is list to match the behavior of np.block(), which special
-    # cases list specifically rather than allowing for generic iterables or
-    # tuple. Also, we know that list.__array_function__ will never exist.
-    if type(arrays) is list:
-        for subarrays in arrays:
-            yield from _block_dispatcher(subarrays)
-    else:
-        yield arrays
-
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('numpy.core.shape_base._block_dispatcher', '_block_dispatcher(arrays)', {'_block_dispatcher': _block_dispatcher, 'arrays': arrays}, 0)
 
 @array_function_dispatch(_block_dispatcher)
 def block(arrays):
@@ -865,74 +706,22 @@ def block(arrays):
 
 
     """
-    arrays, list_ndim, result_ndim, final_size = _block_setup(arrays)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.core.shape_base.block', 'block(arrays)', {'_block_setup': _block_setup, '_block_slicing': _block_slicing, '_block_concatenate': _block_concatenate, 'array_function_dispatch': array_function_dispatch, '_block_dispatcher': _block_dispatcher, 'arrays': arrays}, 1)
 
-    # It was found through benchmarking that making an array of final size
-    # around 256x256 was faster by straight concatenation on a
-    # i7-7700HQ processor and dual channel ram 2400MHz.
-    # It didn't seem to matter heavily on the dtype used.
-    #
-    # A 2D array using repeated concatenation requires 2 copies of the array.
-    #
-    # The fastest algorithm will depend on the ratio of CPU power to memory
-    # speed.
-    # One can monitor the results of the benchmark
-    # https://pv.github.io/numpy-bench/#bench_shape_base.Block2D.time_block2d
-    # to tune this parameter until a C version of the `_block_info_recursion`
-    # algorithm is implemented which would likely be faster than the python
-    # version.
-    if list_ndim * final_size > (2 * 512 * 512):
-        return _block_slicing(arrays, list_ndim, result_ndim)
-    else:
-        return _block_concatenate(arrays, list_ndim, result_ndim)
-
-
-# These helper functions are mostly used for testing.
-# They allow us to write tests that directly call `_block_slicing`
-# or `_block_concatenate` without blocking large arrays to force the wisdom
-# to trigger the desired path.
 def _block_setup(arrays):
     """
     Returns
     (`arrays`, list_ndim, result_ndim, final_size)
     """
-    bottom_index, arr_ndim, final_size = _block_check_depths_match(arrays)
-    list_ndim = len(bottom_index)
-    if bottom_index and bottom_index[-1] is None:
-        raise ValueError(
-            'List at {} cannot be empty'.format(
-                _block_format_index(bottom_index)
-            )
-        )
-    result_ndim = max(arr_ndim, list_ndim)
-    return arrays, list_ndim, result_ndim, final_size
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.core.shape_base._block_setup', '_block_setup(arrays)', {'_block_check_depths_match': _block_check_depths_match, '_block_format_index': _block_format_index, 'arrays': arrays}, 4)
 
 def _block_slicing(arrays, list_ndim, result_ndim):
-    shape, slices, arrays = _block_info_recursion(
-        arrays, list_ndim, result_ndim)
-    dtype = _nx.result_type(*[arr.dtype for arr in arrays])
-
-    # Test preferring F only in the case that all input arrays are F
-    F_order = all(arr.flags['F_CONTIGUOUS'] for arr in arrays)
-    C_order = all(arr.flags['C_CONTIGUOUS'] for arr in arrays)
-    order = 'F' if F_order and not C_order else 'C'
-    result = _nx.empty(shape=shape, dtype=dtype, order=order)
-    # Note: In a c implementation, the function
-    # PyArray_CreateMultiSortedStridePerm could be used for more advanced
-    # guessing of the desired order.
-
-    for the_slice, arr in zip(slices, arrays):
-        result[(Ellipsis,) + the_slice] = arr
-    return result
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.core.shape_base._block_slicing', '_block_slicing(arrays, list_ndim, result_ndim)', {'_block_info_recursion': _block_info_recursion, '_nx': _nx, 'Ellipsis': Ellipsis, 'arrays': arrays, 'list_ndim': list_ndim, 'result_ndim': result_ndim}, 1)
 
 def _block_concatenate(arrays, list_ndim, result_ndim):
-    result = _block(arrays, list_ndim, result_ndim)
-    if list_ndim == 0:
-        # Catch an edge case where _block returns a view because
-        # `arrays` is a single numpy array and not a list of numpy arrays.
-        # This might copy scalars or lists twice, but this isn't a likely
-        # usecase for those interested in performance
-        result = result.copy()
-    return result
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.core.shape_base._block_concatenate', '_block_concatenate(arrays, list_ndim, result_ndim)', {'_block': _block, 'arrays': arrays, 'list_ndim': list_ndim, 'result_ndim': result_ndim}, 1)
+

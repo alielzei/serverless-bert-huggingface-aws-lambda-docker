@@ -1,76 +1,21 @@
-# coding=utf-8
-# Copyright 2018 T5 Authors and HuggingFace Inc. team.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """ Tokenization class for model T5."""
-
 
 import os
 from shutil import copyfile
 from typing import List, Optional, Tuple
-
 from .file_utils import add_start_docstrings, is_sentencepiece_available
 from .tokenization_utils import BatchEncoding
 from .tokenization_utils_base import PREPARE_SEQ2SEQ_BATCH_DOCSTRING
 from .tokenization_utils_fast import PreTrainedTokenizerFast
 from .utils import logging
-
-
 if is_sentencepiece_available():
     from .tokenization_t5 import T5Tokenizer
 else:
     T5Tokenizer = None
-
-
 logger = logging.get_logger(__name__)
-
-####################################################
-# Mapping from the keyword arguments names of Tokenizer `__init__`
-# to file names for serializing Tokenizer instances
-####################################################
-VOCAB_FILES_NAMES = {"vocab_file": "spiece.model", "tokenizer_file": "tokenizer.json"}
-
-####################################################
-# Mapping from the keyword arguments names of Tokenizer `__init__`
-# to pretrained vocabulary URL for all the model shortcut names.
-####################################################
-PRETRAINED_VOCAB_FILES_MAP = {
-    "vocab_file": {
-        "t5-small": "https://s3.amazonaws.com/models.huggingface.co/bert/t5-spiece.model",
-        "t5-base": "https://s3.amazonaws.com/models.huggingface.co/bert/t5-spiece.model",
-        "t5-large": "https://s3.amazonaws.com/models.huggingface.co/bert/t5-spiece.model",
-        "t5-3b": "https://s3.amazonaws.com/models.huggingface.co/bert/t5-spiece.model",
-        "t5-11b": "https://s3.amazonaws.com/models.huggingface.co/bert/t5-spiece.model",
-    },
-    "tokenizer_file": {
-        "t5-small": "https://s3.amazonaws.com/models.huggingface.co/bert/t5-tokenizer.json",
-        "t5-base": "https://s3.amazonaws.com/models.huggingface.co/bert/t5-tokenizer.json",
-        "t5-large": "https://s3.amazonaws.com/models.huggingface.co/bert/t5-tokenizer.json",
-        "t5-3b": "https://s3.amazonaws.com/models.huggingface.co/bert/t5-tokenizer.json",
-        "t5-11b": "https://s3.amazonaws.com/models.huggingface.co/bert/t5-tokenizer.json",
-    },
-}
-
-####################################################
-# Mapping from model shortcut names to max length of inputs
-####################################################
-PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES = {
-    "t5-small": 512,
-    "t5-base": 512,
-    "t5-large": 512,
-    "t5-3b": 512,
-    "t5-11b": 512,
-}
+VOCAB_FILES_NAMES = {'vocab_file': 'spiece.model', 'tokenizer_file': 'tokenizer.json'}
+PRETRAINED_VOCAB_FILES_MAP = {'vocab_file': {'t5-small': 'https://s3.amazonaws.com/models.huggingface.co/bert/t5-spiece.model', 't5-base': 'https://s3.amazonaws.com/models.huggingface.co/bert/t5-spiece.model', 't5-large': 'https://s3.amazonaws.com/models.huggingface.co/bert/t5-spiece.model', 't5-3b': 'https://s3.amazonaws.com/models.huggingface.co/bert/t5-spiece.model', 't5-11b': 'https://s3.amazonaws.com/models.huggingface.co/bert/t5-spiece.model'}, 'tokenizer_file': {'t5-small': 'https://s3.amazonaws.com/models.huggingface.co/bert/t5-tokenizer.json', 't5-base': 'https://s3.amazonaws.com/models.huggingface.co/bert/t5-tokenizer.json', 't5-large': 'https://s3.amazonaws.com/models.huggingface.co/bert/t5-tokenizer.json', 't5-3b': 'https://s3.amazonaws.com/models.huggingface.co/bert/t5-tokenizer.json', 't5-11b': 'https://s3.amazonaws.com/models.huggingface.co/bert/t5-tokenizer.json'}}
+PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES = {'t5-small': 512, 't5-base': 512, 't5-large': 512, 't5-3b': 512, 't5-11b': 512}
 
 
 class T5TokenizerFast(PreTrainedTokenizerFast):
@@ -106,63 +51,32 @@ class T5TokenizerFast(PreTrainedTokenizerFast):
         additional_special_tokens (:obj:`List[str]`, `optional`):
             Additional special tokens used by the tokenizer.
     """
-
     vocab_files_names = VOCAB_FILES_NAMES
     pretrained_vocab_files_map = PRETRAINED_VOCAB_FILES_MAP
     max_model_input_sizes = PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES
-    model_input_names = ["attention_mask"]
+    model_input_names = ['attention_mask']
     slow_tokenizer_class = T5Tokenizer
-
     prefix_tokens: List[int] = []
-
-    def __init__(
-        self,
-        vocab_file,
-        tokenizer_file=None,
-        eos_token="</s>",
-        unk_token="<unk>",
-        pad_token="<pad>",
-        extra_ids=100,
-        additional_special_tokens=None,
-        **kwargs
-    ):
-        super().__init__(
-            vocab_file,
-            tokenizer_file=tokenizer_file,
-            eos_token=eos_token,
-            unk_token=unk_token,
-            pad_token=pad_token,
-            extra_ids=extra_ids,
-            additional_special_tokens=additional_special_tokens,
-            **kwargs,
-        )
-
+    
+    def __init__(self, vocab_file, tokenizer_file=None, eos_token='</s>', unk_token='<unk>', pad_token='<pad>', extra_ids=100, additional_special_tokens=None, **kwargs):
+        super().__init__(vocab_file, tokenizer_file=tokenizer_file, eos_token=eos_token, unk_token=unk_token, pad_token=pad_token, extra_ids=extra_ids, additional_special_tokens=additional_special_tokens, **kwargs)
         if extra_ids > 0:
-            all_extra_tokens = ["<extra_id_{}>".format(i) for i in range(extra_ids)]
-            if all(tok not in self.additional_special_tokens for tok in all_extra_tokens):
-                self.additional_special_tokens = self.additional_special_tokens + [
-                    "<extra_id_{}>".format(i) for i in range(extra_ids)
-                ]
-
+            all_extra_tokens = ['<extra_id_{}>'.format(i) for i in range(extra_ids)]
+            if all((tok not in self.additional_special_tokens for tok in all_extra_tokens)):
+                self.additional_special_tokens = self.additional_special_tokens + ['<extra_id_{}>'.format(i) for i in range(extra_ids)]
         self.vocab_file = vocab_file
         self._extra_ids = extra_ids
-
+    
     def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = None) -> Tuple[str]:
         if not os.path.isdir(save_directory):
-            logger.error("Vocabulary path ({}) should be a directory".format(save_directory))
+            logger.error('Vocabulary path ({}) should be a directory'.format(save_directory))
             return
-        out_vocab_file = os.path.join(
-            save_directory, (filename_prefix + "-" if filename_prefix else "") + VOCAB_FILES_NAMES["vocab_file"]
-        )
-
+        out_vocab_file = os.path.join(save_directory, ((filename_prefix + '-' if filename_prefix else '')) + VOCAB_FILES_NAMES['vocab_file'])
         if os.path.abspath(self.vocab_file) != os.path.abspath(out_vocab_file):
             copyfile(self.vocab_file, out_vocab_file)
-
-        return (out_vocab_file,)
-
-    def build_inputs_with_special_tokens(
-        self, token_ids_0: List[int], token_ids_1: Optional[List[int]] = None
-    ) -> List[int]:
+        return (out_vocab_file, )
+    
+    def build_inputs_with_special_tokens(self, token_ids_0: List[int], token_ids_1: Optional[List[int]] = None) -> List[int]:
         """
         Build model inputs from a sequence or a pair of sequence for sequence classification tasks
         by concatenating and adding special tokens.
@@ -186,47 +100,21 @@ class T5TokenizerFast(PreTrainedTokenizerFast):
         else:
             token_ids_1 = token_ids_1 + [self.eos_token_id]
             return self.prefix_tokens + token_ids_0 + token_ids_1
-
+    
     @add_start_docstrings(PREPARE_SEQ2SEQ_BATCH_DOCSTRING)
-    def prepare_seq2seq_batch(
-        self,
-        src_texts: List[str],
-        tgt_texts: Optional[List[str]] = None,
-        max_length: Optional[int] = None,
-        max_target_length: Optional[int] = None,
-        padding: str = "longest",
-        return_tensors: str = None,
-        truncation: bool = True,
-        **kwargs,
-    ) -> BatchEncoding:
+    def prepare_seq2seq_batch(self, src_texts: List[str], tgt_texts: Optional[List[str]] = None, max_length: Optional[int] = None, max_target_length: Optional[int] = None, padding: str = 'longest', return_tensors: str = None, truncation: bool = True, **kwargs) -> BatchEncoding:
         if max_length is None:
             max_length = self.max_len
         self.prefix_tokens = []
-        model_inputs = self(
-            src_texts,
-            add_special_tokens=True,
-            return_tensors=return_tensors,
-            max_length=max_length,
-            padding=padding,
-            truncation=truncation,
-            **kwargs,
-        )
+        model_inputs = self(src_texts, add_special_tokens=True, return_tensors=return_tensors, max_length=max_length, padding=padding, truncation=truncation, **kwargs)
         if tgt_texts is None:
             return model_inputs
-        # Process tgt_texts
         if max_target_length is None:
             max_target_length = max_length
-        # set prefix_tokens for target text
         self.prefix_tokens = [self.pad_token_id]
-        labels_and_decoder_mask = self(
-            tgt_texts,
-            add_special_tokens=True,
-            return_tensors=return_tensors,
-            padding=padding,
-            max_length=max_target_length,
-            truncation=truncation,
-            **kwargs,
-        )
-        model_inputs["labels"] = labels_and_decoder_mask["input_ids"]
+        labels_and_decoder_mask = self(tgt_texts, add_special_tokens=True, return_tensors=return_tensors, padding=padding, max_length=max_target_length, truncation=truncation, **kwargs)
+        model_inputs['labels'] = labels_and_decoder_mask['input_ids']
         self.prefix_tokens = []
         return model_inputs
+
+

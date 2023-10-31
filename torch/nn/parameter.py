@@ -3,7 +3,7 @@ from collections import OrderedDict
 
 
 class Parameter(torch.Tensor):
-    r"""A kind of Tensor that is to be considered a module parameter.
+    """A kind of Tensor that is to be considered a module parameter.
 
     Parameters are :class:`~torch.Tensor` subclasses, that have a
     very special property when used with :class:`Module` s - when they're
@@ -19,12 +19,12 @@ class Parameter(torch.Tensor):
         requires_grad (bool, optional): if the parameter requires gradient. See
             :ref:`excluding-subgraphs` for more details. Default: `True`
     """
-
+    
     def __new__(cls, data=None, requires_grad=True):
         if data is None:
             data = torch.Tensor()
         return torch.Tensor._make_subclass(cls, data, requires_grad)
-
+    
     def __deepcopy__(self, memo):
         if id(self) in memo:
             return memo[id(self)]
@@ -32,13 +32,11 @@ class Parameter(torch.Tensor):
             result = type(self)(self.data.clone(memory_format=torch.preserve_format), self.requires_grad)
             memo[id(self)] = result
             return result
-
+    
     def __repr__(self):
         return 'Parameter containing:\n' + super(Parameter, self).__repr__()
-
+    
     def __reduce_ex__(self, proto):
-        # See Note [Don't serialize hooks]
-        return (
-            torch._utils._rebuild_parameter,
-            (self.data, self.requires_grad, OrderedDict())
-        )
+        return (torch._utils._rebuild_parameter, (self.data, self.requires_grad, OrderedDict()))
+
+

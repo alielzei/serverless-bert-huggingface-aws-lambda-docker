@@ -1,20 +1,15 @@
 __all__ = ['matrix', 'bmat', 'mat', 'asmatrix']
-
 import sys
 import warnings
 import ast
 import numpy.core.numeric as N
 from numpy.core.numeric import concatenate, isscalar
 from numpy.core.overrides import set_module
-# While not in __all__, matrix_power used to be defined here, so we import
-# it for backward compatibility.
 from numpy.linalg import matrix_power
-
 
 def _convert_from_string(data):
     for char in '[]':
         data = data.replace(char, '')
-
     rows = data.split(';')
     newdata = []
     count = 0
@@ -27,11 +22,10 @@ def _convert_from_string(data):
         if count == 0:
             Ncols = len(newrow)
         elif len(newrow) != Ncols:
-            raise ValueError("Rows not the same size.")
+            raise ValueError('Rows not the same size.')
         count += 1
         newdata.append(newrow)
     return newdata
-
 
 @set_module('numpy')
 def asmatrix(data, dtype=None):
@@ -112,21 +106,16 @@ class matrix(N.ndarray):
 
     """
     __array_priority__ = 10.0
+    
     def __new__(subtype, data, dtype=None, copy=True):
-        warnings.warn('the matrix subclass is not the recommended way to '
-                      'represent matrices or deal with linear algebra (see '
-                      'https://docs.scipy.org/doc/numpy/user/'
-                      'numpy-for-matlab-users.html). '
-                      'Please adjust your code to use regular ndarray.',
-                      PendingDeprecationWarning, stacklevel=2)
+        warnings.warn('the matrix subclass is not the recommended way to represent matrices or deal with linear algebra (see https://docs.scipy.org/doc/numpy/user/numpy-for-matlab-users.html). Please adjust your code to use regular ndarray.', PendingDeprecationWarning, stacklevel=2)
         if isinstance(data, matrix):
             dtype2 = data.dtype
-            if (dtype is None):
+            if dtype is None:
                 dtype = dtype2
-            if (dtype2 == dtype) and (not copy):
+            if (dtype2 == dtype and not copy):
                 return data
             return data.astype(dtype)
-
         if isinstance(data, N.ndarray):
             if dtype is None:
                 intype = data.dtype
@@ -135,49 +124,44 @@ class matrix(N.ndarray):
             new = data.view(subtype)
             if intype != data.dtype:
                 return new.astype(intype)
-            if copy: return new.copy()
-            else: return new
-
+            if copy:
+                return new.copy()
+            else:
+                return new
         if isinstance(data, str):
             data = _convert_from_string(data)
-
-        # now convert data to an array
         arr = N.array(data, dtype=dtype, copy=copy)
         ndim = arr.ndim
         shape = arr.shape
-        if (ndim > 2):
-            raise ValueError("matrix must be 2-dimensional")
+        if ndim > 2:
+            raise ValueError('matrix must be 2-dimensional')
         elif ndim == 0:
             shape = (1, 1)
         elif ndim == 1:
             shape = (1, shape[0])
-
         order = 'C'
-        if (ndim == 2) and arr.flags.fortran:
+        if (ndim == 2 and arr.flags.fortran):
             order = 'F'
-
-        if not (order or arr.flags.contiguous):
+        if not ((order or arr.flags.contiguous)):
             arr = arr.copy()
-
-        ret = N.ndarray.__new__(subtype, shape, arr.dtype,
-                                buffer=arr,
-                                order=order)
+        ret = N.ndarray.__new__(subtype, shape, arr.dtype, buffer=arr, order=order)
         return ret
-
+    
     def __array_finalize__(self, obj):
         self._getitem = False
-        if (isinstance(obj, matrix) and obj._getitem): return
-        ndim = self.ndim
-        if (ndim == 2):
+        if (isinstance(obj, matrix) and obj._getitem):
             return
-        if (ndim > 2):
+        ndim = self.ndim
+        if ndim == 2:
+            return
+        if ndim > 2:
             newshape = tuple([x for x in self.shape if x > 1])
             ndim = len(newshape)
             if ndim == 2:
                 self.shape = newshape
                 return
-            elif (ndim > 2):
-                raise ValueError("shape too large to be a matrix.")
+            elif ndim > 2:
+                raise ValueError('shape too large to be a matrix.')
         else:
             newshape = self.shape
         if ndim == 0:
@@ -185,82 +169,75 @@ class matrix(N.ndarray):
         elif ndim == 1:
             self.shape = (1, newshape[0])
         return
-
+    
     def __getitem__(self, index):
         self._getitem = True
-
         try:
             out = N.ndarray.__getitem__(self, index)
         finally:
             self._getitem = False
-
         if not isinstance(out, N.ndarray):
             return out
-
         if out.ndim == 0:
             return out[()]
         if out.ndim == 1:
             sh = out.shape[0]
-            # Determine when we should have a column array
             try:
                 n = len(index)
             except Exception:
                 n = 0
-            if n > 1 and isscalar(index[1]):
+            if (n > 1 and isscalar(index[1])):
                 out.shape = (sh, 1)
             else:
                 out.shape = (1, sh)
         return out
-
+    
     def __mul__(self, other):
-        if isinstance(other, (N.ndarray, list, tuple)) :
-            # This promotes 1-D vectors to row vectors
+        if isinstance(other, (N.ndarray, list, tuple)):
             return N.dot(self, asmatrix(other))
-        if isscalar(other) or not hasattr(other, '__rmul__') :
+        if (isscalar(other) or not hasattr(other, '__rmul__')):
             return N.dot(self, other)
         return NotImplemented
-
+    
     def __rmul__(self, other):
         return N.dot(other, self)
-
+    
     def __imul__(self, other):
         self[:] = self * other
         return self
-
+    
     def __pow__(self, other):
         return matrix_power(self, other)
-
+    
     def __ipow__(self, other):
-        self[:] = self ** other
+        self[:] = self**other
         return self
-
+    
     def __rpow__(self, other):
         return NotImplemented
-
+    
     def _align(self, axis):
         """A convenience function for operations that need to preserve axis
         orientation.
         """
         if axis is None:
-            return self[0, 0]
-        elif axis==0:
+            return self[(0, 0)]
+        elif axis == 0:
             return self
-        elif axis==1:
+        elif axis == 1:
             return self.transpose()
         else:
-            raise ValueError("unsupported axis")
-
+            raise ValueError('unsupported axis')
+    
     def _collapse(self, axis):
         """A convenience function for operations that want to collapse
         to a scalar like _align, but are using keepdims=True
         """
         if axis is None:
-            return self[0, 0]
+            return self[(0, 0)]
         else:
             return self
-
-    # Necessary because base-class tolist expects dimension
-    #  reduction by x[0]
+    
     def tolist(self):
         """
         Return the matrix as a (possibly nested) list.
@@ -282,8 +259,7 @@ class matrix(N.ndarray):
 
         """
         return self.__array__().tolist()
-
-    # To preserve orientation of result...
+    
     def sum(self, axis=None, dtype=None, out=None):
         """
         Returns the sum of the matrix elements, along the given axis.
@@ -317,9 +293,7 @@ class matrix(N.ndarray):
 
         """
         return N.ndarray.sum(self, axis, dtype, out, keepdims=True)._collapse(axis)
-
-
-    # To update docstring from array to matrix...
+    
     def squeeze(self, axis=None):
         """
         Return a possibly reshaped matrix.
@@ -370,9 +344,7 @@ class matrix(N.ndarray):
 
         """
         return N.ndarray.squeeze(self, axis=axis)
-
-
-    # To update docstring from array to matrix...
+    
     def flatten(self, order='C'):
         """
         Return a flattened copy of the matrix.
@@ -409,7 +381,7 @@ class matrix(N.ndarray):
 
         """
         return N.ndarray.flatten(self, order=order)
-
+    
     def mean(self, axis=None, dtype=None, out=None):
         """
         Returns the average of the matrix elements along the given axis.
@@ -443,7 +415,7 @@ class matrix(N.ndarray):
 
         """
         return N.ndarray.mean(self, axis, dtype, out, keepdims=True)._collapse(axis)
-
+    
     def std(self, axis=None, dtype=None, out=None, ddof=0):
         """
         Return the standard deviation of the array elements along the given axis.
@@ -477,7 +449,7 @@ class matrix(N.ndarray):
 
         """
         return N.ndarray.std(self, axis, dtype, out, ddof, keepdims=True)._collapse(axis)
-
+    
     def var(self, axis=None, dtype=None, out=None, ddof=0):
         """
         Returns the variance of the matrix elements, along the given axis.
@@ -511,7 +483,7 @@ class matrix(N.ndarray):
 
         """
         return N.ndarray.var(self, axis, dtype, out, ddof, keepdims=True)._collapse(axis)
-
+    
     def prod(self, axis=None, dtype=None, out=None):
         """
         Return the product of the array elements over the given axis.
@@ -544,7 +516,7 @@ class matrix(N.ndarray):
 
         """
         return N.ndarray.prod(self, axis, dtype, out, keepdims=True)._collapse(axis)
-
+    
     def any(self, axis=None, out=None):
         """
         Test whether any array element along a given axis evaluates to True.
@@ -567,7 +539,7 @@ class matrix(N.ndarray):
 
         """
         return N.ndarray.any(self, axis, out, keepdims=True)._collapse(axis)
-
+    
     def all(self, axis=None, out=None):
         """
         Test whether all matrix elements along a given axis evaluate to True.
@@ -607,7 +579,7 @@ class matrix(N.ndarray):
 
         """
         return N.ndarray.all(self, axis, out, keepdims=True)._collapse(axis)
-
+    
     def max(self, axis=None, out=None):
         """
         Return the maximum value along an axis.
@@ -642,7 +614,7 @@ class matrix(N.ndarray):
 
         """
         return N.ndarray.max(self, axis, out, keepdims=True)._collapse(axis)
-
+    
     def argmax(self, axis=None, out=None):
         """
         Indexes of the maximum values along an axis.
@@ -681,7 +653,7 @@ class matrix(N.ndarray):
 
         """
         return N.ndarray.argmax(self, axis, out)._align(axis)
-
+    
     def min(self, axis=None, out=None):
         """
         Return the minimum value along an axis.
@@ -716,7 +688,7 @@ class matrix(N.ndarray):
 
         """
         return N.ndarray.min(self, axis, out, keepdims=True)._collapse(axis)
-
+    
     def argmin(self, axis=None, out=None):
         """
         Indexes of the minimum values along an axis.
@@ -755,7 +727,7 @@ class matrix(N.ndarray):
 
         """
         return N.ndarray.argmin(self, axis, out)._align(axis)
-
+    
     def ptp(self, axis=None, out=None):
         """
         Peak-to-peak (maximum - minimum) value along the given axis.
@@ -788,7 +760,7 @@ class matrix(N.ndarray):
 
         """
         return N.ndarray.ptp(self, axis, out)._align(axis)
-
+    
     @property
     def I(self):
         """
@@ -827,13 +799,13 @@ class matrix(N.ndarray):
                 [ 0.,  1.]])
 
         """
-        M, N = self.shape
+        (M, N) = self.shape
         if M == N:
             from numpy.linalg import inv as func
         else:
             from numpy.linalg import pinv as func
         return asmatrix(func(self))
-
+    
     @property
     def A(self):
         """
@@ -863,7 +835,7 @@ class matrix(N.ndarray):
 
         """
         return self.__array__()
-
+    
     @property
     def A1(self):
         """
@@ -892,8 +864,7 @@ class matrix(N.ndarray):
 
         """
         return self.__array__().ravel()
-
-
+    
     def ravel(self, order='C'):
         """
         Return a flattened matrix.
@@ -931,7 +902,7 @@ class matrix(N.ndarray):
 
         """
         return N.ndarray.ravel(self, order=order)
-
+    
     @property
     def T(self):
         """
@@ -964,7 +935,7 @@ class matrix(N.ndarray):
 
         """
         return self.transpose()
-
+    
     @property
     def H(self):
         """
@@ -999,13 +970,12 @@ class matrix(N.ndarray):
             return self.transpose().conjugate()
         else:
             return self.transpose()
-
-    # kept for compatibility
     getT = T.fget
     getA = A.fget
     getA1 = A1.fget
     getH = H.fget
     getI = I.fget
+
 
 def _from_string(str, gdict, ldict):
     rows = str.split(';')
@@ -1025,12 +995,10 @@ def _from_string(str, gdict, ldict):
                 try:
                     thismat = gdict[col]
                 except KeyError as e:
-                    raise NameError(f"name {col!r} is not defined") from None
-
+                    raise NameError(f'name {col!r} is not defined') from None
             coltup.append(thismat)
         rowtup.append(concatenate(coltup, axis=-1))
     return concatenate(rowtup, axis=0)
-
 
 @set_module('numpy')
 def bmat(obj, ldict=None, gdict=None):
@@ -1088,26 +1056,22 @@ def bmat(obj, ldict=None, gdict=None):
     """
     if isinstance(obj, str):
         if gdict is None:
-            # get previous frame
             frame = sys._getframe().f_back
             glob_dict = frame.f_globals
             loc_dict = frame.f_locals
         else:
             glob_dict = gdict
             loc_dict = ldict
-
         return matrix(_from_string(obj, glob_dict, loc_dict))
-
     if isinstance(obj, (tuple, list)):
-        # [[A,B],[C,D]]
         arr_rows = []
         for row in obj:
-            if isinstance(row, N.ndarray):  # not 2-d
+            if isinstance(row, N.ndarray):
                 return matrix(concatenate(obj, axis=-1))
             else:
                 arr_rows.append(concatenate(row, axis=-1))
         return matrix(concatenate(arr_rows, axis=0))
     if isinstance(obj, N.ndarray):
         return matrix(obj)
-
 mat = asmatrix
+

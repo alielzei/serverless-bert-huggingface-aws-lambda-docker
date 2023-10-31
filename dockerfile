@@ -16,7 +16,7 @@ RUN python3 -m pip install -r requirements.txt
 RUN rm ${LAMBDA_TASK_ROOT}/joblib/test/test_func_inspect_special_encoding.py
 RUN sed -i '247d' ${LAMBDA_TASK_ROOT}/caffe2/python/layers/layers.py
 
-# RUN python3 integrationFunMain.py
+RUN python3 integrationFunMain.py
 
 WORKDIR ${LAMBDA_TASK_ROOT}
 

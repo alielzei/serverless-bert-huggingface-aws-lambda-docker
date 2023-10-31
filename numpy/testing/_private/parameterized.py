@@ -30,16 +30,16 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of David Wolever.
 
 """
+
 import re
 import inspect
 import warnings
 from functools import wraps
 from types import MethodType
 from collections import namedtuple
-
 from unittest import TestCase
+_param = namedtuple('param', 'args kwargs')
 
-_param = namedtuple("param", "args kwargs")
 
 class param(_param):
     """ Represents a single parameter to a test case.
@@ -62,10 +62,10 @@ class param(_param):
             def test_stuff(foo, bar=16):
                 pass
         """
-
-    def __new__(cls, *args , **kwargs):
+    
+    def __new__(cls, *args, **kwargs):
         return _param.__new__(cls, args, kwargs)
-
+    
     @classmethod
     def explicit(cls, args=None, kwargs=None):
         """ Creates a ``param`` by explicitly specifying ``args`` and
@@ -76,10 +76,10 @@ class param(_param):
                 >>> param.explicit(kwargs={"foo": 42})
                 param(*(), **{"foo": "42"})
             """
-        args = args or ()
-        kwargs = kwargs or {}
+        args = (args or ())
+        kwargs = (kwargs or {})
         return cls(*args, **kwargs)
-
+    
     @classmethod
     def from_decorator(cls, args):
         """ Returns an instance of ``param()`` for ``@parameterized`` argument
@@ -92,20 +92,17 @@ class param(_param):
             """
         if isinstance(args, param):
             return args
-        elif isinstance(args, (str,)):
+        elif isinstance(args, (str, )):
             args = (args, )
         try:
             return cls(*args)
         except TypeError as e:
-            if "after * must be" not in str(e):
+            if 'after * must be' not in str(e):
                 raise
-            raise TypeError(
-                "Parameters must be tuples, but %r is not (hint: use '(%r, )')"
-                %(args, args),
-            )
-
+            raise TypeError("Parameters must be tuples, but %r is not (hint: use '(%r, )')" % (args, args))
+    
     def __repr__(self):
-        return "param(*%r, **%r)" %self
+        return 'param(*%r, **%r)' % self
 
 
 def parameterized_argument_value_pairs(func, p):
@@ -137,35 +134,8 @@ def parameterized_argument_value_pairs(func, p):
             >>> parameterized_argument_value_pairs(func, p)
             [("foo", 1), ("*args", (16, ))]
     """
-    argspec = inspect.getargspec(func)
-    arg_offset = 1 if argspec.args[:1] == ["self"] else 0
-
-    named_args = argspec.args[arg_offset:]
-
-    result = list(zip(named_args, p.args))
-    named_args = argspec.args[len(result) + arg_offset:]
-    varargs = p.args[len(result):]
-
-    result.extend([
-        (name, p.kwargs.get(name, default))
-        for (name, default)
-        in zip(named_args, argspec.defaults or [])
-    ])
-
-    seen_arg_names = {n for (n, _) in result}
-    keywords = dict(sorted([
-        (name, p.kwargs[name])
-        for name in p.kwargs
-        if name not in seen_arg_names
-    ]))
-
-    if varargs:
-        result.append(("*%s" %(argspec.varargs, ), tuple(varargs)))
-
-    if keywords:
-        result.append(("**%s" %(argspec.keywords, ), keywords))
-
-    return result
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.testing._private.parameterized.parameterized_argument_value_pairs', 'parameterized_argument_value_pairs(func, p)', {'inspect': inspect, 'func': func, 'p': p}, 1)
 
 def short_repr(x, n=64):
     """ A shortened repr of ``x`` which is guaranteed to be ``unicode``::
@@ -175,83 +145,33 @@ def short_repr(x, n=64):
             >>> short_repr("123456789", n=4)
             u"12...89"
     """
-
-    x_repr = repr(x)
-    if isinstance(x_repr, bytes):
-        try:
-            x_repr = str(x_repr, "utf-8")
-        except UnicodeDecodeError:
-            x_repr = str(x_repr, "latin1")
-    if len(x_repr) > n:
-        x_repr = x_repr[:n//2] + "..." + x_repr[len(x_repr) - n//2:]
-    return x_repr
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.testing._private.parameterized.short_repr', 'short_repr(x, n=64)', {'x': x, 'n': n}, 1)
 
 def default_doc_func(func, num, p):
-    if func.__doc__ is None:
-        return None
-
-    all_args_with_values = parameterized_argument_value_pairs(func, p)
-
-    # Assumes that the function passed is a bound method.
-    descs = [f'{n}={short_repr(v)}' for n, v in all_args_with_values]
-
-    # The documentation might be a multiline string, so split it
-    # and just work with the first string, ignoring the period
-    # at the end if there is one.
-    first, nl, rest = func.__doc__.lstrip().partition("\n")
-    suffix = ""
-    if first.endswith("."):
-        suffix = "."
-        first = first[:-1]
-    args = "%s[with %s]" %(len(first) and " " or "", ", ".join(descs))
-    return "".join([first.rstrip(), args, suffix, nl, rest])
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.testing._private.parameterized.default_doc_func', 'default_doc_func(func, num, p)', {'parameterized_argument_value_pairs': parameterized_argument_value_pairs, 'short_repr': short_repr, 'func': func, 'num': num, 'p': p}, 1)
 
 def default_name_func(func, num, p):
-    base_name = func.__name__
-    name_suffix = "_%s" %(num, )
-    if len(p.args) > 0 and isinstance(p.args[0], (str,)):
-        name_suffix += "_" + parameterized.to_safe_name(p.args[0])
-    return base_name + name_suffix
-
-
-# force nose for numpy purposes.
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.testing._private.parameterized.default_name_func', 'default_name_func(func, num, p)', {'parameterized': parameterized, 'func': func, 'num': num, 'p': p}, 1)
 _test_runner_override = 'nose'
 _test_runner_guess = False
-_test_runners = set(["unittest", "unittest2", "nose", "nose2", "pytest"])
-_test_runner_aliases = {
-    "_pytest": "pytest",
-}
+_test_runners = set(['unittest', 'unittest2', 'nose', 'nose2', 'pytest'])
+_test_runner_aliases = {'_pytest': 'pytest'}
 
 def set_test_runner(name):
-    global _test_runner_override
-    if name not in _test_runners:
-        raise TypeError(
-            "Invalid test runner: %r (must be one of: %s)"
-            %(name, ", ".join(_test_runners)),
-        )
-    _test_runner_override = name
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('numpy.testing._private.parameterized.set_test_runner', 'set_test_runner(name)', {'_test_runners': _test_runners, 'name': name}, 0)
 
 def detect_runner():
     """ Guess which test runner we're using by traversing the stack and looking
         for the first matching module. This *should* be reasonably safe, as
         it's done during test discovery where the test runner should be the
         stack frame immediately outside. """
-    if _test_runner_override is not None:
-        return _test_runner_override
-    global _test_runner_guess
-    if _test_runner_guess is False:
-        stack = inspect.stack()
-        for record in reversed(stack):
-            frame = record[0]
-            module = frame.f_globals.get("__name__").partition(".")[0]
-            if module in _test_runner_aliases:
-                module = _test_runner_aliases[module]
-            if module in _test_runners:
-                _test_runner_guess = module
-                break
-        else:
-            _test_runner_guess = None
-    return _test_runner_guess
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.testing._private.parameterized.detect_runner', 'detect_runner()', {'_test_runner_override': _test_runner_override, 'inspect': inspect, '_test_runner_aliases': _test_runner_aliases, '_test_runners': _test_runners}, 1)
+
 
 class parameterized:
     """ Parameterize a test case::
@@ -273,29 +193,23 @@ class parameterized:
             def test_add(a, b, expected):
                 assert_equal(a + b, expected)
         """
-
+    
     def __init__(self, input, doc_func=None):
         self.get_input = self.input_as_callable(input)
-        self.doc_func = doc_func or default_doc_func
-
+        self.doc_func = (doc_func or default_doc_func)
+    
     def __call__(self, test_func):
         self.assert_not_in_testcase_subclass()
-
+        
         @wraps(test_func)
         def wrapper(test_self=None):
-            test_cls = test_self and type(test_self)
-
+            test_cls = (test_self and type(test_self))
             original_doc = wrapper.__doc__
-            for num, args in enumerate(wrapper.parameterized_input):
+            for (num, args) in enumerate(wrapper.parameterized_input):
                 p = param.from_decorator(args)
-                unbound_func, nose_tuple = self.param_as_nose_tuple(test_self, test_func, num, p)
+                (unbound_func, nose_tuple) = self.param_as_nose_tuple(test_self, test_func, num, p)
                 try:
                     wrapper.__doc__ = nose_tuple[0].__doc__
-                    # Nose uses `getattr(instance, test_func.__name__)` to get
-                    # a method bound to the test instance (as opposed to a
-                    # method bound to the instance of the class created when
-                    # tests were being enumerated). Set a value here to make
-                    # sure nose can get the correct test method.
                     if test_self is not None:
                         setattr(test_cls, test_func.__name__, unbound_func)
                     yield nose_tuple
@@ -305,27 +219,22 @@ class parameterized:
                     wrapper.__doc__ = original_doc
         wrapper.parameterized_input = self.get_input()
         wrapper.parameterized_func = test_func
-        test_func.__name__ = "_parameterized_original_%s" %(test_func.__name__, )
+        test_func.__name__ = '_parameterized_original_%s' % (test_func.__name__, )
         return wrapper
-
+    
     def param_as_nose_tuple(self, test_self, func, num, p):
         nose_func = wraps(func)(lambda *args: func(*args[:-1], **args[-1]))
         nose_func.__doc__ = self.doc_func(func, num, p)
-        # Track the unbound function because we need to setattr the unbound
-        # function onto the class for nose to work (see comments above), and
-        # Python 3 doesn't let us pull the function out of a bound method.
         unbound_func = nose_func
         if test_self is not None:
             nose_func = MethodType(nose_func, test_self)
-        return unbound_func, (nose_func, ) + p.args + (p.kwargs or {}, )
-
+        return (unbound_func, (nose_func, ) + p.args + ((p.kwargs or {}), ))
+    
     def assert_not_in_testcase_subclass(self):
         parent_classes = self._terrible_magic_get_defining_classes()
-        if any(issubclass(cls, TestCase) for cls in parent_classes):
-            raise Exception("Warning: '@parameterized' tests won't work "
-                            "inside subclasses of 'TestCase' - use "
-                            "'@parameterized.expand' instead.")
-
+        if any((issubclass(cls, TestCase) for cls in parent_classes)):
+            raise Exception("Warning: '@parameterized' tests won't work inside subclasses of 'TestCase' - use '@parameterized.expand' instead.")
+    
     def _terrible_magic_get_defining_classes(self):
         """ Returns the list of parent classes of the class currently being defined.
             Will likely only work if called from the ``parameterized`` decorator.
@@ -336,31 +245,26 @@ class parameterized:
         if len(stack) <= 4:
             return []
         frame = stack[4]
-        code_context = frame[4] and frame[4][0].strip()
-        if not (code_context and code_context.startswith("class ")):
+        code_context = (frame[4] and frame[4][0].strip())
+        if not ((code_context and code_context.startswith('class '))):
             return []
-        _, _, parents = code_context.partition("(")
-        parents, _, _ = parents.partition(")")
-        return eval("[" + parents + "]", frame[0].f_globals, frame[0].f_locals)
-
+        (_, _, parents) = code_context.partition('(')
+        (parents, _, _) = parents.partition(')')
+        return eval('[' + parents + ']', frame[0].f_globals, frame[0].f_locals)
+    
     @classmethod
     def input_as_callable(cls, input):
         if callable(input):
             return lambda: cls.check_input_values(input())
         input_values = cls.check_input_values(input)
         return lambda: input_values
-
+    
     @classmethod
     def check_input_values(cls, input_values):
-        # Explicitly convert non-list inputs to a list so that:
-        # 1. A helpful exception will be raised if they aren't iterable, and
-        # 2. Generators are unwrapped exactly once (otherwise `nosetests
-        #    --processes=n` has issues; see:
-        #    https://github.com/wolever/nose-parameterized/pull/31)
         if not isinstance(input_values, list):
             input_values = list(input_values)
-        return [ param.from_decorator(p) for p in input_values ]
-
+        return [param.from_decorator(p) for p in input_values]
+    
     @classmethod
     def expand(cls, input, name_func=None, doc_func=None, **legacy):
         """ A "brute force" method of parameterizing test cases. Creates new
@@ -377,56 +281,45 @@ class parameterized:
             ... 'test_add1_foo_0': <function ...> ...
             >>>
             """
-
-        if "testcase_func_name" in legacy:
-            warnings.warn("testcase_func_name= is deprecated; use name_func=",
-                          DeprecationWarning, stacklevel=2)
+        if 'testcase_func_name' in legacy:
+            warnings.warn('testcase_func_name= is deprecated; use name_func=', DeprecationWarning, stacklevel=2)
             if not name_func:
-                name_func = legacy["testcase_func_name"]
-
-        if "testcase_func_doc" in legacy:
-            warnings.warn("testcase_func_doc= is deprecated; use doc_func=",
-                          DeprecationWarning, stacklevel=2)
+                name_func = legacy['testcase_func_name']
+        if 'testcase_func_doc' in legacy:
+            warnings.warn('testcase_func_doc= is deprecated; use doc_func=', DeprecationWarning, stacklevel=2)
             if not doc_func:
-                doc_func = legacy["testcase_func_doc"]
-
-        doc_func = doc_func or default_doc_func
-        name_func = name_func or default_name_func
-
+                doc_func = legacy['testcase_func_doc']
+        doc_func = (doc_func or default_doc_func)
+        name_func = (name_func or default_name_func)
+        
         def parameterized_expand_wrapper(f, instance=None):
             stack = inspect.stack()
             frame = stack[1]
             frame_locals = frame[0].f_locals
-
             parameters = cls.input_as_callable(input)()
-            for num, p in enumerate(parameters):
+            for (num, p) in enumerate(parameters):
                 name = name_func(f, num, p)
                 frame_locals[name] = cls.param_as_standalone_func(p, f, name)
                 frame_locals[name].__doc__ = doc_func(f, num, p)
-
             f.__test__ = False
         return parameterized_expand_wrapper
-
+    
     @classmethod
     def param_as_standalone_func(cls, p, func, name):
+        
         @wraps(func)
         def standalone_func(*a):
-            return func(*(a + p.args), **p.kwargs)
+            return func(*a + p.args, **p.kwargs)
         standalone_func.__name__ = name
-
-        # place_as is used by py.test to determine what source file should be
-        # used for this test.
         standalone_func.place_as = func
-
-        # Remove __wrapped__ because py.test will try to look at __wrapped__
-        # to determine which parameters should be used with this test case,
-        # and obviously we don't need it to do any parameterization.
         try:
             del standalone_func.__wrapped__
         except AttributeError:
             pass
         return standalone_func
-
+    
     @classmethod
     def to_safe_name(cls, s):
-        return str(re.sub("[^a-zA-Z0-9_]+", "_", s))
+        return str(re.sub('[^a-zA-Z0-9_]+', '_', s))
+
+

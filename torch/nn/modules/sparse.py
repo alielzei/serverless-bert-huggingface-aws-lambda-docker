@@ -1,13 +1,12 @@
 import torch
 from torch.nn.parameter import Parameter
-
 from .module import Module
 from .. import functional as F
 from .. import init
 
 
 class Embedding(Module):
-    r"""A simple lookup table that stores embeddings of a fixed dictionary and size.
+    """A simple lookup table that stores embeddings of a fixed dictionary and size.
 
     This module is often used to store word embeddings and retrieve them using indices.
     The input to the module is a list of indices, and the output is the corresponding
@@ -32,7 +31,7 @@ class Embedding(Module):
 
     Shape:
         - Input: :math:`(*)`, LongTensor of arbitrary shape containing the indices to extract
-        - Output: :math:`(*, H)`, where `*` is the input shape and :math:`H=\text{embedding\_dim}`
+        - Output: :math:`(*, H)`, where `*` is the input shape and :math:`H=	ext{embedding\_dim}`
 
     .. note::
         Keep in mind that only a limited number of optimizers support
@@ -74,12 +73,9 @@ class Embedding(Module):
                  [ 0.0000,  0.0000,  0.0000],
                  [-0.1655,  0.9897,  0.0635]]])
     """
-    __constants__ = ['num_embeddings', 'embedding_dim', 'padding_idx', 'max_norm',
-                     'norm_type', 'scale_grad_by_freq', 'sparse']
-
-    def __init__(self, num_embeddings, embedding_dim, padding_idx=None,
-                 max_norm=None, norm_type=2., scale_grad_by_freq=False,
-                 sparse=False, _weight=None):
+    __constants__ = ['num_embeddings', 'embedding_dim', 'padding_idx', 'max_norm', 'norm_type', 'scale_grad_by_freq', 'sparse']
+    
+    def __init__(self, num_embeddings, embedding_dim, padding_idx=None, max_norm=None, norm_type=2.0, scale_grad_by_freq=False, sparse=False, _weight=None):
         super(Embedding, self).__init__()
         self.num_embeddings = num_embeddings
         self.embedding_dim = embedding_dim
@@ -97,22 +93,19 @@ class Embedding(Module):
             self.weight = Parameter(torch.Tensor(num_embeddings, embedding_dim))
             self.reset_parameters()
         else:
-            assert list(_weight.shape) == [num_embeddings, embedding_dim], \
-                'Shape of weight does not match num_embeddings and embedding_dim'
+            assert list(_weight.shape) == [num_embeddings, embedding_dim], 'Shape of weight does not match num_embeddings and embedding_dim'
             self.weight = Parameter(_weight)
         self.sparse = sparse
-
+    
     def reset_parameters(self):
         init.normal_(self.weight)
         if self.padding_idx is not None:
             with torch.no_grad():
                 self.weight[self.padding_idx].fill_(0)
-
+    
     def forward(self, input):
-        return F.embedding(
-            input, self.weight, self.padding_idx, self.max_norm,
-            self.norm_type, self.scale_grad_by_freq, self.sparse)
-
+        return F.embedding(input, self.weight, self.padding_idx, self.max_norm, self.norm_type, self.scale_grad_by_freq, self.sparse)
+    
     def extra_repr(self):
         s = '{num_embeddings}, {embedding_dim}'
         if self.padding_idx is not None:
@@ -126,12 +119,10 @@ class Embedding(Module):
         if self.sparse is not False:
             s += ', sparse=True'
         return s.format(**self.__dict__)
-
+    
     @classmethod
-    def from_pretrained(cls, embeddings, freeze=True, padding_idx=None,
-                        max_norm=None, norm_type=2., scale_grad_by_freq=False,
-                        sparse=False):
-        r"""Creates Embedding instance from given 2-dimensional FloatTensor.
+    def from_pretrained(cls, embeddings, freeze=True, padding_idx=None, max_norm=None, norm_type=2.0, scale_grad_by_freq=False, sparse=False):
+        """Creates Embedding instance from given 2-dimensional FloatTensor.
 
         Args:
             embeddings (Tensor): FloatTensor containing weights for the Embedding.
@@ -154,24 +145,16 @@ class Embedding(Module):
             >>> embedding(input)
             tensor([[ 4.0000,  5.1000,  6.3000]])
         """
-        assert embeddings.dim() == 2, \
-            'Embeddings parameter is expected to be 2-dimensional'
-        rows, cols = embeddings.shape
-        embedding = cls(
-            num_embeddings=rows,
-            embedding_dim=cols,
-            _weight=embeddings,
-            padding_idx=padding_idx,
-            max_norm=max_norm,
-            norm_type=norm_type,
-            scale_grad_by_freq=scale_grad_by_freq,
-            sparse=sparse)
+        assert embeddings.dim() == 2, 'Embeddings parameter is expected to be 2-dimensional'
+        (rows, cols) = embeddings.shape
+        embedding = cls(num_embeddings=rows, embedding_dim=cols, _weight=embeddings, padding_idx=padding_idx, max_norm=max_norm, norm_type=norm_type, scale_grad_by_freq=scale_grad_by_freq, sparse=sparse)
         embedding.weight.requires_grad = not freeze
         return embedding
 
 
+
 class EmbeddingBag(Module):
-    r"""Computes sums or means of 'bags' of embeddings, without instantiating the
+    """Computes sums or means of 'bags' of embeddings, without instantiating the
     intermediate embeddings.
 
     For bags of constant length and no :attr:`per_sample_weights`, this class
@@ -251,12 +234,9 @@ class EmbeddingBag(Module):
         tensor([[-0.8861, -5.4350, -0.0523],
                 [ 1.1306, -2.5798, -1.0044]])
     """
-    __constants__ = ['num_embeddings', 'embedding_dim', 'max_norm', 'norm_type',
-                     'scale_grad_by_freq', 'mode', 'sparse', 'include_last_offset']
-
-    def __init__(self, num_embeddings, embedding_dim,
-                 max_norm=None, norm_type=2., scale_grad_by_freq=False,
-                 mode='mean', sparse=False, _weight=None, include_last_offset=False):
+    __constants__ = ['num_embeddings', 'embedding_dim', 'max_norm', 'norm_type', 'scale_grad_by_freq', 'mode', 'sparse', 'include_last_offset']
+    
+    def __init__(self, num_embeddings, embedding_dim, max_norm=None, norm_type=2.0, scale_grad_by_freq=False, mode='mean', sparse=False, _weight=None, include_last_offset=False):
         super(EmbeddingBag, self).__init__()
         self.num_embeddings = num_embeddings
         self.embedding_dim = embedding_dim
@@ -267,23 +247,18 @@ class EmbeddingBag(Module):
             self.weight = Parameter(torch.Tensor(num_embeddings, embedding_dim))
             self.reset_parameters()
         else:
-            assert list(_weight.shape) == [num_embeddings, embedding_dim], \
-                'Shape of weight does not match num_embeddings and embedding_dim'
+            assert list(_weight.shape) == [num_embeddings, embedding_dim], 'Shape of weight does not match num_embeddings and embedding_dim'
             self.weight = Parameter(_weight)
         self.mode = mode
         self.sparse = sparse
         self.include_last_offset = include_last_offset
-
+    
     def reset_parameters(self):
         init.normal_(self.weight)
-
+    
     def forward(self, input, offsets=None, per_sample_weights=None):
-        # type: (Tensor, Optional[Tensor], Optional[Tensor]) -> Tensor
-        return F.embedding_bag(input, self.weight, offsets,
-                               self.max_norm, self.norm_type,
-                               self.scale_grad_by_freq, self.mode, self.sparse,
-                               per_sample_weights, self.include_last_offset)
-
+        return F.embedding_bag(input, self.weight, offsets, self.max_norm, self.norm_type, self.scale_grad_by_freq, self.mode, self.sparse, per_sample_weights, self.include_last_offset)
+    
     def extra_repr(self):
         s = '{num_embeddings}, {embedding_dim}'
         if self.max_norm is not None:
@@ -294,12 +269,10 @@ class EmbeddingBag(Module):
             s += ', scale_grad_by_freq={scale_grad_by_freq}'
         s += ', mode={mode}'
         return s.format(**self.__dict__)
-
+    
     @classmethod
-    def from_pretrained(cls, embeddings, freeze=True, max_norm=None,
-                        norm_type=2., scale_grad_by_freq=False,
-                        mode='mean', sparse=False, include_last_offset=False):
-        r"""Creates EmbeddingBag instance from given 2-dimensional FloatTensor.
+    def from_pretrained(cls, embeddings, freeze=True, max_norm=None, norm_type=2.0, scale_grad_by_freq=False, mode='mean', sparse=False, include_last_offset=False):
+        """Creates EmbeddingBag instance from given 2-dimensional FloatTensor.
 
         Args:
             embeddings (Tensor): FloatTensor containing weights for the EmbeddingBag.
@@ -323,18 +296,10 @@ class EmbeddingBag(Module):
             >>> embeddingbag(input)
             tensor([[ 2.5000,  3.7000,  4.6500]])
         """
-        assert embeddings.dim() == 2, \
-            'Embeddings parameter is expected to be 2-dimensional'
-        rows, cols = embeddings.shape
-        embeddingbag = cls(
-            num_embeddings=rows,
-            embedding_dim=cols,
-            _weight=embeddings,
-            max_norm=max_norm,
-            norm_type=norm_type,
-            scale_grad_by_freq=scale_grad_by_freq,
-            mode=mode,
-            sparse=sparse,
-            include_last_offset=include_last_offset)
+        assert embeddings.dim() == 2, 'Embeddings parameter is expected to be 2-dimensional'
+        (rows, cols) = embeddings.shape
+        embeddingbag = cls(num_embeddings=rows, embedding_dim=cols, _weight=embeddings, max_norm=max_norm, norm_type=norm_type, scale_grad_by_freq=scale_grad_by_freq, mode=mode, sparse=sparse, include_last_offset=include_last_offset)
         embeddingbag.weight.requires_grad = not freeze
         return embeddingbag
+
+

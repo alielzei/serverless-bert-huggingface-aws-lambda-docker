@@ -1,36 +1,19 @@
 from __future__ import absolute_import
-
 from base64 import b64encode
-
 from ..exceptions import UnrewindableBodyError
 from ..packages.six import b, integer_types
-
-# Pass as a value within ``headers`` to skip
-# emitting some HTTP headers that are added automatically.
-# The only headers that are supported are ``Accept-Encoding``,
-# ``Host``, and ``User-Agent``.
-SKIP_HEADER = "@@@SKIP_HEADER@@@"
-SKIPPABLE_HEADERS = frozenset(["accept-encoding", "host", "user-agent"])
-
-ACCEPT_ENCODING = "gzip,deflate"
+SKIP_HEADER = '@@@SKIP_HEADER@@@'
+SKIPPABLE_HEADERS = frozenset(['accept-encoding', 'host', 'user-agent'])
+ACCEPT_ENCODING = 'gzip,deflate'
 try:
-    import brotli as _unused_module_brotli  # noqa: F401
+    import brotli as _unused_module_brotli
 except ImportError:
     pass
 else:
-    ACCEPT_ENCODING += ",br"
-
+    ACCEPT_ENCODING += ',br'
 _FAILEDTELL = object()
 
-
-def make_headers(
-    keep_alive=None,
-    accept_encoding=None,
-    user_agent=None,
-    basic_auth=None,
-    proxy_basic_auth=None,
-    disable_cache=None,
-):
+def make_headers(keep_alive=None, accept_encoding=None, user_agent=None, basic_auth=None, proxy_basic_auth=None, disable_cache=None):
     """
     Shortcuts for generating request headers.
 
@@ -65,53 +48,16 @@ def make_headers(
         >>> make_headers(accept_encoding=True)
         {'accept-encoding': 'gzip,deflate'}
     """
-    headers = {}
-    if accept_encoding:
-        if isinstance(accept_encoding, str):
-            pass
-        elif isinstance(accept_encoding, list):
-            accept_encoding = ",".join(accept_encoding)
-        else:
-            accept_encoding = ACCEPT_ENCODING
-        headers["accept-encoding"] = accept_encoding
-
-    if user_agent:
-        headers["user-agent"] = user_agent
-
-    if keep_alive:
-        headers["connection"] = "keep-alive"
-
-    if basic_auth:
-        headers["authorization"] = "Basic " + b64encode(b(basic_auth)).decode("utf-8")
-
-    if proxy_basic_auth:
-        headers["proxy-authorization"] = "Basic " + b64encode(
-            b(proxy_basic_auth)
-        ).decode("utf-8")
-
-    if disable_cache:
-        headers["cache-control"] = "no-cache"
-
-    return headers
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('urllib3.util.request.make_headers', 'make_headers(keep_alive=None, accept_encoding=None, user_agent=None, basic_auth=None, proxy_basic_auth=None, disable_cache=None)', {'ACCEPT_ENCODING': ACCEPT_ENCODING, 'b64encode': b64encode, 'b': b, 'keep_alive': keep_alive, 'accept_encoding': accept_encoding, 'user_agent': user_agent, 'basic_auth': basic_auth, 'proxy_basic_auth': proxy_basic_auth, 'disable_cache': disable_cache}, 1)
 
 def set_file_position(body, pos):
     """
     If a position is provided, move file to that point.
     Otherwise, we'll attempt to record a position for future use.
     """
-    if pos is not None:
-        rewind_body(body, pos)
-    elif getattr(body, "tell", None) is not None:
-        try:
-            pos = body.tell()
-        except (IOError, OSError):
-            # This differentiates from None, allowing us to catch
-            # a failed `tell()` later when trying to rewind the body.
-            pos = _FAILEDTELL
-
-    return pos
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('urllib3.util.request.set_file_position', 'set_file_position(body, pos)', {'rewind_body': rewind_body, 'IOError': IOError, '_FAILEDTELL': _FAILEDTELL, 'body': body, 'pos': pos}, 1)
 
 def rewind_body(body, body_pos):
     """
@@ -124,20 +70,6 @@ def rewind_body(body, body_pos):
     :param int pos:
         Position to seek to in file.
     """
-    body_seek = getattr(body, "seek", None)
-    if body_seek is not None and isinstance(body_pos, integer_types):
-        try:
-            body_seek(body_pos)
-        except (IOError, OSError):
-            raise UnrewindableBodyError(
-                "An error occurred when rewinding request body for redirect/retry."
-            )
-    elif body_pos is _FAILEDTELL:
-        raise UnrewindableBodyError(
-            "Unable to record file position for rewinding "
-            "request body during a redirect/retry."
-        )
-    else:
-        raise ValueError(
-            "body_pos must be of type integer, instead it was %s." % type(body_pos)
-        )
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('urllib3.util.request.rewind_body', 'rewind_body(body, body_pos)', {'integer_types': integer_types, 'IOError': IOError, 'UnrewindableBodyError': UnrewindableBodyError, '_FAILEDTELL': _FAILEDTELL, 'body': body, 'body_pos': body_pos}, 0)
+

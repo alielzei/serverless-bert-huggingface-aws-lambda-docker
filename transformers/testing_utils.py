@@ -9,58 +9,21 @@ import unittest
 from distutils.util import strtobool
 from io import StringIO
 from pathlib import Path
-
-from .file_utils import (
-    _datasets_available,
-    _faiss_available,
-    _flax_available,
-    _sentencepiece_available,
-    _tf_available,
-    _tokenizers_available,
-    _torch_available,
-    _torch_tpu_available,
-)
-
-
-SMALL_MODEL_IDENTIFIER = "julien-c/bert-xsmall-dummy"
-DUMMY_UNKWOWN_IDENTIFIER = "julien-c/dummy-unknown"
-DUMMY_DIFF_TOKENIZER_IDENTIFIER = "julien-c/dummy-diff-tokenizer"
-# Used to test Auto{Config, Model, Tokenizer} model_type detection.
-
+from .file_utils import _datasets_available, _faiss_available, _flax_available, _sentencepiece_available, _tf_available, _tokenizers_available, _torch_available, _torch_tpu_available
+SMALL_MODEL_IDENTIFIER = 'julien-c/bert-xsmall-dummy'
+DUMMY_UNKWOWN_IDENTIFIER = 'julien-c/dummy-unknown'
+DUMMY_DIFF_TOKENIZER_IDENTIFIER = 'julien-c/dummy-diff-tokenizer'
 
 def parse_flag_from_env(key, default=False):
-    try:
-        value = os.environ[key]
-    except KeyError:
-        # KEY isn't set, default to `default`.
-        _value = default
-    else:
-        # KEY is set, convert it to True or False.
-        try:
-            _value = strtobool(value)
-        except ValueError:
-            # More values are supported, but let's keep the message simple.
-            raise ValueError("If set, {} must be yes or no.".format(key))
-    return _value
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('transformers.testing_utils.parse_flag_from_env', 'parse_flag_from_env(key, default=False)', {'os': os, 'strtobool': strtobool, 'key': key, 'default': default}, 1)
 
 def parse_int_from_env(key, default=None):
-    try:
-        value = os.environ[key]
-    except KeyError:
-        _value = default
-    else:
-        try:
-            _value = int(value)
-        except ValueError:
-            raise ValueError("If set, {} must be a int.".format(key))
-    return _value
-
-
-_run_slow_tests = parse_flag_from_env("RUN_SLOW", default=False)
-_run_custom_tokenizers = parse_flag_from_env("RUN_CUSTOM_TOKENIZERS", default=False)
-_tf_gpu_memory_limit = parse_int_from_env("TF_GPU_MEMORY_LIMIT", default=None)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('transformers.testing_utils.parse_int_from_env', 'parse_int_from_env(key, default=None)', {'os': os, 'key': key, 'default': default}, 1)
+_run_slow_tests = parse_flag_from_env('RUN_SLOW', default=False)
+_run_custom_tokenizers = parse_flag_from_env('RUN_CUSTOM_TOKENIZERS', default=False)
+_tf_gpu_memory_limit = parse_int_from_env('TF_GPU_MEMORY_LIMIT', default=None)
 
 def slow(test_case):
     """
@@ -70,11 +33,8 @@ def slow(test_case):
     to a truthy value to run them.
 
     """
-    if not _run_slow_tests:
-        return unittest.skip("test is slow")(test_case)
-    else:
-        return test_case
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('transformers.testing_utils.slow', 'slow(test_case)', {'_run_slow_tests': _run_slow_tests, 'unittest': unittest, 'test_case': test_case}, 1)
 
 def custom_tokenizers(test_case):
     """
@@ -84,11 +44,8 @@ def custom_tokenizers(test_case):
     by default. Set the RUN_CUSTOM_TOKENIZERS environment variable
     to a truthy value to run them.
     """
-    if not _run_custom_tokenizers:
-        return unittest.skip("test of custom tokenizers")(test_case)
-    else:
-        return test_case
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('transformers.testing_utils.custom_tokenizers', 'custom_tokenizers(test_case)', {'_run_custom_tokenizers': _run_custom_tokenizers, 'unittest': unittest, 'test_case': test_case}, 1)
 
 def require_torch(test_case):
     """
@@ -97,11 +54,8 @@ def require_torch(test_case):
     These tests are skipped when PyTorch isn't installed.
 
     """
-    if not _torch_available:
-        return unittest.skip("test requires PyTorch")(test_case)
-    else:
-        return test_case
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('transformers.testing_utils.require_torch', 'require_torch(test_case)', {'_torch_available': _torch_available, 'unittest': unittest, 'test_case': test_case}, 1)
 
 def require_tf(test_case):
     """
@@ -110,11 +64,8 @@ def require_tf(test_case):
     These tests are skipped when TensorFlow isn't installed.
 
     """
-    if not _tf_available:
-        return unittest.skip("test requires TensorFlow")(test_case)
-    else:
-        return test_case
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('transformers.testing_utils.require_tf', 'require_tf(test_case)', {'_tf_available': _tf_available, 'unittest': unittest, 'test_case': test_case}, 1)
 
 def require_flax(test_case):
     """
@@ -123,10 +74,8 @@ def require_flax(test_case):
     These tests are skipped when one / both are not installed
 
     """
-    if not _flax_available:
-        test_case = unittest.skip("test requires JAX & Flax")(test_case)
-    return test_case
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('transformers.testing_utils.require_flax', 'require_flax(test_case)', {'_flax_available': _flax_available, 'unittest': unittest, 'test_case': test_case}, 1)
 
 def require_sentencepiece(test_case):
     """
@@ -135,11 +84,8 @@ def require_sentencepiece(test_case):
     These tests are skipped when SentencePiece isn't installed.
 
     """
-    if not _sentencepiece_available:
-        return unittest.skip("test requires SentencePiece")(test_case)
-    else:
-        return test_case
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('transformers.testing_utils.require_sentencepiece', 'require_sentencepiece(test_case)', {'_sentencepiece_available': _sentencepiece_available, 'unittest': unittest, 'test_case': test_case}, 1)
 
 def require_tokenizers(test_case):
     """
@@ -148,11 +94,8 @@ def require_tokenizers(test_case):
     These tests are skipped when 🤗 Tokenizers isn't installed.
 
     """
-    if not _tokenizers_available:
-        return unittest.skip("test requires tokenizers")(test_case)
-    else:
-        return test_case
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('transformers.testing_utils.require_tokenizers', 'require_tokenizers(test_case)', {'_tokenizers_available': _tokenizers_available, 'unittest': unittest, 'test_case': test_case}, 1)
 
 def require_torch_multigpu(test_case):
     """
@@ -163,75 +106,42 @@ def require_torch_multigpu(test_case):
     To run *only* the multigpu tests, assuming all test names contain multigpu:
     $ pytest -sv ./tests -k "multigpu"
     """
-    if not _torch_available:
-        return unittest.skip("test requires PyTorch")(test_case)
-
-    import torch
-
-    if torch.cuda.device_count() < 2:
-        return unittest.skip("test requires multiple GPUs")(test_case)
-    else:
-        return test_case
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('transformers.testing_utils.require_torch_multigpu', 'require_torch_multigpu(test_case)', {'_torch_available': _torch_available, 'unittest': unittest, 'test_case': test_case}, 1)
 
 def require_torch_non_multigpu(test_case):
     """
     Decorator marking a test that requires 0 or 1 GPU setup (in PyTorch).
     """
-    if not _torch_available:
-        return unittest.skip("test requires PyTorch")(test_case)
-
-    import torch
-
-    if torch.cuda.device_count() > 1:
-        return unittest.skip("test requires 0 or 1 GPU")(test_case)
-    else:
-        return test_case
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('transformers.testing_utils.require_torch_non_multigpu', 'require_torch_non_multigpu(test_case)', {'_torch_available': _torch_available, 'unittest': unittest, 'test_case': test_case}, 1)
 
 def require_torch_tpu(test_case):
     """
     Decorator marking a test that requires a TPU (in PyTorch).
     """
-    if not _torch_tpu_available:
-        return unittest.skip("test requires PyTorch TPU")
-    else:
-        return test_case
-
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('transformers.testing_utils.require_torch_tpu', 'require_torch_tpu(test_case)', {'_torch_tpu_available': _torch_tpu_available, 'unittest': unittest, 'test_case': test_case}, 1)
 if _torch_available:
-    # Set env var CUDA_VISIBLE_DEVICES="" to force cpu-mode
     import torch
-
-    torch_device = "cuda" if torch.cuda.is_available() else "cpu"
+    torch_device = ('cuda' if torch.cuda.is_available() else 'cpu')
 else:
     torch_device = None
 
-
 def require_torch_gpu(test_case):
     """Decorator marking a test that requires CUDA and PyTorch. """
-    if torch_device != "cuda":
-        return unittest.skip("test requires CUDA")(test_case)
-    else:
-        return test_case
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('transformers.testing_utils.require_torch_gpu', 'require_torch_gpu(test_case)', {'torch_device': torch_device, 'unittest': unittest, 'test_case': test_case}, 1)
 
 def require_datasets(test_case):
     """Decorator marking a test that requires datasets."""
-
-    if not _datasets_available:
-        return unittest.skip("test requires `datasets`")(test_case)
-    else:
-        return test_case
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('transformers.testing_utils.require_datasets', 'require_datasets(test_case)', {'_datasets_available': _datasets_available, 'unittest': unittest, 'test_case': test_case}, 1)
 
 def require_faiss(test_case):
     """Decorator marking a test that requires faiss."""
-    if not _faiss_available:
-        return unittest.skip("test requires `faiss`")(test_case)
-    else:
-        return test_case
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('transformers.testing_utils.require_faiss', 'require_faiss(test_case)', {'_faiss_available': _faiss_available, 'unittest': unittest, 'test_case': test_case}, 1)
 
 def get_tests_dir(append_path=None):
     """
@@ -243,37 +153,15 @@ def get_tests_dir(append_path=None):
         Optionally `append_path` is joined after the `tests` dir the former is provided.
 
     """
-    # this function caller's __file__
-    caller__file__ = inspect.stack()[1][1]
-    tests_dir = os.path.abspath(os.path.dirname(caller__file__))
-    if append_path:
-        return os.path.join(tests_dir, append_path)
-    else:
-        return tests_dir
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('transformers.testing_utils.get_tests_dir', 'get_tests_dir(append_path=None)', {'inspect': inspect, 'os': os, 'append_path': append_path}, 1)
 
-
-#
-# Helper functions for dealing with testing text outputs
-# The original code came from:
-# https://github.com/fastai/fastai/blob/master/tests/utils/text.py
-
-# When any function contains print() calls that get overwritten, like progress bars,
-# a special care needs to be applied, since under pytest -s captured output (capsys
-# or contextlib.redirect_stdout) contains any temporary printed strings, followed by
-# \r's. This helper function ensures that the buffer will contain the same output
-# with and without -s in pytest, by turning:
-# foo bar\r tar mar\r final message
-# into:
-# final message
-# it can handle a single string or a multiline buffer
 def apply_print_resets(buf):
-    return re.sub(r"^.*\r", "", buf, 0, re.M)
-
+    return re.sub('^.*\\r', '', buf, 0, re.M)
 
 def assert_screenout(out, what):
-    out_pr = apply_print_resets(out).lower()
-    match_str = out_pr.find(what.lower())
-    assert match_str != -1, f"expecting to find {what} in output: f{out_pr}"
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('transformers.testing_utils.assert_screenout', 'assert_screenout(out, what)', {'apply_print_resets': apply_print_resets, 'out': out, 'what': what}, 0)
 
 
 class CaptureStd:
@@ -303,69 +191,62 @@ class CaptureStd:
     # but best use the stream-specific subclasses
 
     """
-
+    
     def __init__(self, out=True, err=True):
         if out:
             self.out_buf = StringIO()
-            self.out = "error: CaptureStd context is unfinished yet, called too early"
+            self.out = 'error: CaptureStd context is unfinished yet, called too early'
         else:
             self.out_buf = None
-            self.out = "not capturing stdout"
-
+            self.out = 'not capturing stdout'
         if err:
             self.err_buf = StringIO()
-            self.err = "error: CaptureStd context is unfinished yet, called too early"
+            self.err = 'error: CaptureStd context is unfinished yet, called too early'
         else:
             self.err_buf = None
-            self.err = "not capturing stderr"
-
+            self.err = 'not capturing stderr'
+    
     def __enter__(self):
         if self.out_buf:
             self.out_old = sys.stdout
             sys.stdout = self.out_buf
-
         if self.err_buf:
             self.err_old = sys.stderr
             sys.stderr = self.err_buf
-
         return self
-
+    
     def __exit__(self, *exc):
         if self.out_buf:
             sys.stdout = self.out_old
             self.out = apply_print_resets(self.out_buf.getvalue())
-
         if self.err_buf:
             sys.stderr = self.err_old
             self.err = self.err_buf.getvalue()
-
+    
     def __repr__(self):
-        msg = ""
+        msg = ''
         if self.out_buf:
-            msg += f"stdout: {self.out}\n"
+            msg += f'stdout: {self.out}\n'
         if self.err_buf:
-            msg += f"stderr: {self.err}\n"
+            msg += f'stderr: {self.err}\n'
         return msg
 
-
-# in tests it's the best to capture only the stream that's wanted, otherwise
-# it's easy to miss things, so unless you need to capture both streams, use the
-# subclasses below (less typing). Or alternatively, configure `CaptureStd` to
-# disable the stream you don't need to test.
 
 
 class CaptureStdout(CaptureStd):
     """ Same as CaptureStd but captures only stdout """
-
+    
     def __init__(self):
         super().__init__(err=False)
 
 
+
 class CaptureStderr(CaptureStd):
     """ Same as CaptureStd but captures only stderr """
-
+    
     def __init__(self):
         super().__init__(out=False)
+
 
 
 class CaptureLogger:
@@ -387,25 +268,27 @@ class CaptureLogger:
     >>> logger = logging.get_logger("transformers.tokenization_bart")
     >>> with CaptureLogger(logger) as cl:
     ...     logger.info(msg)
-    >>> assert cl.out, msg+"\n"
+    >>> assert cl.out, msg+"
+"
     """
-
+    
     def __init__(self, logger):
         self.logger = logger
         self.io = StringIO()
         self.sh = logging.StreamHandler(self.io)
-        self.out = ""
-
+        self.out = ''
+    
     def __enter__(self):
         self.logger.addHandler(self.sh)
         return self
-
+    
     def __exit__(self, *exc):
         self.logger.removeHandler(self.sh)
         self.out = self.io.getvalue()
-
+    
     def __repr__(self):
-        return f"captured: {self.out}\n"
+        return f'captured: {self.out}\n'
+
 
 
 class TestCasePlus(unittest.TestCase):
@@ -446,10 +329,10 @@ class TestCasePlus(unittest.TestCase):
     auto-removed, unless requested otherwise.
 
     """
-
+    
     def setUp(self):
         self.teardown_tmp_dirs = []
-
+    
     def get_auto_remove_tmp_dir(self, tmp_dir=None, after=True, before=False):
         """
         Args:
@@ -465,33 +348,19 @@ class TestCasePlus(unittest.TestCase):
                 either the same value as passed via `tmp_dir` or the path to the auto-created tmp dir
         """
         if tmp_dir is not None:
-            # using provided path
             path = Path(tmp_dir).resolve()
-
-            # to avoid nuking parts of the filesystem, only relative paths are allowed
-            if not tmp_dir.startswith("./"):
-                raise ValueError(
-                    f"`tmp_dir` can only be a relative path, i.e. `./some/path`, but received `{tmp_dir}`"
-                )
-
-            # ensure the dir is empty to start with
-            if before is True and path.exists():
+            if not tmp_dir.startswith('./'):
+                raise ValueError(f'`tmp_dir` can only be a relative path, i.e. `./some/path`, but received `{tmp_dir}`')
+            if (before is True and path.exists()):
                 shutil.rmtree(tmp_dir, ignore_errors=True)
-
             path.mkdir(parents=True, exist_ok=True)
-
         else:
-            # using unique tmp dir (always empty, regardless of `before`)
             tmp_dir = tempfile.mkdtemp()
-
         if after is True:
-            # register for deletion
             self.teardown_tmp_dirs.append(tmp_dir)
-
         return tmp_dir
-
+    
     def tearDown(self):
-        # remove registered temp dirs
         for path in self.teardown_tmp_dirs:
             shutil.rmtree(path, ignore_errors=True)
         self.teardown_tmp_dirs = []
@@ -506,3 +375,4 @@ def mockenv(**kwargs):
         use_tf = os.getenv("USE_TF", False)
     """
     return unittest.mock.patch.dict(os.environ, kwargs)
+

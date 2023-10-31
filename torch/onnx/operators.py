@@ -1,4 +1,4 @@
-r"""This file provides a location for operators that help exporting
+"""This file provides a location for operators that help exporting
 models via onnx. E.g. shape_as_tensor and reshape_from_tensor_shape
 are to make all dynamic sizes operations traceable.
 
@@ -11,10 +11,9 @@ import torch
 import torch.onnx
 import torch.onnx.utils
 
-
 def shape_as_tensor(x):
     return torch._shape_as_tensor(x)
 
-
 def reshape_from_tensor_shape(x, shape):
     return torch._reshape_from_tensor(x, shape)
+

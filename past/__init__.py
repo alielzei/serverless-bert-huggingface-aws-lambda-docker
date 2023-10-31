@@ -1,4 +1,3 @@
-# coding=utf-8
 """
 past: compatibility with Python 2 from Python 3
 ===============================================
@@ -24,12 +23,12 @@ Here are some code examples that run identically on Python 3 and 2::
 
     >>> from past.builtins import str as oldstr
 
-    >>> philosopher = oldstr(u'\u5b54\u5b50'.encode('utf-8'))
+    >>> philosopher = oldstr(u'孔子'.encode('utf-8'))
     >>> # This now behaves like a Py2 byte-string on both Py2 and Py3.
     >>> # For example, indexing returns a Python 2-like string object, not
     >>> # an integer:
     >>> philosopher[0]
-    '\xe5'
+    'å'
     >>> type(philosopher[0])
     <past.builtins.oldstr>
 
@@ -85,6 +84,6 @@ The software is distributed under an MIT licence. See LICENSE.txt.
 """
 
 from future import __version__, __copyright__, __license__
-
 __title__ = 'past'
 __author__ = 'Ed Schofield'
+

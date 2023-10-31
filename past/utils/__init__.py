@@ -15,11 +15,9 @@ For example:
 
 import sys
 import numbers
-
 PY3 = sys.version_info[0] >= 3
 PY2 = sys.version_info[0] == 2
 PYPY = hasattr(sys, 'pypy_translation_info')
-
 
 def with_metaclass(meta, *bases):
     """
@@ -46,15 +44,18 @@ def with_metaclass(meta, *bases):
     This has the advantage over six.with_metaclass of not introducing
     dummy classes into the final MRO.
     """
+    
+    
     class metaclass(meta):
         __call__ = type.__call__
         __init__ = type.__init__
+        
         def __new__(cls, name, this_bases, d):
             if this_bases is None:
                 return type.__new__(cls, name, (), d)
             return meta(name, bases, d)
+    
     return metaclass('temporary_class', None, {})
-
 
 def native(obj):
     """
@@ -75,13 +76,9 @@ def native(obj):
     >>> type(native(b'ABC'))
     bytes
     """
-    if hasattr(obj, '__native__'):
-        return obj.__native__()
-    else:
-        return obj
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('past.utils.__init__.native', 'native(obj)', {'obj': obj}, 1)
 
-
-# An alias for future.utils.old_div():
 def old_div(a, b):
     """
     Equivalent to ``a / b`` on Python 2 without ``from __future__ import
@@ -89,9 +86,7 @@ def old_div(a, b):
 
     TODO: generalize this to other objects (like arrays etc.)
     """
-    if isinstance(a, numbers.Integral) and isinstance(b, numbers.Integral):
-        return a // b
-    else:
-        return a / b
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('past.utils.__init__.old_div', 'old_div(a, b)', {'numbers': numbers, 'a': a, 'b': b}, 1)
 __all__ = ['PY3', 'PY2', 'PYPY', 'with_metaclass', 'native', 'old_div']
+

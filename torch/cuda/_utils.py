@@ -1,9 +1,8 @@
 import torch
 import torch._six
 
-
 def _get_device_index(device, optional=False):
-    r"""Gets the device index from :attr:`device`, which can be a torch.device
+    """Gets the device index from :attr:`device`, which can be a torch.device
     object, a Python integer, or ``None``.
 
     If :attr:`device` is a torch.device object, returns the device index if it
@@ -27,9 +26,8 @@ def _get_device_index(device, optional=False):
         device_idx = device
     if device_idx is None:
         if optional:
-            # default cuda device index
             return torch.cuda.current_device()
         else:
-            raise ValueError('Expected a cuda device with a specified index '
-                             'or an integer, but got: '.format(device))
+            raise ValueError('Expected a cuda device with a specified index or an integer, but got: '.format(device))
     return device_idx
+

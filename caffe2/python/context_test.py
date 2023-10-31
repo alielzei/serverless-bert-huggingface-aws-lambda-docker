@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
-
 from caffe2.python import context, test_util
 from threading import Thread
 
@@ -12,7 +11,9 @@ class MyContext(object):
     pass
 
 
+
 class TestContext(test_util.TestCase):
+    
     def use_my_context(self):
         try:
             for _ in range(100):
@@ -21,7 +22,7 @@ class TestContext(test_util.TestCase):
                         self.assertTrue(MyContext.current() == a)
         except Exception as e:
             self._exceptions.append(e)
-
+    
     def testMultiThreaded(self):
         threads = []
         self._exceptions = []
@@ -33,7 +34,9 @@ class TestContext(test_util.TestCase):
             t.join()
         for e in self._exceptions:
             raise e
-
+    
     @MyContext()
     def testDecorator(self):
         self.assertIsNotNone(MyContext.current())
+
+

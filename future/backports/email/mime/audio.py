@@ -1,29 +1,15 @@
-# Copyright (C) 2001-2007 Python Software Foundation
-# Author: Anthony Baxter
-# Contact: email-sig@python.org
-
 """Class representing audio/* type MIME documents."""
+
 from __future__ import unicode_literals
 from __future__ import division
 from __future__ import absolute_import
-
 __all__ = ['MIMEAudio']
-
 import sndhdr
-
 from io import BytesIO
 from future.backports.email import encoders
 from future.backports.email.mime.nonmultipart import MIMENonMultipart
+_sndhdr_MIMEmap = {'au': 'basic', 'wav': 'x-wav', 'aiff': 'x-aiff', 'aifc': 'x-aiff'}
 
-
-_sndhdr_MIMEmap = {'au'  : 'basic',
-                   'wav' :'x-wav',
-                   'aiff':'x-aiff',
-                   'aifc':'x-aiff',
-                   }
-
-# There are others in sndhdr that don't have MIME types. :(
-# Additional ones to be added to sndhdr? midi, mp3, realaudio, wma??
 def _whatsnd(data):
     """Try to identify a sound file type.
 
@@ -31,20 +17,14 @@ def _whatsnd(data):
     we re-do it here.  It would be easier to reverse engineer the Unix 'file'
     command and use the standard 'magic' file, as shipped with a modern Unix.
     """
-    hdr = data[:512]
-    fakefile = BytesIO(hdr)
-    for testfn in sndhdr.tests:
-        res = testfn(hdr, fakefile)
-        if res is not None:
-            return _sndhdr_MIMEmap.get(res[0])
-    return None
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('future.backports.email.mime.audio._whatsnd', '_whatsnd(data)', {'BytesIO': BytesIO, 'sndhdr': sndhdr, '_sndhdr_MIMEmap': _sndhdr_MIMEmap, 'data': data}, 1)
 
 
 class MIMEAudio(MIMENonMultipart):
     """Class for generating audio/* MIME documents."""
-
-    def __init__(self, _audiodata, _subtype=None,
-                 _encoder=encoders.encode_base64, **_params):
+    
+    def __init__(self, _audiodata, _subtype=None, _encoder=encoders.encode_base64, **_params):
         """Create an audio/* type MIME document.
 
         _audiodata is a string containing the raw audio data.  If this data
@@ -72,3 +52,5 @@ class MIMEAudio(MIMENonMultipart):
         MIMENonMultipart.__init__(self, 'audio', _subtype, **_params)
         self.set_payload(_audiodata)
         _encoder(self)
+
+

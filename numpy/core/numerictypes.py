@@ -1,7 +1,7 @@
 """
 numerictypes: Define the numeric type objects
 
-This module is designed so "from numerictypes import \\*" is safe.
+This module is designed so "from numerictypes import \*" is safe.
 Exported symbols include:
 
   Dictionary with all registered number types (including aliases):
@@ -50,7 +50,7 @@ Exported symbols include:
      |   |   |     intp
      |   |   |     int_
      |   |   |     longlong
-     |   |   \\-> unsignedinteger  (uintxx)     (kind=u)
+     |   |   \-> unsignedinteger  (uintxx)     (kind=u)
      |   |         ubyte
      |   |         ushort
      |   |         uintc
@@ -63,7 +63,7 @@ Exported symbols include:
      |       |     single
      |       |     float_          (double)
      |       |     longfloat
-     |       \\-> complexfloating  (complexxx)  (kind=c)
+     |       \-> complexfloating  (complexxx)  (kind=c)
      |             csingle         (singlecomplex)
      |             complex_        (cfloat, cdouble)
      |             clongfloat      (longcomplex)
@@ -75,59 +75,22 @@ Exported symbols include:
      |   |     bytes_   (string_)               (kind=S)    [Python 3]
      |   |     str_     (unicode_)              (kind=U)    [Python 3]
      |   |
-     |   \\-> void                              (kind=V)
-     \\-> object_ (not used much)               (kind=O)
+     |   \-> void                              (kind=V)
+     \-> object_ (not used much)               (kind=O)
 
 """
+
 import numbers
-
-from numpy.core.multiarray import (
-        ndarray, array, dtype, datetime_data, datetime_as_string,
-        busday_offset, busday_count, is_busday, busdaycalendar
-        )
+from numpy.core.multiarray import ndarray, array, dtype, datetime_data, datetime_as_string, busday_offset, busday_count, is_busday, busdaycalendar
 from numpy.core.overrides import set_module
-
-# we add more at the bottom
-__all__ = ['sctypeDict', 'sctypes',
-           'ScalarType', 'obj2sctype', 'cast', 'nbytes', 'sctype2char',
-           'maximum_sctype', 'issctype', 'typecodes', 'find_common_type',
-           'issubdtype', 'datetime_data', 'datetime_as_string',
-           'busday_offset', 'busday_count', 'is_busday', 'busdaycalendar',
-           ]
-
-# we don't need all these imports, but we need to keep them for compatibility
-# for users using np.core.numerictypes.UPPER_TABLE
-from ._string_helpers import (
-    english_lower, english_upper, english_capitalize, LOWER_TABLE, UPPER_TABLE
-)
-
-from ._type_aliases import (
-    sctypeDict,
-    allTypes,
-    bitname,
-    sctypes,
-    _concrete_types,
-    _concrete_typeinfo,
-    _bits_of,
-)
+__all__ = ['sctypeDict', 'sctypes', 'ScalarType', 'obj2sctype', 'cast', 'nbytes', 'sctype2char', 'maximum_sctype', 'issctype', 'typecodes', 'find_common_type', 'issubdtype', 'datetime_data', 'datetime_as_string', 'busday_offset', 'busday_count', 'is_busday', 'busdaycalendar']
+from ._string_helpers import english_lower, english_upper, english_capitalize, LOWER_TABLE, UPPER_TABLE
+from ._type_aliases import sctypeDict, allTypes, bitname, sctypes, _concrete_types, _concrete_typeinfo, _bits_of
 from ._dtype import _kind_name
-
-# we don't export these for import *, but we do want them accessible
-# as numerictypes.bool, etc.
 from builtins import bool, int, float, complex, object, str, bytes
 from numpy.compat import long, unicode
-
-
-# We use this later
 generic = allTypes['generic']
-
-genericTypeRank = ['bool', 'int8', 'uint8', 'int16', 'uint16',
-                   'int32', 'uint32', 'int64', 'uint64', 'int128',
-                   'uint128', 'float16',
-                   'float32', 'float64', 'float80', 'float96', 'float128',
-                   'float256',
-                   'complex32', 'complex64', 'complex128', 'complex160',
-                   'complex192', 'complex256', 'complex512', 'object']
+genericTypeRank = ['bool', 'int8', 'uint8', 'int16', 'uint16', 'int32', 'uint32', 'int64', 'uint64', 'int128', 'uint128', 'float16', 'float32', 'float64', 'float80', 'float96', 'float128', 'float256', 'complex32', 'complex64', 'complex128', 'complex160', 'complex192', 'complex256', 'complex512', 'object']
 
 @set_module('numpy')
 def maximum_sctype(t):
@@ -168,16 +131,8 @@ def maximum_sctype(t):
     <class 'numpy.float128'> # may vary
 
     """
-    g = obj2sctype(t)
-    if g is None:
-        return t
-    t = g
-    base = _kind_name(dtype(t))
-    if base in sctypes:
-        return sctypes[base][-1]
-    else:
-        return t
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.core.numerictypes.maximum_sctype', 'maximum_sctype(t)', {'obj2sctype': obj2sctype, '_kind_name': _kind_name, 'dtype': dtype, 'sctypes': sctypes, 'set_module': set_module, 't': t}, 1)
 
 @set_module('numpy')
 def issctype(rep):
@@ -214,16 +169,8 @@ def issctype(rep):
     True
 
     """
-    if not isinstance(rep, (type, dtype)):
-        return False
-    try:
-        res = obj2sctype(rep)
-        if res and res != object_:
-            return True
-        return False
-    except Exception:
-        return False
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.core.numerictypes.issctype', 'issctype(rep)', {'dtype': dtype, 'obj2sctype': obj2sctype, 'object_': object_, 'set_module': set_module, 'rep': rep}, 1)
 
 @set_module('numpy')
 def obj2sctype(rep, default=None):
@@ -264,20 +211,16 @@ def obj2sctype(rep, default=None):
     <class 'list'>
 
     """
-    # prevent abstract classes being upcast
-    if isinstance(rep, type) and issubclass(rep, generic):
+    if (isinstance(rep, type) and issubclass(rep, generic)):
         return rep
-    # extract dtype from arrays
     if isinstance(rep, ndarray):
         return rep.dtype.type
-    # fall back on dtype to convert
     try:
         res = dtype(rep)
     except Exception:
         return default
     else:
         return res.type
-
 
 @set_module('numpy')
 def issubclass_(arg1, arg2):
@@ -320,7 +263,6 @@ def issubclass_(arg1, arg2):
     except TypeError:
         return False
 
-
 @set_module('numpy')
 def issubsctype(arg1, arg2):
     """
@@ -352,10 +294,9 @@ def issubsctype(arg1, arg2):
     """
     return issubclass(obj2sctype(arg1), obj2sctype(arg2))
 
-
 @set_module('numpy')
 def issubdtype(arg1, arg2):
-    r"""
+    """
     Returns True if first argument is a typecode lower/equal in type hierarchy.
 
     This is like the builtin :func:`issubclass`, but for `dtype`\ s.
@@ -416,11 +357,9 @@ def issubdtype(arg1, arg2):
         arg1 = dtype(arg1).type
     if not issubclass_(arg2, generic):
         arg2 = dtype(arg2).type
-
     return issubclass(arg1, arg2)
 
 
-# This dictionary allows look up based on any alias for an array data-type
 class _typedict(dict):
     """
     Base object for a dictionary for look-up with any alias for an array dtype.
@@ -429,7 +368,7 @@ class _typedict(dict):
     first they have to be populated.
 
     """
-
+    
     def __getitem__(self, obj):
         return dict.__getitem__(self, obj2sctype(obj))
 
@@ -437,8 +376,9 @@ nbytes = _typedict()
 _alignment = _typedict()
 _maxvals = _typedict()
 _minvals = _typedict()
+
 def _construct_lookups():
-    for name, info in _concrete_typeinfo.items():
+    for (name, info) in _concrete_typeinfo.items():
         obj = info.type
         nbytes[obj] = info.bits // 8
         _alignment[obj] = info.alignment
@@ -448,9 +388,7 @@ def _construct_lookups():
         else:
             _maxvals[obj] = None
             _minvals[obj] = None
-
 _construct_lookups()
-
 
 @set_module('numpy')
 def sctype2char(sctype):
@@ -497,69 +435,31 @@ def sctype2char(sctype):
     """
     sctype = obj2sctype(sctype)
     if sctype is None:
-        raise ValueError("unrecognized type")
+        raise ValueError('unrecognized type')
     if sctype not in _concrete_types:
-        # for compatibility
         raise KeyError(sctype)
     return dtype(sctype).char
-
-# Create dictionary of casting functions that wrap sequences
-# indexed by type or type character
 cast = _typedict()
 for key in _concrete_types:
     cast[key] = lambda x, k=key: array(x, copy=False).astype(k)
-
 
 def _scalar_type_key(typ):
     """A ``key`` function for `sorted`."""
     dt = dtype(typ)
     return (dt.kind.lower(), dt.itemsize)
-
-
 ScalarType = [int, float, complex, bool, bytes, str, memoryview]
 ScalarType += sorted(_concrete_types, key=_scalar_type_key)
 ScalarType = tuple(ScalarType)
-
-
-# Now add the types we've determined to this module
 for key in allTypes:
     globals()[key] = allTypes[key]
     __all__.append(key)
-
 del key
-
-typecodes = {'Character':'c',
-             'Integer':'bhilqp',
-             'UnsignedInteger':'BHILQP',
-             'Float':'efdg',
-             'Complex':'FDG',
-             'AllInteger':'bBhHiIlLqQpP',
-             'AllFloat':'efdgFDG',
-             'Datetime': 'Mm',
-             'All':'?bhilqpBHILQPefdgFDGSUVOMm'}
-
-# backwards compatibility --- deprecated name
-# Formal deprecation: Numpy 1.20.0, 2020-10-19 (see numpy/__init__.py)
+typecodes = {'Character': 'c', 'Integer': 'bhilqp', 'UnsignedInteger': 'BHILQP', 'Float': 'efdg', 'Complex': 'FDG', 'AllInteger': 'bBhHiIlLqQpP', 'AllFloat': 'efdgFDG', 'Datetime': 'Mm', 'All': '?bhilqpBHILQPefdgFDGSUVOMm'}
 typeDict = sctypeDict
-
-# b -> boolean
-# u -> unsigned integer
-# i -> signed integer
-# f -> floating point
-# c -> complex
-# M -> datetime
-# m -> timedelta
-# S -> string
-# U -> Unicode string
-# V -> record
-# O -> Python object
 _kind_list = ['b', 'u', 'i', 'f', 'c', 'S', 'U', 'V', 'O', 'M', 'm']
-
-__test_types = '?'+typecodes['AllInteger'][:-2]+typecodes['AllFloat']+'O'
+__test_types = '?' + typecodes['AllInteger'][:-2] + typecodes['AllFloat'] + 'O'
 __len_test_types = len(__test_types)
 
-# Keep incrementing until a common type both can be coerced to
-#  is found.  Otherwise, return None
 def _find_common_coerce(a, b):
     if a > b:
         return a
@@ -569,7 +469,6 @@ def _find_common_coerce(a, b):
         return None
     return _can_coerce_all([a, b], start=thisind)
 
-# Find a data-type that all data-types in a list can be coerced to
 def _can_coerce_all(dtypelist, start=0):
     N = len(dtypelist)
     if N == 0:
@@ -590,9 +489,7 @@ def _register_types():
     numbers.Complex.register(inexact)
     numbers.Real.register(floating)
     numbers.Number.register(number)
-
 _register_types()
-
 
 @set_module('numpy')
 def find_common_type(array_types, scalar_types):
@@ -648,23 +545,19 @@ def find_common_type(array_types, scalar_types):
     """
     array_types = [dtype(x) for x in array_types]
     scalar_types = [dtype(x) for x in scalar_types]
-
     maxa = _can_coerce_all(array_types)
     maxsc = _can_coerce_all(scalar_types)
-
     if maxa is None:
         return maxsc
-
     if maxsc is None:
         return maxa
-
     try:
         index_a = _kind_list.index(maxa.kind)
         index_sc = _kind_list.index(maxsc.kind)
     except ValueError:
         return None
-
     if index_sc > index_a:
         return _find_common_coerce(maxsc, maxa)
     else:
         return maxa
+

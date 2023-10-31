@@ -1,51 +1,18 @@
-# coding=utf-8
-# Copyright 2018 The Google Flax Team Authors and The HuggingFace Inc. team.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """ Auto Model class. """
 
-
 from collections import OrderedDict
-
 from .configuration_auto import AutoConfig, BertConfig, RobertaConfig
 from .configuration_utils import PretrainedConfig
 from .modeling_flax_bert import FlaxBertModel
 from .modeling_flax_roberta import FlaxRobertaModel
 from .utils import logging
-
-
 logger = logging.get_logger(__name__)
-
-
-ALL_PRETRAINED_MODEL_ARCHIVE_MAP = dict(
-    (key, value)
-    for pretrained_map in [
-        FlaxBertModel.pretrained_model_archive_map,
-        FlaxRobertaModel.pretrained_model_archive_map,
-    ]
-    for key, value, in pretrained_map.items()
-)
-
-MODEL_MAPPING = OrderedDict(
-    [
-        (RobertaConfig, FlaxRobertaModel),
-        (BertConfig, FlaxBertModel),
-    ]
-)
+ALL_PRETRAINED_MODEL_ARCHIVE_MAP = dict(((key, value) for pretrained_map in [FlaxBertModel.pretrained_model_archive_map, FlaxRobertaModel.pretrained_model_archive_map] for (key, value) in pretrained_map.items()))
+MODEL_MAPPING = OrderedDict([(RobertaConfig, FlaxRobertaModel), (BertConfig, FlaxBertModel)])
 
 
 class FlaxAutoModel(object):
-    r"""
+    """
     :class:`~transformers.FlaxAutoModel` is a generic model class
     that will be instantiated as one of the base model classes of the library
     when created with the `FlaxAutoModel.from_pretrained(pretrained_model_name_or_path)`
@@ -53,17 +20,13 @@ class FlaxAutoModel(object):
 
     This class cannot be instantiated using `__init__()` (throws an error).
     """
-
+    
     def __init__(self):
-        raise EnvironmentError(
-            "FlaxAutoModel is designed to be instantiated "
-            "using the `FlaxAutoModel.from_pretrained(pretrained_model_name_or_path)` or "
-            "`FlaxAutoModel.from_config(config)` methods."
-        )
-
+        raise EnvironmentError('FlaxAutoModel is designed to be instantiated using the `FlaxAutoModel.from_pretrained(pretrained_model_name_or_path)` or `FlaxAutoModel.from_config(config)` methods.')
+    
     @classmethod
     def from_config(cls, config):
-        r"""Instantiates one of the base model classes of the library
+        """Instantiates one of the base model classes of the library
         from a configuration.
 
         Args:
@@ -77,18 +40,14 @@ class FlaxAutoModel(object):
             config = BertConfig.from_pretrained('bert-base-uncased')    # Download configuration from S3 and cache.
             model = FlaxAutoModel.from_config(config)  # E.g. model was saved using `save_pretrained('./test/saved_model/')`
         """
-        for config_class, model_class in MODEL_MAPPING.items():
+        for (config_class, model_class) in MODEL_MAPPING.items():
             if isinstance(config, config_class):
                 return model_class(config)
-        raise ValueError(
-            f"Unrecognized configuration class {config.__class__} "
-            f"for this kind of FlaxAutoModel: {cls.__name__}.\n"
-            f"Model type should be one of {', '.join(c.__name__ for c in MODEL_MAPPING.keys())}."
-        )
-
+        raise ValueError(f"Unrecognized configuration class {config.__class__} for this kind of FlaxAutoModel: {cls.__name__}.\nModel type should be one of {', '.join((c.__name__ for c in MODEL_MAPPING.keys()))}.")
+    
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path, *model_args, **kwargs):
-        r"""Instantiates one of the base model classes of the library
+        """Instantiates one of the base model classes of the library
         from a pre-trained model configuration.
 
         The `from_pretrained()` method takes care of returning the correct model class instance
@@ -153,15 +112,12 @@ class FlaxAutoModel(object):
             assert model.config.output_attention == True
 
         """
-        config = kwargs.pop("config", None)
+        config = kwargs.pop('config', None)
         if not isinstance(config, PretrainedConfig):
             config = AutoConfig.from_pretrained(pretrained_model_name_or_path, **kwargs)
-
-        for config_class, model_class in MODEL_MAPPING.items():
+        for (config_class, model_class) in MODEL_MAPPING.items():
             if isinstance(config, config_class):
                 return model_class.from_pretrained(pretrained_model_name_or_path, *model_args, config=config, **kwargs)
-        raise ValueError(
-            f"Unrecognized configuration class {config.__class__} "
-            f"for this kind of FlaxAutoModel: {cls.__name__}.\n"
-            f"Model type should be one of {', '.join(c.__name__ for c in MODEL_MAPPING.keys())}"
-        )
+        raise ValueError(f"Unrecognized configuration class {config.__class__} for this kind of FlaxAutoModel: {cls.__name__}.\nModel type should be one of {', '.join((c.__name__ for c in MODEL_MAPPING.keys()))}")
+
+

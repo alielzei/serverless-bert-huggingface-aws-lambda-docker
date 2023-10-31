@@ -1,28 +1,17 @@
-#!/usr/bin/env python3
 """Fortran to Python Interface Generator.
 
 """
-__all__ = ['run_main', 'compile', 'get_include']
 
+__all__ = ['run_main', 'compile', 'get_include']
 import sys
 import subprocess
 import os
-
 from . import f2py2e
 from . import diagnose
-
 run_main = f2py2e.run_main
 main = f2py2e.main
 
-
-def compile(source,
-            modulename='untitled',
-            extra_args='',
-            verbose=True,
-            source_fn=None,
-            extension='.f',
-            full_output=False
-           ):
+def compile(source, modulename='untitled', extra_args='', verbose=True, source_fn=None, extension='.f', full_output=False):
     """
     Build extension module from a Fortran 77 source string with f2py.
 
@@ -77,36 +66,25 @@ def compile(source,
     """
     import tempfile
     import shlex
-
     if source_fn is None:
-        f, fname = tempfile.mkstemp(suffix=extension)
-        # f is a file descriptor so need to close it
-        # carefully -- not with .close() directly
+        (f, fname) = tempfile.mkstemp(suffix=extension)
         os.close(f)
     else:
         fname = source_fn
-
     if not isinstance(source, str):
         source = str(source, 'utf-8')
     try:
         with open(fname, 'w') as f:
             f.write(source)
-
         args = ['-c', '-m', modulename, f.name]
-
         if isinstance(extra_args, str):
-            is_posix = (os.name == 'posix')
+            is_posix = os.name == 'posix'
             extra_args = shlex.split(extra_args, posix=is_posix)
-
         args.extend(extra_args)
-
-        c = [sys.executable,
-             '-c',
-             'import numpy.f2py as f2py2e;f2py2e.main()'] + args
+        c = [sys.executable, '-c', 'import numpy.f2py as f2py2e;f2py2e.main()'] + args
         try:
             cp = subprocess.run(c, capture_output=True)
         except OSError:
-            # preserve historic status code used by exec_command()
             cp = subprocess.CompletedProcess(c, 127, stdout=b'', stderr=b'')
         else:
             if verbose:
@@ -114,12 +92,10 @@ def compile(source,
     finally:
         if source_fn is None:
             os.remove(fname)
-
     if full_output:
         return cp
     else:
         return cp.returncode
-
 
 def get_include():
     """
@@ -167,20 +143,10 @@ def get_include():
     """
     return os.path.join(os.path.dirname(__file__), 'src')
 
-
 def __getattr__(attr):
-
-    # Avoid importing things that aren't needed for building
-    # which might import the main numpy module
-    if attr == "test":
-        from numpy._pytesttester import PytestTester
-        test = PytestTester(__name__)
-        return test
-
-    else:
-        raise AttributeError("module {!r} has no attribute "
-                              "{!r}".format(__name__, attr))
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.f2py.__init__.__getattr__', '__getattr__(attr)', {'__name__': __name__, 'attr': attr}, 1)
 
 def __dir__():
-    return list(globals().keys() | {"test"})
+    return list(globals().keys() | {'test'})
+

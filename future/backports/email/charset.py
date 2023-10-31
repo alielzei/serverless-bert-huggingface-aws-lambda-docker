@@ -3,110 +3,22 @@ from __future__ import division
 from __future__ import absolute_import
 from future.builtins import str
 from future.builtins import next
-
-# Copyright (C) 2001-2007 Python Software Foundation
-# Author: Ben Gertzfield, Barry Warsaw
-# Contact: email-sig@python.org
-
-__all__ = [
-    'Charset',
-    'add_alias',
-    'add_charset',
-    'add_codec',
-    ]
-
+__all__ = ['Charset', 'add_alias', 'add_charset', 'add_codec']
 from functools import partial
-
 from future.backports import email
 from future.backports.email import errors
 from future.backports.email.encoders import encode_7or8bit
-
-
-# Flags for types of header encodings
-QP          = 1 # Quoted-Printable
-BASE64      = 2 # Base64
-SHORTEST    = 3 # the shorter of QP and base64, but only for headers
-
-# In "=?charset?q?hello_world?=", the =?, ?q?, and ?= add up to 7
+QP = 1
+BASE64 = 2
+SHORTEST = 3
 RFC2047_CHROME_LEN = 7
-
 DEFAULT_CHARSET = 'us-ascii'
 UNKNOWN8BIT = 'unknown-8bit'
 EMPTYSTRING = ''
+CHARSETS = {'iso-8859-1': (QP, QP, None), 'iso-8859-2': (QP, QP, None), 'iso-8859-3': (QP, QP, None), 'iso-8859-4': (QP, QP, None), 'iso-8859-9': (QP, QP, None), 'iso-8859-10': (QP, QP, None), 'iso-8859-13': (QP, QP, None), 'iso-8859-14': (QP, QP, None), 'iso-8859-15': (QP, QP, None), 'iso-8859-16': (QP, QP, None), 'windows-1252': (QP, QP, None), 'viscii': (QP, QP, None), 'us-ascii': (None, None, None), 'big5': (BASE64, BASE64, None), 'gb2312': (BASE64, BASE64, None), 'euc-jp': (BASE64, None, 'iso-2022-jp'), 'shift_jis': (BASE64, None, 'iso-2022-jp'), 'iso-2022-jp': (BASE64, None, None), 'koi8-r': (BASE64, BASE64, None), 'utf-8': (SHORTEST, BASE64, 'utf-8')}
+ALIASES = {'latin_1': 'iso-8859-1', 'latin-1': 'iso-8859-1', 'latin_2': 'iso-8859-2', 'latin-2': 'iso-8859-2', 'latin_3': 'iso-8859-3', 'latin-3': 'iso-8859-3', 'latin_4': 'iso-8859-4', 'latin-4': 'iso-8859-4', 'latin_5': 'iso-8859-9', 'latin-5': 'iso-8859-9', 'latin_6': 'iso-8859-10', 'latin-6': 'iso-8859-10', 'latin_7': 'iso-8859-13', 'latin-7': 'iso-8859-13', 'latin_8': 'iso-8859-14', 'latin-8': 'iso-8859-14', 'latin_9': 'iso-8859-15', 'latin-9': 'iso-8859-15', 'latin_10': 'iso-8859-16', 'latin-10': 'iso-8859-16', 'cp949': 'ks_c_5601-1987', 'euc_jp': 'euc-jp', 'euc_kr': 'euc-kr', 'ascii': 'us-ascii'}
+CODEC_MAP = {'gb2312': 'eucgb2312_cn', 'big5': 'big5_tw', 'us-ascii': None}
 
-
-# Defaults
-CHARSETS = {
-    # input        header enc  body enc output conv
-    'iso-8859-1':  (QP,        QP,      None),
-    'iso-8859-2':  (QP,        QP,      None),
-    'iso-8859-3':  (QP,        QP,      None),
-    'iso-8859-4':  (QP,        QP,      None),
-    # iso-8859-5 is Cyrillic, and not especially used
-    # iso-8859-6 is Arabic, also not particularly used
-    # iso-8859-7 is Greek, QP will not make it readable
-    # iso-8859-8 is Hebrew, QP will not make it readable
-    'iso-8859-9':  (QP,        QP,      None),
-    'iso-8859-10': (QP,        QP,      None),
-    # iso-8859-11 is Thai, QP will not make it readable
-    'iso-8859-13': (QP,        QP,      None),
-    'iso-8859-14': (QP,        QP,      None),
-    'iso-8859-15': (QP,        QP,      None),
-    'iso-8859-16': (QP,        QP,      None),
-    'windows-1252':(QP,        QP,      None),
-    'viscii':      (QP,        QP,      None),
-    'us-ascii':    (None,      None,    None),
-    'big5':        (BASE64,    BASE64,  None),
-    'gb2312':      (BASE64,    BASE64,  None),
-    'euc-jp':      (BASE64,    None,    'iso-2022-jp'),
-    'shift_jis':   (BASE64,    None,    'iso-2022-jp'),
-    'iso-2022-jp': (BASE64,    None,    None),
-    'koi8-r':      (BASE64,    BASE64,  None),
-    'utf-8':       (SHORTEST,  BASE64, 'utf-8'),
-    }
-
-# Aliases for other commonly-used names for character sets.  Map
-# them to the real ones used in email.
-ALIASES = {
-    'latin_1': 'iso-8859-1',
-    'latin-1': 'iso-8859-1',
-    'latin_2': 'iso-8859-2',
-    'latin-2': 'iso-8859-2',
-    'latin_3': 'iso-8859-3',
-    'latin-3': 'iso-8859-3',
-    'latin_4': 'iso-8859-4',
-    'latin-4': 'iso-8859-4',
-    'latin_5': 'iso-8859-9',
-    'latin-5': 'iso-8859-9',
-    'latin_6': 'iso-8859-10',
-    'latin-6': 'iso-8859-10',
-    'latin_7': 'iso-8859-13',
-    'latin-7': 'iso-8859-13',
-    'latin_8': 'iso-8859-14',
-    'latin-8': 'iso-8859-14',
-    'latin_9': 'iso-8859-15',
-    'latin-9': 'iso-8859-15',
-    'latin_10':'iso-8859-16',
-    'latin-10':'iso-8859-16',
-    'cp949':   'ks_c_5601-1987',
-    'euc_jp':  'euc-jp',
-    'euc_kr':  'euc-kr',
-    'ascii':   'us-ascii',
-    }
-
-
-# Map charsets to their Unicode codec strings.
-CODEC_MAP = {
-    'gb2312':      'eucgb2312_cn',
-    'big5':        'big5_tw',
-    # Hack: We don't want *any* conversion for stuff marked us-ascii, as all
-    # sorts of garbage might be sent to us in the guise of 7-bit us-ascii.
-    # Let that stuff pass through without conversion to/from Unicode.
-    'us-ascii':    None,
-    }
-
-
-# Convenience functions for extending the above mappings
 def add_charset(charset, header_enc=None, body_enc=None, output_charset=None):
     """Add character set properties to the global registry.
 
@@ -130,10 +42,8 @@ def add_charset(charset, header_enc=None, body_enc=None, output_charset=None):
     to add codecs the module does not know about.  See the codecs module's
     documentation for more information.
     """
-    if body_enc == SHORTEST:
-        raise ValueError('SHORTEST not allowed for body_enc')
-    CHARSETS[charset] = (header_enc, body_enc, output_charset)
-
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('future.backports.email.charset.add_charset', 'add_charset(charset, header_enc=None, body_enc=None, output_charset=None)', {'SHORTEST': SHORTEST, 'CHARSETS': CHARSETS, 'charset': charset, 'header_enc': header_enc, 'body_enc': body_enc, 'output_charset': output_charset}, 0)
 
 def add_alias(alias, canonical):
     """Add a character set alias.
@@ -142,7 +52,6 @@ def add_alias(alias, canonical):
     canonical is the character set's canonical name, e.g. iso-8859-1
     """
     ALIASES[alias] = canonical
-
 
 def add_codec(charset, codecname):
     """Add a codec that map characters in the given charset to/from Unicode.
@@ -153,15 +62,9 @@ def add_codec(charset, codecname):
     """
     CODEC_MAP[charset] = codecname
 
-
-# Convenience function for encoding strings, taking into account
-# that they might be unknown-8bit (ie: have surrogate-escaped bytes)
 def _encode(string, codec):
-    string = str(string)
-    if codec == UNKNOWN8BIT:
-        return string.encode('ascii', 'surrogateescape')
-    else:
-        return string.encode(codec)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('future.backports.email.charset._encode', '_encode(string, codec)', {'UNKNOWN8BIT': UNKNOWN8BIT, 'string': string, 'codec': codec}, 1)
 
 
 class Charset(object):
@@ -208,11 +111,8 @@ class Charset(object):
                   to the output_charset.  If no conversion codec is necessary,
                   this attribute will have the same value as the input_codec.
     """
+    
     def __init__(self, input_charset=DEFAULT_CHARSET):
-        # RFC 2046, $4.1.2 says charsets are not case sensitive.  We coerce to
-        # unicode because its .lower() is locale insensitive.  If the argument
-        # is already a unicode, we leave it at that, but ensure that the
-        # charset is ASCII, as the standard (RFC XXX) requires.
         try:
             if isinstance(input_charset, str):
                 input_charset.encode('ascii')
@@ -221,37 +121,26 @@ class Charset(object):
         except UnicodeError:
             raise errors.CharsetError(input_charset)
         input_charset = input_charset.lower()
-        # Set the input charset after filtering through the aliases
         self.input_charset = ALIASES.get(input_charset, input_charset)
-        # We can try to guess which encoding and conversion to use by the
-        # charset_map dictionary.  Try that first, but let the user override
-        # it.
-        henc, benc, conv = CHARSETS.get(self.input_charset,
-                                        (SHORTEST, BASE64, None))
+        (henc, benc, conv) = CHARSETS.get(self.input_charset, (SHORTEST, BASE64, None))
         if not conv:
             conv = self.input_charset
-        # Set the attributes, allowing the arguments to override the default.
         self.header_encoding = henc
         self.body_encoding = benc
         self.output_charset = ALIASES.get(conv, conv)
-        # Now set the codecs.  If one isn't defined for input_charset,
-        # guess and try a Unicode codec with the same name as input_codec.
-        self.input_codec = CODEC_MAP.get(self.input_charset,
-                                         self.input_charset)
-        self.output_codec = CODEC_MAP.get(self.output_charset,
-                                          self.output_charset)
-
+        self.input_codec = CODEC_MAP.get(self.input_charset, self.input_charset)
+        self.output_codec = CODEC_MAP.get(self.output_charset, self.output_charset)
+    
     def __str__(self):
         return self.input_charset.lower()
-
     __repr__ = __str__
-
+    
     def __eq__(self, other):
         return str(self) == str(other).lower()
-
+    
     def __ne__(self, other):
         return not self.__eq__(other)
-
+    
     def get_body_encoding(self):
         """Return the content-transfer-encoding used for body encoding.
 
@@ -272,15 +161,15 @@ class Charset(object):
             return 'base64'
         else:
             return encode_7or8bit
-
+    
     def get_output_charset(self):
         """Return the output character set.
 
         This is self.output_charset if that is not None, otherwise it is
         self.input_charset.
         """
-        return self.output_charset or self.input_charset
-
+        return (self.output_charset or self.input_charset)
+    
     def header_encode(self, string):
         """Header-encode a string by converting it first to bytes.
 
@@ -292,14 +181,13 @@ class Charset(object):
             output codec.
         :return: The encoded string, with RFC 2047 chrome.
         """
-        codec = self.output_codec or 'us-ascii'
+        codec = (self.output_codec or 'us-ascii')
         header_bytes = _encode(string, codec)
-        # 7bit/8bit encodings return the string unchanged (modulo conversions)
         encoder_module = self._get_encoder(header_bytes)
         if encoder_module is None:
             return string
         return encoder_module.header_encode(header_bytes, codec)
-
+    
     def header_encode_lines(self, string, maxlengths):
         """Header-encode a string by converting it first to bytes.
 
@@ -317,26 +205,12 @@ class Charset(object):
             hint; the splitter does the best it can.
         :return: Lines of encoded strings, each with RFC 2047 chrome.
         """
-        # See which encoding we should use.
-        codec = self.output_codec or 'us-ascii'
+        codec = (self.output_codec or 'us-ascii')
         header_bytes = _encode(string, codec)
         encoder_module = self._get_encoder(header_bytes)
         encoder = partial(encoder_module.header_encode, charset=codec)
-        # Calculate the number of characters that the RFC 2047 chrome will
-        # contribute to each line.
         charset = self.get_output_charset()
         extra = len(charset) + RFC2047_CHROME_LEN
-        # Now comes the hard part.  We must encode bytes but we can't split on
-        # bytes because some character sets are variable length and each
-        # encoded word must stand on its own.  So the problem is you have to
-        # encode to bytes to figure out this word's length, but you must split
-        # on characters.  This causes two problems: first, we don't know how
-        # many octets a specific substring of unicode characters will get
-        # encoded to, and second, we don't know how many ASCII characters
-        # those octets will get encoded to.  Unless we try it.  Which seems
-        # inefficient.  In the interest of being correct rather than fast (and
-        # in the hope that there will be few encoded headers in any such
-        # message), brute force it. :(
         lines = []
         current_line = []
         maxlen = next(maxlengths) - extra
@@ -345,10 +219,8 @@ class Charset(object):
             this_line = EMPTYSTRING.join(current_line)
             length = encoder_module.header_length(_encode(this_line, charset))
             if length > maxlen:
-                # This last character doesn't fit so pop it off.
                 current_line.pop()
-                # Does nothing fit on the first line?
-                if not lines and not current_line:
+                if (not lines and not current_line):
                     lines.append(None)
                 else:
                     separator = (' ' if lines else '')
@@ -361,7 +233,7 @@ class Charset(object):
         header_bytes = _encode(joined_line, codec)
         lines.append(encoder(header_bytes))
         return lines
-
+    
     def _get_encoder(self, header_bytes):
         if self.header_encoding == BASE64:
             return email.base64mime
@@ -376,7 +248,7 @@ class Charset(object):
                 return email.quoprimime
         else:
             return None
-
+    
     def body_encode(self, string):
         """Body-encode a string by converting it first to bytes.
 
@@ -393,12 +265,6 @@ class Charset(object):
                 string = string.encode(self.output_charset)
             return email.base64mime.body_encode(string)
         elif self.body_encoding is QP:
-            # quopromime.body_encode takes a string, but operates on it as if
-            # it were a list of byte codes.  For a (minimal) history on why
-            # this is so, see changeset 0cf700464177.  To correctly encode a
-            # character set, then, we must turn it into pseudo bytes via the
-            # latin1 charset, which will encode any byte as a single code point
-            # between 0 and 255, which is what body_encode is expecting.
             if isinstance(string, str):
                 string = string.encode(self.output_charset)
             string = string.decode('latin1')
@@ -407,3 +273,5 @@ class Charset(object):
             if isinstance(string, str):
                 string = string.encode(self.output_charset).decode('ascii')
             return string
+
+

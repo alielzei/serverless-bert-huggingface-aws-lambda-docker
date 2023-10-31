@@ -5,66 +5,23 @@ from ._utils import make_grid
 from tensorboard.compat import tf
 from tensorboard.plugins.projector.projector_config_pb2 import EmbeddingInfo
 
-
 def make_tsv(metadata, save_path, metadata_header=None):
-    if not metadata_header:
-        metadata = [str(x) for x in metadata]
-    else:
-        assert len(metadata_header) == len(metadata[0]), \
-            'len of header must be equal to the number of columns in metadata'
-        metadata = ['\t'.join(str(e) for e in l)
-                    for l in [metadata_header] + metadata]
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('torch.utils.tensorboard._embedding.make_tsv', 'make_tsv(metadata, save_path, metadata_header=None)', {'tf': tf, 'metadata': metadata, 'save_path': save_path, 'metadata_header': metadata_header}, 0)
 
-    metadata_bytes = tf.compat.as_bytes('\n'.join(metadata) + '\n')
-    fs = tf.io.gfile.get_filesystem(save_path)
-    fs.write(fs.join(save_path, 'metadata.tsv'), metadata_bytes, binary_mode=True)
-
-
-# https://github.com/tensorflow/tensorboard/issues/44 image label will be squared
 def make_sprite(label_img, save_path):
-    from PIL import Image
-    from io import BytesIO
-
-    # this ensures the sprite image has correct dimension as described in
-    # https://www.tensorflow.org/get_started/embedding_viz
-    nrow = int(math.ceil((label_img.size(0)) ** 0.5))
-    arranged_img_CHW = make_grid(make_np(label_img), ncols=nrow)
-
-    # augment images so that #images equals nrow*nrow
-    arranged_augment_square_HWC = np.ndarray((arranged_img_CHW.shape[2], arranged_img_CHW.shape[2], 3))
-    arranged_img_HWC = arranged_img_CHW.transpose(1, 2, 0)  # chw -> hwc
-    arranged_augment_square_HWC[:arranged_img_HWC.shape[0], :, :] = arranged_img_HWC
-    im = Image.fromarray(np.uint8((arranged_augment_square_HWC * 255).clip(0, 255)))
-
-    with BytesIO() as buf:
-        im.save(buf, format="PNG")
-        im_bytes = buf.getvalue()
-
-    fs = tf.io.gfile.get_filesystem(save_path)
-    fs.write(fs.join(save_path, 'sprite.png'), im_bytes, binary_mode=True)
-
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('torch.utils.tensorboard._embedding.make_sprite', 'make_sprite(label_img, save_path)', {'math': math, 'make_grid': make_grid, 'make_np': make_np, 'np': np, 'tf': tf, 'label_img': label_img, 'save_path': save_path}, 0)
 
 def get_embedding_info(metadata, label_img, filesys, subdir, global_step, tag):
-    info = EmbeddingInfo()
-    info.tensor_name = "{}:{}".format(tag, str(global_step).zfill(5))
-    info.tensor_path = filesys.join(subdir, 'tensors.tsv')
-    if metadata is not None:
-        info.metadata_path = filesys.join(subdir, 'metadata.tsv')
-    if label_img is not None:
-        info.sprite.image_path = filesys.join(subdir, 'sprite.png')
-        info.sprite.single_image_dim.extend([label_img.size(3), label_img.size(2)])
-    return info
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.utils.tensorboard._embedding.get_embedding_info', 'get_embedding_info(metadata, label_img, filesys, subdir, global_step, tag)', {'EmbeddingInfo': EmbeddingInfo, 'metadata': metadata, 'label_img': label_img, 'filesys': filesys, 'subdir': subdir, 'global_step': global_step, 'tag': tag}, 1)
 
 def write_pbtxt(save_path, contents):
-    fs = tf.io.gfile.get_filesystem(save_path)
-    config_path = fs.join(save_path, 'projector_config.pbtxt')
-    fs.write(config_path, tf.compat.as_bytes(contents), binary_mode=True)
-
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('torch.utils.tensorboard._embedding.write_pbtxt', 'write_pbtxt(save_path, contents)', {'tf': tf, 'save_path': save_path, 'contents': contents}, 0)
 
 def make_mat(matlist, save_path):
-    fs = tf.io.gfile.get_filesystem(save_path)
-    with tf.io.gfile.GFile(fs.join(save_path, 'tensors.tsv'), 'wb') as f:
-        for x in matlist:
-            x = [str(i.item()) for i in x]
-            f.write(tf.compat.as_bytes('\t'.join(x) + '\n'))
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('torch.utils.tensorboard._embedding.make_mat', 'make_mat(matlist, save_path)', {'tf': tf, 'matlist': matlist, 'save_path': save_path}, 0)
+

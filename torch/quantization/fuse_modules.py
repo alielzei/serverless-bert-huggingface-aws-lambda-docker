@@ -1,12 +1,10 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
-
 import torch
 import copy
-
 import torch.nn.intrinsic.modules.fused as torch_fused
 
 def fuse_conv_bn(conv, bn):
-    r"""Given the conv and bn modules, fuses them and returns the fused module
+    """Given the conv and bn modules, fuses them and returns the fused module
 
     Args:
         conv: Module instance of type conv2d
@@ -18,20 +16,11 @@ def fuse_conv_bn(conv, bn):
         >>> b1 = nn.BatchNorm2d(20)
         >>> m2 = fuse_conv_bn(m1, b1)
     """
-    assert(conv.training == bn.training),\
-        "Conv and BN both must be in the same mode (train or eval)."
-
-    if conv.training:
-        assert conv.bias is None, 'Only support fusing Conv2d that does not have bias'
-        assert bn.num_features == conv.out_channels, 'Output channel of Conv2d must match num_features of BatchNorm2d'
-        assert bn.affine, 'Only support fusing BatchNorm2d with affine set to True'
-        assert bn.track_running_stats, 'Only support fusing BatchNorm2d with tracking_running_stats set to True'
-        return torch.nn.intrinsic.ConvBn2d(conv, bn)
-    else:
-        return torch.nn.utils.fuse_conv_bn_eval(conv, bn)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.quantization.fuse_modules.fuse_conv_bn', 'fuse_conv_bn(conv, bn)', {'torch': torch, 'conv': conv, 'bn': bn}, 1)
 
 def fuse_conv_bn_relu(conv, bn, relu):
-    r"""Given the conv and bn modules, fuses them and returns the fused module
+    """Given the conv and bn modules, fuses them and returns the fused module
 
     Args:
         conv: Module instance of type conv2d
@@ -43,35 +32,19 @@ def fuse_conv_bn_relu(conv, bn, relu):
         >>> b1 = nn.BatchNorm2d(20)
         >>> m2 = fuse_conv_bn(m1, b1)
     """
-    assert(conv.training == bn.training == relu.training),\
-        "Conv and BN both must be in the same mode (train or eval)."
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.quantization.fuse_modules.fuse_conv_bn_relu', 'fuse_conv_bn_relu(conv, bn, relu)', {'torch_fused': torch_fused, 'torch': torch, 'conv': conv, 'bn': bn, 'relu': relu}, 1)
 
-    if conv.training:
-        return torch_fused.ConvBnReLU2d(conv, bn, relu)
-    else:
-        return torch_fused.ConvReLU2d(
-            torch.nn.utils.fusion.fuse_conv_bn_eval(conv, bn), relu)
-
-# Generalization of getattr
 def _get_module(model, submodule_key):
-    tokens = submodule_key.split('.')
-    cur_mod = model
-    for s in tokens:
-        cur_mod = getattr(cur_mod, s)
-    return cur_mod
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.quantization.fuse_modules._get_module', '_get_module(model, submodule_key)', {'model': model, 'submodule_key': submodule_key}, 1)
 
-# Generalization of setattr
 def _set_module(model, submodule_key, module):
-    tokens = submodule_key.split('.')
-    sub_tokens = tokens[:-1]
-    cur_mod = model
-    for s in sub_tokens:
-        cur_mod = getattr(cur_mod, s)
-
-    setattr(cur_mod, tokens[-1], module)
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('torch.quantization.fuse_modules._set_module', '_set_module(model, submodule_key, module)', {'model': model, 'submodule_key': submodule_key, 'module': module}, 0)
 
 def fuse_known_modules(mod_list):
-    r"""Returns a list of modules that fuses the operations specified
+    """Returns a list of modules that fuses the operations specified
      in the input module list.
 
     Fuses only the following sequence of modules:
@@ -82,42 +55,15 @@ def fuse_known_modules(mod_list):
     For these sequences, the first element in the output module list performs
     the fused operation. The rest of the elements are set to nn.Identity()
     """
-
-    OP_LIST_TO_FUSER_METHOD = {
-        (torch.nn.Conv2d, torch.nn.BatchNorm2d): fuse_conv_bn,
-        (torch.nn.Conv2d, torch.nn.BatchNorm2d, torch.nn.ReLU): fuse_conv_bn_relu,
-        (torch.nn.Conv2d, torch.nn.ReLU): torch.nn.intrinsic.ConvReLU2d,
-        (torch.nn.Linear, torch.nn.ReLU): torch.nn.intrinsic.LinearReLU
-    }
-
-    types = tuple(type(m) for m in mod_list)
-    fuser_method = OP_LIST_TO_FUSER_METHOD.get(types, None)
-    if fuser_method is None:
-        raise NotImplementedError("Cannot fuse modules: {}".format(types))
-    new_mod = [None] * len(mod_list)
-    new_mod[0] = fuser_method(*mod_list)
-
-    for i in range(1, len(mod_list)):
-        new_mod[i] = torch.nn.Identity()
-        new_mod[i].training = mod_list[0].training
-
-    return new_mod
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.quantization.fuse_modules.fuse_known_modules', 'fuse_known_modules(mod_list)', {'torch': torch, 'fuse_conv_bn': fuse_conv_bn, 'fuse_conv_bn_relu': fuse_conv_bn_relu, 'mod_list': mod_list}, 1)
 
 def _fuse_modules(model, modules_to_fuse, fuser_func=fuse_known_modules):
-
-    mod_list = []
-    for item in modules_to_fuse:
-        mod_list.append(_get_module(model, item))
-
-    # Fuse list of modules
-    new_mod_list = fuser_func(mod_list)
-
-    # Replace original module list with fused module list
-    for i, item in enumerate(modules_to_fuse):
-        _set_module(model, item, new_mod_list[i])
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('torch.quantization.fuse_modules._fuse_modules', '_fuse_modules(model, modules_to_fuse, fuser_func=fuse_known_modules)', {'_get_module': _get_module, '_set_module': _set_module, 'model': model, 'modules_to_fuse': modules_to_fuse, 'fuser_func': fuser_func, 'fuse_known_modules': fuse_known_modules}, 0)
 
 def fuse_modules(model, modules_to_fuse, inplace=False, fuser_func=fuse_known_modules):
-    r"""Fuses a list of modules into a single module
+    """Fuses a list of modules into a single module
 
     Fuses only the following sequence of modules:
 
@@ -162,14 +108,6 @@ def fuse_modules(model, modules_to_fuse, inplace=False, fuser_func=fuse_known_mo
             >>> output = fused_m(input)
 
     """
-    if not inplace:
-        model = copy.deepcopy(model)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.quantization.fuse_modules.fuse_modules', 'fuse_modules(model, modules_to_fuse, inplace=False, fuser_func=fuse_known_modules)', {'copy': copy, '_fuse_modules': _fuse_modules, 'model': model, 'modules_to_fuse': modules_to_fuse, 'inplace': inplace, 'fuser_func': fuser_func, 'fuse_known_modules': fuse_known_modules}, 1)
 
-    if all(isinstance(module_element, str) for module_element in modules_to_fuse):
-        # Handle case of modules_to_fuse being a list
-        _fuse_modules(model, modules_to_fuse, fuser_func)
-    else:
-        # Handle case of modules_to_fuse being a list of lists
-        for module_list in modules_to_fuse:
-            _fuse_modules(model, module_list, fuser_func)
-    return model

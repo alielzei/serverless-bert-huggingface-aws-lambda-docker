@@ -1,27 +1,26 @@
-# coding=utf-8
 from .module import Module
 from .. import functional as F
 
 
 class Fold(Module):
-    r"""Combines an array of sliding local blocks into a large containing
+    """Combines an array of sliding local blocks into a large containing
     tensor.
 
     Consider a batched :attr:`input` tensor containing sliding local blocks,
-    e.g., patches of images, of shape :math:`(N, C \times  \prod(\text{kernel\_size}), L)`,
-    where :math:`N` is batch dimension, :math:`C \times \prod(\text{kernel\_size})`
-    is the number of values within a block (a block has :math:`\prod(\text{kernel\_size})`
+    e.g., patches of images, of shape :math:`(N, C 	imes  \prod(	ext{kernel\_size}), L)`,
+    where :math:`N` is batch dimension, :math:`C 	imes \prod(	ext{kernel\_size})`
+    is the number of values within a block (a block has :math:`\prod(	ext{kernel\_size})`
     spatial locations each containing a :math:`C`-channeled vector), and
     :math:`L` is the total number of blocks. (This is exactly the
     same specification as the output shape of :class:`~torch.nn.Unfold`.) This
     operation combines these local blocks into the large :attr:`output` tensor
-    of shape :math:`(N, C, \text{output\_size}[0], \text{output\_size}[1], \dots)`
+    of shape :math:`(N, C, 	ext{output\_size}[0], 	ext{output\_size}[1], \dots)`
     by summing the overlapping values. Similar to :class:`~torch.nn.Unfold`, the
     arguments must satisfy
 
     .. math::
-        L = \prod_d \left\lfloor\frac{\text{output\_size}[d] + 2 \times \text{padding}[d] %
-            - \text{dilation}[d] \times (\text{kernel\_size}[d] - 1) - 1}{\text{stride}[d]} + 1\right\rfloor,
+        L = \prod_d \left\lfloorrac{	ext{output\_size}[d] + 2 	imes 	ext{padding}[d] %
+            - 	ext{dilation}[d] 	imes (	ext{kernel\_size}[d] - 1) - 1}{	ext{stride}[d]} + 1ightfloor,
 
     where :math:`d` is over all spatial dimensions.
 
@@ -99,8 +98,8 @@ class Fold(Module):
         supported.
 
     Shape:
-        - Input: :math:`(N, C \times \prod(\text{kernel\_size}), L)`
-        - Output: :math:`(N, C, \text{output\_size}[0], \text{output\_size}[1], \dots)` as described above
+        - Input: :math:`(N, C 	imes \prod(	ext{kernel\_size}), L)`
+        - Output: :math:`(N, C, 	ext{output\_size}[0], 	ext{output\_size}[1], \dots)` as described above
 
     Examples::
 
@@ -114,9 +113,8 @@ class Fold(Module):
         https://github.com/vdumoulin/conv_arithmetic/blob/master/README.md
 
     """
-    __constants__ = ['output_size', 'kernel_size', 'dilation', 'padding',
-                     'stride']
-
+    __constants__ = ['output_size', 'kernel_size', 'dilation', 'padding', 'stride']
+    
     def __init__(self, output_size, kernel_size, dilation=1, padding=0, stride=1):
         super(Fold, self).__init__()
         self.output_size = output_size
@@ -124,37 +122,34 @@ class Fold(Module):
         self.dilation = dilation
         self.padding = padding
         self.stride = stride
-
+    
     def forward(self, input):
-        return F.fold(input, self.output_size, self.kernel_size, self.dilation,
-                      self.padding, self.stride)
-
+        return F.fold(input, self.output_size, self.kernel_size, self.dilation, self.padding, self.stride)
+    
     def extra_repr(self):
-        return 'output_size={output_size}, kernel_size={kernel_size}, ' \
-            'dilation={dilation}, padding={padding}, stride={stride}'.format(
-                **self.__dict__
-            )
+        return 'output_size={output_size}, kernel_size={kernel_size}, dilation={dilation}, padding={padding}, stride={stride}'.format(**self.__dict__)
+
 
 
 class Unfold(Module):
-    r"""Extracts sliding local blocks from a batched input tensor.
+    """Extracts sliding local blocks from a batched input tensor.
 
     Consider a batched :attr:`input` tensor of shape :math:`(N, C, *)`,
     where :math:`N` is the batch dimension, :math:`C` is the channel dimension,
     and :math:`*` represent arbitrary spatial dimensions. This operation flattens
     each sliding :attr:`kernel_size`-sized block within the spatial dimensions
     of :attr:`input` into a column (i.e., last dimension) of a 3-D :attr:`output`
-    tensor of shape :math:`(N, C \times \prod(\text{kernel\_size}), L)`, where
-    :math:`C \times \prod(\text{kernel\_size})` is the total number of values
-    within each block (a block has :math:`\prod(\text{kernel\_size})` spatial
+    tensor of shape :math:`(N, C 	imes \prod(	ext{kernel\_size}), L)`, where
+    :math:`C 	imes \prod(	ext{kernel\_size})` is the total number of values
+    within each block (a block has :math:`\prod(	ext{kernel\_size})` spatial
     locations each containing a :math:`C`-channeled vector), and :math:`L` is
     the total number of such blocks:
 
     .. math::
-        L = \prod_d \left\lfloor\frac{\text{spatial\_size}[d] + 2 \times \text{padding}[d] %
-            - \text{dilation}[d] \times (\text{kernel\_size}[d] - 1) - 1}{\text{stride}[d]} + 1\right\rfloor,
+        L = \prod_d \left\lfloorrac{	ext{spatial\_size}[d] + 2 	imes 	ext{padding}[d] %
+            - 	ext{dilation}[d] 	imes (	ext{kernel\_size}[d] - 1) - 1}{	ext{stride}[d]} + 1ightfloor,
 
-    where :math:`\text{spatial\_size}` is formed by the spatial dimensions
+    where :math:`	ext{spatial\_size}` is formed by the spatial dimensions
     of :attr:`input` (:math:`*` above), and :math:`d` is over all spatial
     dimensions.
 
@@ -229,7 +224,7 @@ class Unfold(Module):
 
     Shape:
         - Input: :math:`(N, C, *)`
-        - Output: :math:`(N, C \times \prod(\text{kernel\_size}), L)` as described above
+        - Output: :math:`(N, C 	imes \prod(	ext{kernel\_size}), L)` as described above
 
     Examples::
 
@@ -257,18 +252,18 @@ class Unfold(Module):
 
     """
     __constants__ = ['kernel_size', 'dilation', 'padding', 'stride']
-
+    
     def __init__(self, kernel_size, dilation=1, padding=0, stride=1):
         super(Unfold, self).__init__()
         self.kernel_size = kernel_size
         self.dilation = dilation
         self.padding = padding
         self.stride = stride
-
+    
     def forward(self, input):
-        return F.unfold(input, self.kernel_size, self.dilation,
-                        self.padding, self.stride)
-
+        return F.unfold(input, self.kernel_size, self.dilation, self.padding, self.stride)
+    
     def extra_repr(self):
-        return 'kernel_size={kernel_size}, dilation={dilation}, padding={padding},' \
-            ' stride={stride}'.format(**self.__dict__)
+        return 'kernel_size={kernel_size}, dilation={dilation}, padding={padding}, stride={stride}'.format(**self.__dict__)
+
+

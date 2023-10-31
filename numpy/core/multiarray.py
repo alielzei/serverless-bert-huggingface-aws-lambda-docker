@@ -9,46 +9,11 @@ by importing from the extension module.
 import functools
 from . import overrides
 from . import _multiarray_umath
-from ._multiarray_umath import *  # noqa: F403
-# These imports are needed for backward compatibility,
-# do not change them. issue gh-15518
-# _get_ndarray_c_version is semi-public, on purpose not added to __all__
-from ._multiarray_umath import (
-    fastCopyAndTranspose, _flagdict, from_dlpack, _insert, _reconstruct,
-    _vec_string, _ARRAY_API, _monotonicity, _get_ndarray_c_version,
-    _get_madvise_hugepage, _set_madvise_hugepage,
-    _get_promotion_state, _set_promotion_state,
-    )
-
-__all__ = [
-    '_ARRAY_API', 'ALLOW_THREADS', 'BUFSIZE', 'CLIP', 'DATETIMEUNITS',
-    'ITEM_HASOBJECT', 'ITEM_IS_POINTER', 'LIST_PICKLE', 'MAXDIMS',
-    'MAY_SHARE_BOUNDS', 'MAY_SHARE_EXACT', 'NEEDS_INIT', 'NEEDS_PYAPI',
-    'RAISE', 'USE_GETITEM', 'USE_SETITEM', 'WRAP',
-    '_flagdict', 'from_dlpack', '_insert', '_reconstruct', '_vec_string',
-    '_monotonicity', 'add_docstring', 'arange', 'array', 'asarray',
-    'asanyarray', 'ascontiguousarray', 'asfortranarray', 'bincount',
-    'broadcast', 'busday_count', 'busday_offset', 'busdaycalendar', 'can_cast',
-    'compare_chararrays', 'concatenate', 'copyto', 'correlate', 'correlate2',
-    'count_nonzero', 'c_einsum', 'datetime_as_string', 'datetime_data',
-    'dot', 'dragon4_positional', 'dragon4_scientific', 'dtype',
-    'empty', 'empty_like', 'error', 'flagsobj', 'flatiter', 'format_longfloat',
-    'frombuffer', 'fromfile', 'fromiter', 'fromstring',
-    'get_handler_name', 'get_handler_version', 'inner', 'interp',
-    'interp_complex', 'is_busday', 'lexsort', 'matmul', 'may_share_memory',
-    'min_scalar_type', 'ndarray', 'nditer', 'nested_iters',
-    'normalize_axis_index', 'packbits', 'promote_types', 'putmask',
-    'ravel_multi_index', 'result_type', 'scalar', 'set_datetimeparse_function',
-    'set_legacy_print_mode', 'set_numeric_ops', 'set_string_function',
-    'set_typeDict', 'shares_memory', 'tracemalloc_domain', 'typeinfo',
-    'unpackbits', 'unravel_index', 'vdot', 'where', 'zeros',
-    '_get_promotion_state', '_set_promotion_state']
-
-# For backward compatibility, make sure pickle imports these functions from here
+from ._multiarray_umath import *
+from ._multiarray_umath import fastCopyAndTranspose, _flagdict, from_dlpack, _insert, _reconstruct, _vec_string, _ARRAY_API, _monotonicity, _get_ndarray_c_version, _get_madvise_hugepage, _set_madvise_hugepage, _get_promotion_state, _set_promotion_state
+__all__ = ['_ARRAY_API', 'ALLOW_THREADS', 'BUFSIZE', 'CLIP', 'DATETIMEUNITS', 'ITEM_HASOBJECT', 'ITEM_IS_POINTER', 'LIST_PICKLE', 'MAXDIMS', 'MAY_SHARE_BOUNDS', 'MAY_SHARE_EXACT', 'NEEDS_INIT', 'NEEDS_PYAPI', 'RAISE', 'USE_GETITEM', 'USE_SETITEM', 'WRAP', '_flagdict', 'from_dlpack', '_insert', '_reconstruct', '_vec_string', '_monotonicity', 'add_docstring', 'arange', 'array', 'asarray', 'asanyarray', 'ascontiguousarray', 'asfortranarray', 'bincount', 'broadcast', 'busday_count', 'busday_offset', 'busdaycalendar', 'can_cast', 'compare_chararrays', 'concatenate', 'copyto', 'correlate', 'correlate2', 'count_nonzero', 'c_einsum', 'datetime_as_string', 'datetime_data', 'dot', 'dragon4_positional', 'dragon4_scientific', 'dtype', 'empty', 'empty_like', 'error', 'flagsobj', 'flatiter', 'format_longfloat', 'frombuffer', 'fromfile', 'fromiter', 'fromstring', 'get_handler_name', 'get_handler_version', 'inner', 'interp', 'interp_complex', 'is_busday', 'lexsort', 'matmul', 'may_share_memory', 'min_scalar_type', 'ndarray', 'nditer', 'nested_iters', 'normalize_axis_index', 'packbits', 'promote_types', 'putmask', 'ravel_multi_index', 'result_type', 'scalar', 'set_datetimeparse_function', 'set_legacy_print_mode', 'set_numeric_ops', 'set_string_function', 'set_typeDict', 'shares_memory', 'tracemalloc_domain', 'typeinfo', 'unpackbits', 'unravel_index', 'vdot', 'where', 'zeros', '_get_promotion_state', '_set_promotion_state']
 _reconstruct.__module__ = 'numpy.core.multiarray'
 scalar.__module__ = 'numpy.core.multiarray'
-
-
 from_dlpack.__module__ = 'numpy'
 arange.__module__ = 'numpy'
 array.__module__ = 'numpy'
@@ -72,14 +37,7 @@ seterrobj.__module__ = 'numpy'
 zeros.__module__ = 'numpy'
 _get_promotion_state.__module__ = 'numpy'
 _set_promotion_state.__module__ = 'numpy'
-
-
-# We can't verify dispatcher signatures because NumPy's C functions don't
-# support introspection.
-array_function_from_c_func_and_dispatcher = functools.partial(
-    overrides.array_function_from_dispatcher,
-    module='numpy', docs_from_dispatcher=True, verify=False)
-
+array_function_from_c_func_and_dispatcher = functools.partial(overrides.array_function_from_dispatcher, module='numpy', docs_from_dispatcher=True, verify=False)
 
 @array_function_from_c_func_and_dispatcher(_multiarray_umath.empty_like)
 def empty_like(prototype, dtype=None, order=None, subok=None, shape=None):
@@ -146,8 +104,7 @@ def empty_like(prototype, dtype=None, order=None, subok=None, shape=None):
            [  4.38791518e-305,  -2.00000715e+000,   4.17269252e-309]])
 
     """
-    return (prototype,)
-
+    return (prototype, )
 
 @array_function_from_c_func_and_dispatcher(_multiarray_umath.concatenate)
 def concatenate(arrays, axis=None, out=None, *, dtype=None, casting=None):
@@ -244,11 +201,9 @@ def concatenate(arrays, axis=None, out=None, *, dtype=None, casting=None):
 
     """
     if out is not None:
-        # optimize for the typical case where only arrays is provided
         arrays = list(arrays)
         arrays.append(out)
     return arrays
-
 
 @array_function_from_c_func_and_dispatcher(_multiarray_umath.inner)
 def inner(a, b):
@@ -341,7 +296,6 @@ def inner(a, b):
     """
     return (a, b)
 
-
 @array_function_from_c_func_and_dispatcher(_multiarray_umath.where)
 def where(condition, x=None, y=None):
     """
@@ -415,7 +369,6 @@ def where(condition, x=None, y=None):
            [ 0,  3, -1]])
     """
     return (condition, x, y)
-
 
 @array_function_from_c_func_and_dispatcher(_multiarray_umath.lexsort)
 def lexsort(keys, axis=None):
@@ -496,8 +449,7 @@ def lexsort(keys, axis=None):
     if isinstance(keys, tuple):
         return keys
     else:
-        return (keys,)
-
+        return (keys, )
 
 @array_function_from_c_func_and_dispatcher(_multiarray_umath.can_cast)
 def can_cast(from_, to, casting=None):
@@ -611,8 +563,7 @@ def can_cast(from_, to, casting=None):
     True
 
     """
-    return (from_,)
-
+    return (from_, )
 
 @array_function_from_c_func_and_dispatcher(_multiarray_umath.min_scalar_type)
 def min_scalar_type(a):
@@ -662,8 +613,7 @@ def min_scalar_type(a):
     dtype('float64')
 
     """
-    return (a,)
-
+    return (a, )
 
 @array_function_from_c_func_and_dispatcher(_multiarray_umath.result_type)
 def result_type(*arrays_and_dtypes):
@@ -735,7 +685,6 @@ def result_type(*arrays_and_dtypes):
 
     """
     return arrays_and_dtypes
-
 
 @array_function_from_c_func_and_dispatcher(_multiarray_umath.dot)
 def dot(a, b, out=None):
@@ -829,7 +778,6 @@ def dot(a, b, out=None):
     """
     return (a, b, out)
 
-
 @array_function_from_c_func_and_dispatcher(_multiarray_umath.vdot)
 def vdot(a, b):
     """
@@ -886,7 +834,6 @@ def vdot(a, b):
 
     """
     return (a, b)
-
 
 @array_function_from_c_func_and_dispatcher(_multiarray_umath.bincount)
 def bincount(x, weights=None, minlength=None):
@@ -964,7 +911,6 @@ def bincount(x, weights=None, minlength=None):
     """
     return (x, weights)
 
-
 @array_function_from_c_func_and_dispatcher(_multiarray_umath.ravel_multi_index)
 def ravel_multi_index(multi_index, dims, mode=None, order=None):
     """
@@ -1025,7 +971,6 @@ def ravel_multi_index(multi_index, dims, mode=None, order=None):
     """
     return multi_index
 
-
 @array_function_from_c_func_and_dispatcher(_multiarray_umath.unravel_index)
 def unravel_index(indices, shape=None, order=None):
     """
@@ -1073,8 +1018,7 @@ def unravel_index(indices, shape=None, order=None):
     (3, 1, 4, 1)
 
     """
-    return (indices,)
-
+    return (indices, )
 
 @array_function_from_c_func_and_dispatcher(_multiarray_umath.copyto)
 def copyto(dst, src, casting=None, where=None):
@@ -1122,10 +1066,9 @@ def copyto(dst, src, casting=None, where=None):
     >>> A
     array([[4, 5, 6],
            [7, 8, 9]])
-       
+
     """
     return (dst, src, where)
-
 
 @array_function_from_c_func_and_dispatcher(_multiarray_umath.putmask)
 def putmask(a, mask, values):
@@ -1170,7 +1113,6 @@ def putmask(a, mask, values):
 
     """
     return (a, mask, values)
-
 
 @array_function_from_c_func_and_dispatcher(_multiarray_umath.packbits)
 def packbits(a, axis=None, bitorder='big'):
@@ -1227,8 +1169,7 @@ def packbits(a, axis=None, bitorder='big'):
     and 32 = 0010 0000.
 
     """
-    return (a,)
-
+    return (a, )
 
 @array_function_from_c_func_and_dispatcher(_multiarray_umath.unpackbits)
 def unpackbits(a, axis=None, count=None, bitorder='big'):
@@ -1311,8 +1252,7 @@ def unpackbits(a, axis=None, count=None, bitorder='big'):
     True
 
     """
-    return (a,)
-
+    return (a, )
 
 @array_function_from_c_func_and_dispatcher(_multiarray_umath.shares_memory)
 def shares_memory(a, b, max_work=None):
@@ -1388,7 +1328,6 @@ def shares_memory(a, b, max_work=None):
     """
     return (a, b)
 
-
 @array_function_from_c_func_and_dispatcher(_multiarray_umath.may_share_memory)
 def may_share_memory(a, b, max_work=None):
     """
@@ -1428,7 +1367,6 @@ def may_share_memory(a, b, max_work=None):
 
     """
     return (a, b)
-
 
 @array_function_from_c_func_and_dispatcher(_multiarray_umath.is_busday)
 def is_busday(dates, weekmask=None, holidays=None, busdaycal=None, out=None):
@@ -1483,10 +1421,8 @@ def is_busday(dates, weekmask=None, holidays=None, busdaycal=None, out=None):
     """
     return (dates, weekmask, holidays, out)
 
-
 @array_function_from_c_func_and_dispatcher(_multiarray_umath.busday_offset)
-def busday_offset(dates, offsets, roll=None, weekmask=None, holidays=None,
-                  busdaycal=None, out=None):
+def busday_offset(dates, offsets, roll=None, weekmask=None, holidays=None, busdaycal=None, out=None):
     """
     busday_offset(dates, offsets, roll='raise', weekmask='1111100', holidays=None, busdaycal=None, out=None)
 
@@ -1577,10 +1513,8 @@ def busday_offset(dates, offsets, roll=None, weekmask=None, holidays=None,
     """
     return (dates, offsets, weekmask, holidays, out)
 
-
 @array_function_from_c_func_and_dispatcher(_multiarray_umath.busday_count)
-def busday_count(begindates, enddates, weekmask=None, holidays=None,
-                 busdaycal=None, out=None):
+def busday_count(begindates, enddates, weekmask=None, holidays=None, busdaycal=None, out=None):
     """
     busday_count(begindates, enddates, weekmask='1111100', holidays=[], busdaycal=None, out=None)
 
@@ -1645,9 +1579,7 @@ def busday_count(begindates, enddates, weekmask=None, holidays=None,
     """
     return (begindates, enddates, weekmask, holidays, out)
 
-
-@array_function_from_c_func_and_dispatcher(
-    _multiarray_umath.datetime_as_string)
+@array_function_from_c_func_and_dispatcher(_multiarray_umath.datetime_as_string)
 def datetime_as_string(arr, unit=None, timezone=None, casting=None):
     """
     datetime_as_string(arr, unit=None, timezone='naive', casting='same_kind')
@@ -1711,4 +1643,5 @@ def datetime_as_string(arr, unit=None, timezone=None, casting=None):
     TypeError: Cannot create a datetime string as units 'h' from a NumPy
     datetime with units 'm' according to the rule 'safe'
     """
-    return (arr,)
+    return (arr, )
+

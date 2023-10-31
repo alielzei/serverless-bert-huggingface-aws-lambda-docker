@@ -1,17 +1,12 @@
 import torch._C
-
 import contextlib
 import ctypes
 import os
 import sys
 import types
-
 import torch.jit
 import torch._utils_internal
-
-# Query `hasattr` only once.
-_SET_GLOBAL_FLAGS = hasattr(sys, 'getdlopenflags') and hasattr(sys, 'setdlopenflags')
-
+_SET_GLOBAL_FLAGS = (hasattr(sys, 'getdlopenflags') and hasattr(sys, 'setdlopenflags'))
 
 @contextlib.contextmanager
 def dl_open_guard():
@@ -19,17 +14,10 @@ def dl_open_guard():
     Context manager to set the RTLD_GLOBAL dynamic linker flag while we open a
     shared library to load custom operators.
     """
-    if _SET_GLOBAL_FLAGS:
-        old_flags = sys.getdlopenflags()
-        sys.setdlopenflags(old_flags | ctypes.RTLD_GLOBAL)
-    yield
-    if _SET_GLOBAL_FLAGS:
-        sys.setdlopenflags(old_flags)
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('torch._ops.dl_open_guard', 'dl_open_guard()', {'_SET_GLOBAL_FLAGS': _SET_GLOBAL_FLAGS, 'sys': sys, 'ctypes': ctypes, 'contextlib': contextlib}, 0)
 
 
-# _OpNamespace is a subclass of ModuleType because the torch script
-# allows attribute lookups on modules only. Since we want torch.ops.foo.bar()
-# to work from script, we need to ensure ops and foo are modules
 class _OpNamespace(types.ModuleType):
     """
     An op namespace to dynamically bind Operators into Python.
@@ -50,35 +38,33 @@ class _OpNamespace(types.ModuleType):
         and subsequent accesses will incur no further lookup (the namespace and
         operation will already exist).
     """
+    
     def __init__(self, name):
         super(_OpNamespace, self).__init__('torch.ops.' + name)
         self.name = name
-
+    
     def __getattr__(self, op_name):
-        # Get the op `my_namespace::my_op` if available. This will also check
-        # for overloads and raise an exception if there are more than one.
         qualified_op_name = '{}::{}'.format(self.name, op_name)
         op = torch._C._jit_get_operation(qualified_op_name)
-        # let the script frontend know that op is identical to the builtin op
-        # with qualified_op_name
         torch.jit._register_builtin(op, qualified_op_name)
         setattr(self, op_name, op)
-        op.__module__ = self.__module__ + "." + self.name
+        op.__module__ = self.__module__ + '.' + self.name
         return op
+
+
 
 class _Ops(types.ModuleType):
     __file__ = os.path.join(os.path.dirname(__file__), '_ops.py')
-
+    
     def __init__(self):
         super(_Ops, self).__init__('torch.ops')
         self.loaded_libraries = set()
-
+    
     def __getattr__(self, name):
-        # Here we are creating `torch.ops.my_namespace`
         namespace = _OpNamespace(name)
         setattr(self, name, namespace)
         return namespace
-
+    
     def load_library(self, path):
         """
         Loads a shared library from the given path into the current process.
@@ -99,11 +85,8 @@ class _Ops(types.ModuleType):
         """
         path = torch._utils_internal.resolve_library_path(path)
         with dl_open_guard():
-            # Import the shared library into the process, thus running its
-            # static (global) initialization code in order to register custom
-            # operators with the JIT.
             ctypes.CDLL(path)
         self.loaded_libraries.add(path)
 
-# The ops "namespace"
 ops = _Ops()
+

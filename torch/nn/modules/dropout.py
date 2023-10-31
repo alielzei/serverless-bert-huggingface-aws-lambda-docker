@@ -4,21 +4,21 @@ from .. import functional as F
 
 class _DropoutNd(Module):
     __constants__ = ['p', 'inplace']
-
+    
     def __init__(self, p=0.5, inplace=False):
         super(_DropoutNd, self).__init__()
-        if p < 0 or p > 1:
-            raise ValueError("dropout probability has to be between 0 and 1, "
-                             "but got {}".format(p))
+        if (p < 0 or p > 1):
+            raise ValueError('dropout probability has to be between 0 and 1, but got {}'.format(p))
         self.p = p
         self.inplace = inplace
-
+    
     def extra_repr(self):
         return 'p={}, inplace={}'.format(self.p, self.inplace)
 
 
+
 class Dropout(_DropoutNd):
-    r"""During training, randomly zeroes some of the elements of the input
+    """During training, randomly zeroes some of the elements of the input
     tensor with probability :attr:`p` using samples from a Bernoulli
     distribution. Each channel will be zeroed out independently on every forward
     call.
@@ -28,7 +28,7 @@ class Dropout(_DropoutNd):
     `Improving neural networks by preventing co-adaptation of feature
     detectors`_ .
 
-    Furthermore, the outputs are scaled by a factor of :math:`\frac{1}{1-p}` during
+    Furthermore, the outputs are scaled by a factor of :math:`rac{1}{1-p}` during
     training. This means that during evaluation the module simply computes an
     identity function.
 
@@ -49,15 +49,16 @@ class Dropout(_DropoutNd):
     .. _Improving neural networks by preventing co-adaptation of feature
         detectors: https://arxiv.org/abs/1207.0580
     """
-
+    
     def forward(self, input):
         return F.dropout(input, self.p, self.training, self.inplace)
 
 
+
 class Dropout2d(_DropoutNd):
-    r"""Randomly zero out entire channels (a channel is a 2D feature map,
+    """Randomly zero out entire channels (a channel is a 2D feature map,
     e.g., the :math:`j`-th channel of the :math:`i`-th sample in the
-    batched input is a 2D tensor :math:`\text{input}[i, j]`).
+    batched input is a 2D tensor :math:`	ext{input}[i, j]`).
     Each channel will be zeroed out independently on every forward call with
     probability :attr:`p` using samples from a Bernoulli distribution.
 
@@ -91,15 +92,16 @@ class Dropout2d(_DropoutNd):
     .. _Efficient Object Localization Using Convolutional Networks:
        http://arxiv.org/abs/1411.4280
     """
-
+    
     def forward(self, input):
         return F.dropout2d(input, self.p, self.training, self.inplace)
 
 
+
 class Dropout3d(_DropoutNd):
-    r"""Randomly zero out entire channels (a channel is a 3D feature map,
+    """Randomly zero out entire channels (a channel is a 3D feature map,
     e.g., the :math:`j`-th channel of the :math:`i`-th sample in the
-    batched input is a 3D tensor :math:`\text{input}[i, j]`).
+    batched input is a 3D tensor :math:`	ext{input}[i, j]`).
     Each channel will be zeroed out independently on every forward call with
     probability :attr:`p` using samples from a Bernoulli distribution.
 
@@ -133,13 +135,14 @@ class Dropout3d(_DropoutNd):
     .. _Efficient Object Localization Using Convolutional Networks:
        http://arxiv.org/abs/1411.4280
     """
-
+    
     def forward(self, input):
         return F.dropout3d(input, self.p, self.training, self.inplace)
 
 
+
 class AlphaDropout(_DropoutNd):
-    r"""Applies Alpha Dropout over the input.
+    """Applies Alpha Dropout over the input.
 
     Alpha Dropout is a type of Dropout that maintains the self-normalizing
     property.
@@ -175,12 +178,15 @@ class AlphaDropout(_DropoutNd):
 
     .. _Self-Normalizing Neural Networks: https://arxiv.org/abs/1706.02515
     """
-
+    
     def forward(self, input):
         return F.alpha_dropout(input, self.p, self.training)
 
 
-class FeatureAlphaDropout(_DropoutNd):
 
+class FeatureAlphaDropout(_DropoutNd):
+    
     def forward(self, input):
         return F.feature_alpha_dropout(input, self.p, self.training)
+
+

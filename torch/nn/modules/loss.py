@@ -1,43 +1,46 @@
 import warnings
-
 from .module import Module
 from .. import functional as F
 from .. import _reduction as _Reduction
 
 
 class _Loss(Module):
+    
     def __init__(self, size_average=None, reduce=None, reduction='mean'):
         super(_Loss, self).__init__()
-        if size_average is not None or reduce is not None:
+        if (size_average is not None or reduce is not None):
             self.reduction = _Reduction.legacy_get_string(size_average, reduce)
         else:
             self.reduction = reduction
 
 
+
 class _WeightedLoss(_Loss):
+    
     def __init__(self, weight=None, size_average=None, reduce=None, reduction='mean'):
         super(_WeightedLoss, self).__init__(size_average, reduce, reduction)
         self.register_buffer('weight', weight)
 
 
+
 class L1Loss(_Loss):
-    r"""Creates a criterion that measures the mean absolute error (MAE) between each element in
+    """Creates a criterion that measures the mean absolute error (MAE) between each element in
     the input :math:`x` and target :math:`y`.
 
     The unreduced (i.e. with :attr:`reduction` set to ``'none'``) loss can be described as:
 
     .. math::
-        \ell(x, y) = L = \{l_1,\dots,l_N\}^\top, \quad
-        l_n = \left| x_n - y_n \right|,
+        \ell(x, y) = L = \{l_1,\dots,l_N\}^	op, \quad
+        l_n = \left| x_n - y_n ight|,
 
     where :math:`N` is the batch size. If :attr:`reduction` is not ``'none'``
     (default ``'mean'``), then:
 
     .. math::
         \ell(x, y) =
-        \begin{cases}
-            \operatorname{mean}(L), & \text{if reduction} = \text{'mean';}\\
-            \operatorname{sum}(L),  & \text{if reduction} = \text{'sum'.}
+        egin{cases}
+            \operatorname{mean}(L), & 	ext{if reduction} = 	ext{'mean';}\
+            \operatorname{sum}(L),  & 	ext{if reduction} = 	ext{'sum'.}
         \end{cases}
 
     :math:`x` and :math:`y` are tensors of arbitrary shapes with a total
@@ -80,16 +83,17 @@ class L1Loss(_Loss):
         >>> output.backward()
     """
     __constants__ = ['reduction']
-
+    
     def __init__(self, size_average=None, reduce=None, reduction='mean'):
         super(L1Loss, self).__init__(size_average, reduce, reduction)
-
+    
     def forward(self, input, target):
         return F.l1_loss(input, target, reduction=self.reduction)
 
 
+
 class NLLLoss(_WeightedLoss):
-    r"""The negative log likelihood loss. It is useful to train a classification
+    """The negative log likelihood loss. It is useful to train a classification
     problem with `C` classes.
 
     If provided, the optional argument :attr:`weight` should be a 1D Tensor assigning
@@ -113,20 +117,21 @@ class NLLLoss(_WeightedLoss):
     The unreduced (i.e. with :attr:`reduction` set to ``'none'``) loss can be described as:
 
     .. math::
-        \ell(x, y) = L = \{l_1,\dots,l_N\}^\top, \quad
+        \ell(x, y) = L = \{l_1,\dots,l_N\}^	op, \quad
         l_n = - w_{y_n} x_{n,y_n}, \quad
-        w_{c} = \text{weight}[c] \cdot \mathbb{1}\{c \not= \text{ignore\_index}\},
+        w_{c} = 	ext{weight}[c] \cdot \mathbb{1}\{c 
+ot= 	ext{ignore\_index}\},
 
     where :math:`x` is the input, :math:`y` is the target, :math:`w` is the weight, and
     :math:`N` is the batch size. If :attr:`reduction` is not ``'none'``
     (default ``'mean'``), then
 
     .. math::
-        \ell(x, y) = \begin{cases}
-            \sum_{n=1}^N \frac{1}{\sum_{n=1}^N w_{y_n}} l_n, &
-            \text{if reduction} = \text{'mean';}\\
+        \ell(x, y) = egin{cases}
+            \sum_{n=1}^N rac{1}{\sum_{n=1}^N w_{y_n}} l_n, &
+            	ext{if reduction} = 	ext{'mean';}\
             \sum_{n=1}^N l_n,  &
-            \text{if reduction} = \text{'sum'.}
+            	ext{if reduction} = 	ext{'sum'.}
         \end{cases}
 
     Can also be used for higher dimension inputs, such as 2D images, by providing
@@ -162,7 +167,7 @@ class NLLLoss(_WeightedLoss):
         - Input: :math:`(N, C)` where `C = number of classes`, or
           :math:`(N, C, d_1, d_2, ..., d_K)` with :math:`K \geq 1`
           in the case of `K`-dimensional loss.
-        - Target: :math:`(N)` where each value is :math:`0 \leq \text{targets}[i] \leq C-1`, or
+        - Target: :math:`(N)` where each value is :math:`0 \leq 	ext{targets}[i] \leq C-1`, or
           :math:`(N, d_1, d_2, ..., d_K)` with :math:`K \geq 1` in the case of
           K-dimensional loss.
         - Output: scalar.
@@ -195,35 +200,34 @@ class NLLLoss(_WeightedLoss):
         >>> output.backward()
     """
     __constants__ = ['ignore_index', 'reduction']
-
-    def __init__(self, weight=None, size_average=None, ignore_index=-100,
-                 reduce=None, reduction='mean'):
+    
+    def __init__(self, weight=None, size_average=None, ignore_index=-100, reduce=None, reduction='mean'):
         super(NLLLoss, self).__init__(weight, size_average, reduce, reduction)
         self.ignore_index = ignore_index
-
+    
     def forward(self, input, target):
         return F.nll_loss(input, target, weight=self.weight, ignore_index=self.ignore_index, reduction=self.reduction)
 
 
+
 class NLLLoss2d(NLLLoss):
-    def __init__(self, weight=None, size_average=None, ignore_index=-100,
-                 reduce=None, reduction='mean'):
-        warnings.warn("NLLLoss2d has been deprecated. "
-                      "Please use NLLLoss instead as a drop-in replacement and see "
-                      "https://pytorch.org/docs/master/nn.html#torch.nn.NLLLoss for more details.")
+    
+    def __init__(self, weight=None, size_average=None, ignore_index=-100, reduce=None, reduction='mean'):
+        warnings.warn('NLLLoss2d has been deprecated. Please use NLLLoss instead as a drop-in replacement and see https://pytorch.org/docs/master/nn.html#torch.nn.NLLLoss for more details.')
         super(NLLLoss2d, self).__init__(weight, size_average, ignore_index, reduce, reduction)
 
 
+
 class PoissonNLLLoss(_Loss):
-    r"""Negative log likelihood loss with Poisson distribution of target.
+    """Negative log likelihood loss with Poisson distribution of target.
 
     The loss can be described as:
 
     .. math::
-        \text{target} \sim \mathrm{Poisson}(\text{input})
+        	ext{target} \sim \mathrm{Poisson}(	ext{input})
 
-        \text{loss}(\text{input}, \text{target}) = \text{input} - \text{target} * \log(\text{input})
-                                    + \log(\text{target!})
+        	ext{loss}(	ext{input}, 	ext{target}) = 	ext{input} - 	ext{target} * \log(	ext{input})
+                                    + \log(	ext{target!})
 
     The last term can be omitted or approximated with Stirling formula. The
     approximation is used for target values more than 1. For targets less or
@@ -231,13 +235,13 @@ class PoissonNLLLoss(_Loss):
 
     Args:
         log_input (bool, optional): if ``True`` the loss is computed as
-            :math:`\exp(\text{input}) - \text{target}*\text{input}`, if ``False`` the loss is
-            :math:`\text{input} - \text{target}*\log(\text{input}+\text{eps})`.
+            :math:`\exp(	ext{input}) - 	ext{target}*	ext{input}`, if ``False`` the loss is
+            :math:`	ext{input} - 	ext{target}*\log(	ext{input}+	ext{eps})`.
         full (bool, optional): whether to compute full loss, i. e. to add the
             Stirling approximation term
 
             .. math::
-                \text{target}*\log(\text{target}) - \text{target} + 0.5 * \log(2\pi\text{target}).
+                	ext{target}*\log(	ext{target}) - 	ext{target} + 0.5 * \log(2\pi	ext{target}).
         size_average (bool, optional): Deprecated (see :attr:`reduction`). By default,
             the losses are averaged over each loss element in the batch. Note that for
             some losses, there are multiple elements per sample. If the field :attr:`size_average`
@@ -272,21 +276,20 @@ class PoissonNLLLoss(_Loss):
           the same shape as the input
     """
     __constants__ = ['log_input', 'full', 'eps', 'reduction']
-
-    def __init__(self, log_input=True, full=False, size_average=None,
-                 eps=1e-8, reduce=None, reduction='mean'):
+    
+    def __init__(self, log_input=True, full=False, size_average=None, eps=1e-08, reduce=None, reduction='mean'):
         super(PoissonNLLLoss, self).__init__(size_average, reduce, reduction)
         self.log_input = log_input
         self.full = full
         self.eps = eps
-
+    
     def forward(self, log_input, target):
-        return F.poisson_nll_loss(log_input, target, log_input=self.log_input, full=self.full,
-                                  eps=self.eps, reduction=self.reduction)
+        return F.poisson_nll_loss(log_input, target, log_input=self.log_input, full=self.full, eps=self.eps, reduction=self.reduction)
+
 
 
 class KLDivLoss(_Loss):
-    r"""The `Kullback-Leibler divergence`_ Loss
+    """The `Kullback-Leibler divergence`_ Loss
 
     KL divergence is a useful distance measure for continuous distributions
     and is often useful when performing direct regression over the space of
@@ -303,15 +306,15 @@ class KLDivLoss(_Loss):
 
     .. math::
         l(x,y) = L = \{ l_1,\dots,l_N \}, \quad
-        l_n = y_n \cdot \left( \log y_n - x_n \right)
+        l_n = y_n \cdot \left( \log y_n - x_n ight)
 
     where the index :math:`N` spans all dimensions of ``input`` and :math:`L` has the same
     shape as ``input``. If :attr:`reduction` is not ``'none'`` (default ``'mean'``), then:
 
     .. math::
-        \ell(x, y) = \begin{cases}
-            \operatorname{mean}(L), & \text{if reduction} = \text{'mean';} \\
-            \operatorname{sum}(L),  & \text{if reduction} = \text{'sum'.}
+        \ell(x, y) = egin{cases}
+            \operatorname{mean}(L), & 	ext{if reduction} = 	ext{'mean';} \
+            \operatorname{sum}(L),  & 	ext{if reduction} = 	ext{'sum'.}
         \end{cases}
 
     In default :attr:`reduction` mode ``'mean'``, the losses are averaged for each minibatch over observations
@@ -358,32 +361,33 @@ class KLDivLoss(_Loss):
 
     """
     __constants__ = ['reduction']
-
+    
     def __init__(self, size_average=None, reduce=None, reduction='mean'):
         super(KLDivLoss, self).__init__(size_average, reduce, reduction)
-
+    
     def forward(self, input, target):
         return F.kl_div(input, target, reduction=self.reduction)
 
 
+
 class MSELoss(_Loss):
-    r"""Creates a criterion that measures the mean squared error (squared L2 norm) between
+    """Creates a criterion that measures the mean squared error (squared L2 norm) between
     each element in the input :math:`x` and target :math:`y`.
 
     The unreduced (i.e. with :attr:`reduction` set to ``'none'``) loss can be described as:
 
     .. math::
-        \ell(x, y) = L = \{l_1,\dots,l_N\}^\top, \quad
-        l_n = \left( x_n - y_n \right)^2,
+        \ell(x, y) = L = \{l_1,\dots,l_N\}^	op, \quad
+        l_n = \left( x_n - y_n ight)^2,
 
     where :math:`N` is the batch size. If :attr:`reduction` is not ``'none'``
     (default ``'mean'``), then:
 
     .. math::
         \ell(x, y) =
-        \begin{cases}
-            \operatorname{mean}(L), &  \text{if reduction} = \text{'mean';}\\
-            \operatorname{sum}(L),  &  \text{if reduction} = \text{'sum'.}
+        egin{cases}
+            \operatorname{mean}(L), &  	ext{if reduction} = 	ext{'mean';}\
+            \operatorname{sum}(L),  &  	ext{if reduction} = 	ext{'sum'.}
         \end{cases}
 
     :math:`x` and :math:`y` are tensors of arbitrary shapes with a total
@@ -424,31 +428,32 @@ class MSELoss(_Loss):
         >>> output.backward()
     """
     __constants__ = ['reduction']
-
+    
     def __init__(self, size_average=None, reduce=None, reduction='mean'):
         super(MSELoss, self).__init__(size_average, reduce, reduction)
-
+    
     def forward(self, input, target):
         return F.mse_loss(input, target, reduction=self.reduction)
 
 
+
 class BCELoss(_WeightedLoss):
-    r"""Creates a criterion that measures the Binary Cross Entropy
+    """Creates a criterion that measures the Binary Cross Entropy
     between the target and the output:
 
     The unreduced (i.e. with :attr:`reduction` set to ``'none'``) loss can be described as:
 
     .. math::
-        \ell(x, y) = L = \{l_1,\dots,l_N\}^\top, \quad
-        l_n = - w_n \left[ y_n \cdot \log x_n + (1 - y_n) \cdot \log (1 - x_n) \right],
+        \ell(x, y) = L = \{l_1,\dots,l_N\}^	op, \quad
+        l_n = - w_n \left[ y_n \cdot \log x_n + (1 - y_n) \cdot \log (1 - x_n) ight],
 
     where :math:`N` is the batch size. If :attr:`reduction` is not ``'none'``
     (default ``'mean'``), then
 
     .. math::
-        \ell(x, y) = \begin{cases}
-            \operatorname{mean}(L), & \text{if reduction} = \text{'mean';}\\
-            \operatorname{sum}(L),  & \text{if reduction} = \text{'sum'.}
+        \ell(x, y) = egin{cases}
+            \operatorname{mean}(L), & 	ext{if reduction} = 	ext{'mean';}\
+            \operatorname{sum}(L),  & 	ext{if reduction} = 	ext{'sum'.}
         \end{cases}
 
     This is used for measuring the error of a reconstruction in for example
@@ -457,13 +462,13 @@ class BCELoss(_WeightedLoss):
 
     Notice that if :math:`x_n` is either 0 or 1, one of the log terms would be
     mathematically undefined in the above loss equation. PyTorch chooses to set
-    :math:`\log (0) = -\infty`, since :math:`\lim_{x\to 0} \log (x) = -\infty`.
+    :math:`\log (0) = -\infty`, since :math:`\lim_{x	o 0} \log (x) = -\infty`.
     However, an infinite term in the loss equation is not desirable for several reasons.
 
     For one, if either :math:`y_n = 0` or :math:`(1 - y_n) = 0`, then we would be
     multipying 0 with infinity. Secondly, if we have an infinite loss value, then
     we would also have an infinite term in our gradient, since
-    :math:`\lim_{x\to 0} \frac{d}{dx} \log (x) = \infty`.
+    :math:`\lim_{x	o 0} rac{d}{dx} \log (x) = \infty`.
     This would make BCELoss's backward method nonlinear with respect to :math:`x_n`,
     and using it for things like linear regression would not be straight-forward.
 
@@ -508,16 +513,17 @@ class BCELoss(_WeightedLoss):
         >>> output.backward()
     """
     __constants__ = ['reduction']
-
+    
     def __init__(self, weight=None, size_average=None, reduce=None, reduction='mean'):
         super(BCELoss, self).__init__(weight, size_average, reduce, reduction)
-
+    
     def forward(self, input, target):
         return F.binary_cross_entropy(input, target, weight=self.weight, reduction=self.reduction)
 
 
+
 class BCEWithLogitsLoss(_Loss):
-    r"""This loss combines a `Sigmoid` layer and the `BCELoss` in one single
+    """This loss combines a `Sigmoid` layer and the `BCELoss` in one single
     class. This version is more numerically stable than using a plain `Sigmoid`
     followed by a `BCELoss` as, by combining the operations into one layer,
     we take advantage of the log-sum-exp trick for numerical stability.
@@ -525,17 +531,17 @@ class BCEWithLogitsLoss(_Loss):
     The unreduced (i.e. with :attr:`reduction` set to ``'none'``) loss can be described as:
 
     .. math::
-        \ell(x, y) = L = \{l_1,\dots,l_N\}^\top, \quad
+        \ell(x, y) = L = \{l_1,\dots,l_N\}^	op, \quad
         l_n = - w_n \left[ y_n \cdot \log \sigma(x_n)
-        + (1 - y_n) \cdot \log (1 - \sigma(x_n)) \right],
+        + (1 - y_n) \cdot \log (1 - \sigma(x_n)) ight],
 
     where :math:`N` is the batch size. If :attr:`reduction` is not ``'none'``
     (default ``'mean'``), then
 
     .. math::
-        \ell(x, y) = \begin{cases}
-            \operatorname{mean}(L), & \text{if reduction} = \text{'mean';}\\
-            \operatorname{sum}(L),  & \text{if reduction} = \text{'sum'.}
+        \ell(x, y) = egin{cases}
+            \operatorname{mean}(L), & 	ext{if reduction} = 	ext{'mean';}\
+            \operatorname{sum}(L),  & 	ext{if reduction} = 	ext{'sum'.}
         \end{cases}
 
     This is used for measuring the error of a reconstruction in for example
@@ -546,9 +552,9 @@ class BCEWithLogitsLoss(_Loss):
     In the case of multi-label classification the loss can be described as:
 
     .. math::
-        \ell_c(x, y) = L_c = \{l_{1,c},\dots,l_{N,c}\}^\top, \quad
+        \ell_c(x, y) = L_c = \{l_{1,c},\dots,l_{N,c}\}^	op, \quad
         l_{n,c} = - w_{n,c} \left[ p_c y_{n,c} \cdot \log \sigma(x_{n,c})
-        + (1 - y_{n,c}) \cdot \log (1 - \sigma(x_{n,c})) \right],
+        + (1 - y_{n,c}) \cdot \log (1 - \sigma(x_{n,c})) ight],
 
     where :math:`c` is the class number (:math:`c > 1` for multi-label binary classification,
     :math:`c = 1` for single-label binary classification),
@@ -558,8 +564,8 @@ class BCEWithLogitsLoss(_Loss):
     :math:`p_c > 1` increases the recall, :math:`p_c < 1` increases the precision.
 
     For example, if a dataset contains 100 positive and 300 negative examples of a single class,
-    then `pos_weight` for the class should be equal to :math:`\frac{300}{100}=3`.
-    The loss would act as if the dataset contains :math:`3\times 100=300` positive examples.
+    then `pos_weight` for the class should be equal to :math:`rac{300}{100}=3`.
+    The loss would act as if the dataset contains :math:`3	imes 100=300` positive examples.
 
     Examples::
 
@@ -605,20 +611,19 @@ class BCEWithLogitsLoss(_Loss):
         >>> output = loss(input, target)
         >>> output.backward()
     """
+    
     def __init__(self, weight=None, size_average=None, reduce=None, reduction='mean', pos_weight=None):
         super(BCEWithLogitsLoss, self).__init__(size_average, reduce, reduction)
         self.register_buffer('weight', weight)
         self.register_buffer('pos_weight', pos_weight)
-
+    
     def forward(self, input, target):
-        return F.binary_cross_entropy_with_logits(input, target,
-                                                  self.weight,
-                                                  pos_weight=self.pos_weight,
-                                                  reduction=self.reduction)
+        return F.binary_cross_entropy_with_logits(input, target, self.weight, pos_weight=self.pos_weight, reduction=self.reduction)
+
 
 
 class HingeEmbeddingLoss(_Loss):
-    r"""Measures the loss given an input tensor :math:`x` and a labels tensor :math:`y`
+    """Measures the loss given an input tensor :math:`x` and a labels tensor :math:`y`
     (containing 1 or -1).
     This is usually used for measuring whether two inputs are similar or
     dissimilar, e.g. using the L1 pairwise distance as :math:`x`, and is typically
@@ -627,20 +632,20 @@ class HingeEmbeddingLoss(_Loss):
     The loss function for :math:`n`-th sample in the mini-batch is
 
     .. math::
-        l_n = \begin{cases}
-            x_n, & \text{if}\; y_n = 1,\\
-            \max \{0, \Delta - x_n\}, & \text{if}\; y_n = -1,
+        l_n = egin{cases}
+            x_n, & 	ext{if}\; y_n = 1,\
+            \max \{0, \Delta - x_n\}, & 	ext{if}\; y_n = -1,
         \end{cases}
 
     and the total loss functions is
 
     .. math::
-        \ell(x, y) = \begin{cases}
-            \operatorname{mean}(L), & \text{if reduction} = \text{'mean';}\\
-            \operatorname{sum}(L),  & \text{if reduction} = \text{'sum'.}
+        \ell(x, y) = egin{cases}
+            \operatorname{mean}(L), & 	ext{if reduction} = 	ext{'mean';}\
+            \operatorname{sum}(L),  & 	ext{if reduction} = 	ext{'sum'.}
         \end{cases}
 
-    where :math:`L = \{l_1,\dots,l_N\}^\top`.
+    where :math:`L = \{l_1,\dots,l_N\}^	op`.
 
     Args:
         margin (float, optional): Has a default value of `1`.
@@ -667,28 +672,27 @@ class HingeEmbeddingLoss(_Loss):
         - Output: scalar. If :attr:`reduction` is ``'none'``, then same shape as the input
     """
     __constants__ = ['margin', 'reduction']
-
+    
     def __init__(self, margin=1.0, size_average=None, reduce=None, reduction='mean'):
         super(HingeEmbeddingLoss, self).__init__(size_average, reduce, reduction)
         self.margin = margin
-
+    
     def forward(self, input, target):
         return F.hinge_embedding_loss(input, target, margin=self.margin, reduction=self.reduction)
 
 
+
 class MultiLabelMarginLoss(_Loss):
-    r"""Creates a criterion that optimizes a multi-class multi-classification
+    """Creates a criterion that optimizes a multi-class multi-classification
     hinge loss (margin-based loss) between input :math:`x` (a 2D mini-batch `Tensor`)
     and output :math:`y` (which is a 2D `Tensor` of target class indices).
     For each sample in the mini-batch:
 
     .. math::
-        \text{loss}(x, y) = \sum_{ij}\frac{\max(0, 1 - (x[y[j]] - x[i]))}{\text{x.size}(0)}
+        	ext{loss}(x, y) = \sum_{ij}rac{\max(0, 1 - (x[y[j]] - x[i]))}{	ext{x.size}(0)}
 
-    where :math:`x \in \left\{0, \; \cdots , \; \text{x.size}(0) - 1\right\}`, \
-    :math:`y \in \left\{0, \; \cdots , \; \text{y.size}(0) - 1\right\}`, \
-    :math:`0 \leq y[j] \leq \text{x.size}(0)-1`, \
-    and :math:`i \neq y[j]` for all :math:`i` and :math:`j`.
+    where :math:`x \in \left\{0, \; \cdots , \; 	ext{x.size}(0) - 1ight\}`,     :math:`y \in \left\{0, \; \cdots , \; 	ext{y.size}(0) - 1ight\}`,     :math:`0 \leq y[j] \leq 	ext{x.size}(0)-1`,     and :math:`i 
+eq y[j]` for all :math:`i` and :math:`j`.
 
     :math:`y` and :math:`x` must have the same size.
 
@@ -732,31 +736,32 @@ class MultiLabelMarginLoss(_Loss):
 
     """
     __constants__ = ['reduction']
-
+    
     def __init__(self, size_average=None, reduce=None, reduction='mean'):
         super(MultiLabelMarginLoss, self).__init__(size_average, reduce, reduction)
-
+    
     def forward(self, input, target):
         return F.multilabel_margin_loss(input, target, reduction=self.reduction)
 
 
+
 class SmoothL1Loss(_Loss):
-    r"""Creates a criterion that uses a squared term if the absolute
+    """Creates a criterion that uses a squared term if the absolute
     element-wise error falls below 1 and an L1 term otherwise.
     It is less sensitive to outliers than the `MSELoss` and in some cases
     prevents exploding gradients (e.g. see `Fast R-CNN` paper by Ross Girshick).
     Also known as the Huber loss:
 
     .. math::
-        \text{loss}(x, y) = \frac{1}{n} \sum_{i} z_{i}
+        	ext{loss}(x, y) = rac{1}{n} \sum_{i} z_{i}
 
     where :math:`z_{i}` is given by:
 
     .. math::
         z_{i} =
-        \begin{cases}
-        0.5 (x_i - y_i)^2, & \text{if } |x_i - y_i| < 1 \\
-        |x_i - y_i| - 0.5, & \text{otherwise }
+        egin{cases}
+        0.5 (x_i - y_i)^2, & 	ext{if } |x_i - y_i| < 1 \
+        |x_i - y_i| - 0.5, & 	ext{otherwise }
         \end{cases}
 
     :math:`x` and :math:`y` arbitrary shapes with a total of :math:`n` elements each
@@ -790,21 +795,22 @@ class SmoothL1Loss(_Loss):
 
     """
     __constants__ = ['reduction']
-
+    
     def __init__(self, size_average=None, reduce=None, reduction='mean'):
         super(SmoothL1Loss, self).__init__(size_average, reduce, reduction)
-
+    
     def forward(self, input, target):
         return F.smooth_l1_loss(input, target, reduction=self.reduction)
 
 
+
 class SoftMarginLoss(_Loss):
-    r"""Creates a criterion that optimizes a two-class classification
+    """Creates a criterion that optimizes a two-class classification
     logistic loss between input tensor :math:`x` and target tensor :math:`y`
     (containing 1 or -1).
 
     .. math::
-        \text{loss}(x, y) = \sum_i \frac{\log(1 + \exp(-y[i]*x[i]))}{\text{x.nelement}()}
+        	ext{loss}(x, y) = \sum_i rac{\log(1 + \exp(-y[i]*x[i]))}{	ext{x.nelement}()}
 
     Args:
         size_average (bool, optional): Deprecated (see :attr:`reduction`). By default,
@@ -831,16 +837,17 @@ class SoftMarginLoss(_Loss):
 
     """
     __constants__ = ['reduction']
-
+    
     def __init__(self, size_average=None, reduce=None, reduction='mean'):
         super(SoftMarginLoss, self).__init__(size_average, reduce, reduction)
-
+    
     def forward(self, input, target):
         return F.soft_margin_loss(input, target, reduction=self.reduction)
 
 
+
 class CrossEntropyLoss(_WeightedLoss):
-    r"""This criterion combines :func:`nn.LogSoftmax` and :func:`nn.NLLLoss` in one single class.
+    """This criterion combines :func:`nn.LogSoftmax` and :func:`nn.NLLLoss` in one single class.
 
     It is useful when training a classification problem with `C` classes.
     If provided, the optional argument :attr:`weight` should be a 1D `Tensor`
@@ -861,13 +868,13 @@ class CrossEntropyLoss(_WeightedLoss):
     The loss can be described as:
 
     .. math::
-        \text{loss}(x, class) = -\log\left(\frac{\exp(x[class])}{\sum_j \exp(x[j])}\right)
-                       = -x[class] + \log\left(\sum_j \exp(x[j])\right)
+        	ext{loss}(x, class) = -\log\left(rac{\exp(x[class])}{\sum_j \exp(x[j])}ight)
+                       = -x[class] + \log\left(\sum_j \exp(x[j])ight)
 
     or in the case of the :attr:`weight` argument being specified:
 
     .. math::
-        \text{loss}(x, class) = weight[class] \left(-x[class] + \log\left(\sum_j \exp(x[j])\right)\right)
+        	ext{loss}(x, class) = weight[class] \left(-x[class] + \log\left(\sum_j \exp(x[j])ight)ight)
 
     The losses are averaged across observations for each minibatch.
 
@@ -903,7 +910,7 @@ class CrossEntropyLoss(_WeightedLoss):
         - Input: :math:`(N, C)` where `C = number of classes`, or
           :math:`(N, C, d_1, d_2, ..., d_K)` with :math:`K \geq 1`
           in the case of `K`-dimensional loss.
-        - Target: :math:`(N)` where each value is :math:`0 \leq \text{targets}[i] \leq C-1`, or
+        - Target: :math:`(N)` where each value is :math:`0 \leq 	ext{targets}[i] \leq C-1`, or
           :math:`(N, d_1, d_2, ..., d_K)` with :math:`K \geq 1` in the case of
           K-dimensional loss.
         - Output: scalar.
@@ -921,29 +928,28 @@ class CrossEntropyLoss(_WeightedLoss):
         >>> output.backward()
     """
     __constants__ = ['ignore_index', 'reduction']
-
-    def __init__(self, weight=None, size_average=None, ignore_index=-100,
-                 reduce=None, reduction='mean'):
+    
+    def __init__(self, weight=None, size_average=None, ignore_index=-100, reduce=None, reduction='mean'):
         super(CrossEntropyLoss, self).__init__(weight, size_average, reduce, reduction)
         self.ignore_index = ignore_index
-
+    
     def forward(self, input, target):
-        return F.cross_entropy(input, target, weight=self.weight,
-                               ignore_index=self.ignore_index, reduction=self.reduction)
+        return F.cross_entropy(input, target, weight=self.weight, ignore_index=self.ignore_index, reduction=self.reduction)
+
 
 
 class MultiLabelSoftMarginLoss(_WeightedLoss):
-    r"""Creates a criterion that optimizes a multi-label one-versus-all
+    """Creates a criterion that optimizes a multi-label one-versus-all
     loss based on max-entropy, between input :math:`x` and target :math:`y` of size
     :math:`(N, C)`.
     For each sample in the minibatch:
 
     .. math::
-        loss(x, y) = - \frac{1}{C} * \sum_i y[i] * \log((1 + \exp(-x[i]))^{-1})
-                         + (1-y[i]) * \log\left(\frac{\exp(-x[i])}{(1 + \exp(-x[i]))}\right)
+        loss(x, y) = - rac{1}{C} * \sum_i y[i] * \log((1 + \exp(-x[i]))^{-1})
+                         + (1-y[i]) * \log\left(rac{\exp(-x[i])}{(1 + \exp(-x[i]))}ight)
 
-    where :math:`i \in \left\{0, \; \cdots , \; \text{x.nElement}() - 1\right\}`,
-    :math:`y[i] \in \left\{0, \; 1\right\}`.
+    where :math:`i \in \left\{0, \; \cdots , \; 	ext{x.nElement}() - 1ight\}`,
+    :math:`y[i] \in \left\{0, \; 1ight\}`.
 
     Args:
         weight (Tensor, optional): a manual rescaling weight given to each
@@ -971,16 +977,17 @@ class MultiLabelSoftMarginLoss(_WeightedLoss):
         - Output: scalar. If :attr:`reduction` is ``'none'``, then :math:`(N)`.
     """
     __constants__ = ['reduction']
-
+    
     def __init__(self, weight=None, size_average=None, reduce=None, reduction='mean'):
         super(MultiLabelSoftMarginLoss, self).__init__(weight, size_average, reduce, reduction)
-
+    
     def forward(self, input, target):
         return F.multilabel_soft_margin_loss(input, target, weight=self.weight, reduction=self.reduction)
 
 
+
 class CosineEmbeddingLoss(_Loss):
-    r"""Creates a criterion that measures the loss given input tensors
+    """Creates a criterion that measures the loss given input tensors
     :math:`x_1`, :math:`x_2` and a `Tensor` label :math:`y` with values 1 or -1.
     This is used for measuring whether two inputs are similar or dissimilar,
     using the cosine distance, and is typically used for learning nonlinear
@@ -989,10 +996,10 @@ class CosineEmbeddingLoss(_Loss):
     The loss function for each sample is:
 
     .. math::
-        \text{loss}(x, y) =
-        \begin{cases}
-        1 - \cos(x_1, x_2), & \text{if } y = 1 \\
-        \max(0, \cos(x_1, x_2) - \text{margin}), & \text{if } y = -1
+        	ext{loss}(x, y) =
+        egin{cases}
+        1 - \cos(x_1, x_2), & 	ext{if } y = 1 \
+        \max(0, \cos(x_1, x_2) - 	ext{margin}), & 	ext{if } y = -1
         \end{cases}
 
     Args:
@@ -1016,17 +1023,18 @@ class CosineEmbeddingLoss(_Loss):
             specifying either of those two args will override :attr:`reduction`. Default: ``'mean'``
     """
     __constants__ = ['margin', 'reduction']
-
-    def __init__(self, margin=0., size_average=None, reduce=None, reduction='mean'):
+    
+    def __init__(self, margin=0.0, size_average=None, reduce=None, reduction='mean'):
         super(CosineEmbeddingLoss, self).__init__(size_average, reduce, reduction)
         self.margin = margin
-
+    
     def forward(self, input1, input2, target):
         return F.cosine_embedding_loss(input1, input2, target, margin=self.margin, reduction=self.reduction)
 
 
+
 class MarginRankingLoss(_Loss):
-    r"""Creates a criterion that measures the loss given
+    """Creates a criterion that measures the loss given
     inputs :math:`x1`, :math:`x2`, two 1D mini-batch `Tensors`,
     and a label 1D mini-batch tensor :math:`y` (containing 1 or -1).
 
@@ -1036,7 +1044,7 @@ class MarginRankingLoss(_Loss):
     The loss function for each sample in the mini-batch is:
 
     .. math::
-        \text{loss}(x, y) = \max(0, -y * (x1 - x2) + \text{margin})
+        	ext{loss}(x, y) = \max(0, -y * (x1 - x2) + 	ext{margin})
 
     Args:
         margin (float, optional): Has a default value of :math:`0`.
@@ -1062,29 +1070,31 @@ class MarginRankingLoss(_Loss):
         - Output: scalar. If :attr:`reduction` is ``'none'``, then :math:`(N)`.
     """
     __constants__ = ['margin', 'reduction']
-
-    def __init__(self, margin=0., size_average=None, reduce=None, reduction='mean'):
+    
+    def __init__(self, margin=0.0, size_average=None, reduce=None, reduction='mean'):
         super(MarginRankingLoss, self).__init__(size_average, reduce, reduction)
         self.margin = margin
-
+    
     def forward(self, input1, input2, target):
         return F.margin_ranking_loss(input1, input2, target, margin=self.margin, reduction=self.reduction)
 
 
+
 class MultiMarginLoss(_WeightedLoss):
-    r"""Creates a criterion that optimizes a multi-class classification hinge
+    """Creates a criterion that optimizes a multi-class classification hinge
     loss (margin-based loss) between input :math:`x` (a 2D mini-batch `Tensor`) and
     output :math:`y` (which is a 1D tensor of target class indices,
-    :math:`0 \leq y \leq \text{x.size}(1)-1`):
+    :math:`0 \leq y \leq 	ext{x.size}(1)-1`):
 
     For each mini-batch sample, the loss in terms of the 1D input :math:`x` and scalar
     output :math:`y` is:
 
     .. math::
-        \text{loss}(x, y) = \frac{\sum_i \max(0, \text{margin} - x[y] + x[i]))^p}{\text{x.size}(0)}
+        	ext{loss}(x, y) = rac{\sum_i \max(0, 	ext{margin} - x[y] + x[i]))^p}{	ext{x.size}(0)}
 
-    where :math:`x \in \left\{0, \; \cdots , \; \text{x.size}(0) - 1\right\}`
-    and :math:`i \neq y`.
+    where :math:`x \in \left\{0, \; \cdots , \; 	ext{x.size}(0) - 1ight\}`
+    and :math:`i 
+eq y`.
 
     Optionally, you can give non-equal weighting on the classes by passing
     a 1D :attr:`weight` tensor into the constructor.
@@ -1092,7 +1102,7 @@ class MultiMarginLoss(_WeightedLoss):
     The loss function then becomes:
 
     .. math::
-        \text{loss}(x, y) = \frac{\sum_i \max(0, w[y] * (\text{margin} - x[y] + x[i]))^p)}{\text{x.size}(0)}
+        	ext{loss}(x, y) = rac{\sum_i \max(0, w[y] * (	ext{margin} - x[y] + x[i]))^p)}{	ext{x.size}(0)}
 
     Args:
         p (int, optional): Has a default value of :math:`1`. :math:`1` and :math:`2`
@@ -1118,23 +1128,22 @@ class MultiMarginLoss(_WeightedLoss):
             specifying either of those two args will override :attr:`reduction`. Default: ``'mean'``
     """
     __constants__ = ['p', 'margin', 'reduction']
-
-    def __init__(self, p=1, margin=1., weight=None, size_average=None,
-                 reduce=None, reduction='mean'):
+    
+    def __init__(self, p=1, margin=1.0, weight=None, size_average=None, reduce=None, reduction='mean'):
         super(MultiMarginLoss, self).__init__(weight, size_average, reduce, reduction)
-        if p != 1 and p != 2:
-            raise ValueError("only p == 1 and p == 2 supported")
-        assert weight is None or weight.dim() == 1
+        if (p != 1 and p != 2):
+            raise ValueError('only p == 1 and p == 2 supported')
+        assert (weight is None or weight.dim() == 1)
         self.p = p
         self.margin = margin
-
+    
     def forward(self, input, target):
-        return F.multi_margin_loss(input, target, p=self.p, margin=self.margin,
-                                   weight=self.weight, reduction=self.reduction)
+        return F.multi_margin_loss(input, target, p=self.p, margin=self.margin, weight=self.weight, reduction=self.reduction)
+
 
 
 class TripletMarginLoss(_Loss):
-    r"""Creates a criterion that measures the triplet loss given an input
+    """Creates a criterion that measures the triplet loss given an input
     tensors :math:`x1`, :math:`x2`, :math:`x3` and a margin with a value greater than :math:`0`.
     This is used for measuring a relative similarity between samples. A triplet
     is composed by `a`, `p` and `n` (i.e., `anchor`, `positive examples` and `negative
@@ -1148,13 +1157,13 @@ class TripletMarginLoss(_Loss):
     The loss function for each sample in the mini-batch is:
 
     .. math::
-        L(a, p, n) = \max \{d(a_i, p_i) - d(a_i, n_i) + {\rm margin}, 0\}
+        L(a, p, n) = \max \{d(a_i, p_i) - d(a_i, n_i) + {m margin}, 0\}
 
 
     where
 
     .. math::
-        d(x_i, y_i) = \left\lVert {\bf x}_i - {\bf y}_i \right\rVert_p
+        d(x_i, y_i) = \left\lVert {f x}_i - {f y}_i ightVert_p
 
     Args:
         margin (float, optional): Default: :math:`1`.
@@ -1193,22 +1202,21 @@ class TripletMarginLoss(_Loss):
         http://www.bmva.org/bmvc/2016/papers/paper119/index.html
     """
     __constants__ = ['margin', 'p', 'eps', 'swap', 'reduction']
-
-    def __init__(self, margin=1.0, p=2., eps=1e-6, swap=False, size_average=None,
-                 reduce=None, reduction='mean'):
+    
+    def __init__(self, margin=1.0, p=2.0, eps=1e-06, swap=False, size_average=None, reduce=None, reduction='mean'):
         super(TripletMarginLoss, self).__init__(size_average, reduce, reduction)
         self.margin = margin
         self.p = p
         self.eps = eps
         self.swap = swap
-
+    
     def forward(self, anchor, positive, negative):
-        return F.triplet_margin_loss(anchor, positive, negative, margin=self.margin, p=self.p,
-                                     eps=self.eps, swap=self.swap, reduction=self.reduction)
+        return F.triplet_margin_loss(anchor, positive, negative, margin=self.margin, p=self.p, eps=self.eps, swap=self.swap, reduction=self.reduction)
+
 
 
 class CTCLoss(_Loss):
-    r"""The Connectionist Temporal Classification loss.
+    """The Connectionist Temporal Classification loss.
 
     Calculates loss between a continuous (unsegmented) time series and a target sequence. CTCLoss sums over the
     probability of possible alignments of input to target, producing a loss value which is differentiable
@@ -1229,29 +1237,29 @@ class CTCLoss(_Loss):
 
     Shape:
         - Log_probs: Tensor of size :math:`(T, N, C)`,
-          where :math:`T = \text{input length}`,
-          :math:`N = \text{batch size}`, and
-          :math:`C = \text{number of classes (including blank)}`.
+          where :math:`T = 	ext{input length}`,
+          :math:`N = 	ext{batch size}`, and
+          :math:`C = 	ext{number of classes (including blank)}`.
           The logarithmized probabilities of the outputs (e.g. obtained with
           :func:`torch.nn.functional.log_softmax`).
         - Targets: Tensor of size :math:`(N, S)` or
-          :math:`(\operatorname{sum}(\text{target\_lengths}))`,
-          where :math:`N = \text{batch size}` and
-          :math:`S = \text{max target length, if shape is } (N, S)`.
+          :math:`(\operatorname{sum}(	ext{target\_lengths}))`,
+          where :math:`N = 	ext{batch size}` and
+          :math:`S = 	ext{max target length, if shape is } (N, S)`.
           It represent the target sequences. Each element in the target
           sequence is a class index. And the target index cannot be blank (default=0).
           In the :math:`(N, S)` form, targets are padded to the
           length of the longest sequence, and stacked.
-          In the :math:`(\operatorname{sum}(\text{target\_lengths}))` form,
+          In the :math:`(\operatorname{sum}(	ext{target\_lengths}))` form,
           the targets are assumed to be un-padded and
           concatenated within 1 dimension.
         - Input_lengths: Tuple or tensor of size :math:`(N)`,
-          where :math:`N = \text{batch size}`. It represent the lengths of the
+          where :math:`N = 	ext{batch size}`. It represent the lengths of the
           inputs (must each be :math:`\leq T`). And the lengths are specified
           for each sequence to achieve masking under the assumption that sequences
           are padded to equal lengths.
         - Target_lengths: Tuple or tensor of size :math:`(N)`,
-          where :math:`N = \text{batch size}`. It represent lengths of the targets.
+          where :math:`N = 	ext{batch size}`. It represent lengths of the targets.
           Lengths are specified for each sequence to achieve masking under the
           assumption that sequences are padded to equal lengths. If target shape is
           :math:`(N,S)`, target_lengths are effectively the stop index
@@ -1260,7 +1268,7 @@ class CTCLoss(_Loss):
           If the targets are given as a 1d tensor that is the concatenation of individual
           targets, the target_lengths must add up to the total length of the tensor.
         - Output: scalar. If :attr:`reduction` is ``'none'``, then
-          :math:`(N)`, where :math:`N = \text{batch size}`.
+          :math:`(N)`, where :math:`N = 	ext{batch size}`.
 
     Example::
 
@@ -1300,16 +1308,13 @@ class CTCLoss(_Loss):
 
     """
     __constants__ = ['blank', 'reduction']
-
+    
     def __init__(self, blank=0, reduction='mean', zero_infinity=False):
         super(CTCLoss, self).__init__(reduction=reduction)
         self.blank = blank
         self.zero_infinity = zero_infinity
-
+    
     def forward(self, log_probs, targets, input_lengths, target_lengths):
-        return F.ctc_loss(log_probs, targets, input_lengths, target_lengths, self.blank, self.reduction,
-                          self.zero_infinity)
+        return F.ctc_loss(log_probs, targets, input_lengths, target_lengths, self.blank, self.reduction, self.zero_infinity)
 
-# TODO: L1HingeEmbeddingCriterion
-# TODO: MSECriterion weight
-# TODO: ClassSimplexCriterion
+

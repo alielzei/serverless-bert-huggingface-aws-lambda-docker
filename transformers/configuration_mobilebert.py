@@ -1,30 +1,13 @@
-# coding=utf-8
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """ MobileBERT model configuration """
 
 from .configuration_utils import PretrainedConfig
 from .utils import logging
-
-
 logger = logging.get_logger(__name__)
-
-MOBILEBERT_PRETRAINED_CONFIG_ARCHIVE_MAP = {
-    "mobilebert-uncased": "https://s3.amazonaws.com/models.huggingface.co/bert/google/mobilebert-uncased/config.json"
-}
+MOBILEBERT_PRETRAINED_CONFIG_ARCHIVE_MAP = {'mobilebert-uncased': 'https://s3.amazonaws.com/models.huggingface.co/bert/google/mobilebert-uncased/config.json'}
 
 
 class MobileBertConfig(PretrainedConfig):
-    r"""
+    """
     This is the configuration class to store the configuration of a :class:`~transformers.MobileBertModel` or a
     :class:`~transformers.TFMobileBertModel`. It is used to instantiate a MobileBERT model according to the specified
     arguments, defining the model architecture.
@@ -102,36 +85,10 @@ class MobileBertConfig(PretrainedConfig):
             A dictionary containing all the available pre-trained checkpoints.
     """
     pretrained_config_archive_map = MOBILEBERT_PRETRAINED_CONFIG_ARCHIVE_MAP
-    model_type = "mobilebert"
-
-    def __init__(
-        self,
-        vocab_size=30522,
-        hidden_size=512,
-        num_hidden_layers=24,
-        num_attention_heads=4,
-        intermediate_size=512,
-        hidden_act="relu",
-        hidden_dropout_prob=0.0,
-        attention_probs_dropout_prob=0.1,
-        max_position_embeddings=512,
-        type_vocab_size=2,
-        initializer_range=0.02,
-        layer_norm_eps=1e-12,
-        pad_token_id=0,
-        embedding_size=128,
-        trigram_input=True,
-        use_bottleneck=True,
-        intra_bottleneck_size=128,
-        use_bottleneck_attention=False,
-        key_query_shared_bottleneck=True,
-        num_feedforward_networks=4,
-        normalization_type="no_norm",
-        classifier_activation=True,
-        **kwargs
-    ):
+    model_type = 'mobilebert'
+    
+    def __init__(self, vocab_size=30522, hidden_size=512, num_hidden_layers=24, num_attention_heads=4, intermediate_size=512, hidden_act='relu', hidden_dropout_prob=0.0, attention_probs_dropout_prob=0.1, max_position_embeddings=512, type_vocab_size=2, initializer_range=0.02, layer_norm_eps=1e-12, pad_token_id=0, embedding_size=128, trigram_input=True, use_bottleneck=True, intra_bottleneck_size=128, use_bottleneck_attention=False, key_query_shared_bottleneck=True, num_feedforward_networks=4, normalization_type='no_norm', classifier_activation=True, **kwargs):
         super().__init__(pad_token_id=pad_token_id, **kwargs)
-
         self.vocab_size = vocab_size
         self.hidden_size = hidden_size
         self.num_hidden_layers = num_hidden_layers
@@ -153,8 +110,9 @@ class MobileBertConfig(PretrainedConfig):
         self.num_feedforward_networks = num_feedforward_networks
         self.normalization_type = normalization_type
         self.classifier_activation = classifier_activation
-
         if self.use_bottleneck:
             self.true_hidden_size = intra_bottleneck_size
         else:
             self.true_hidden_size = hidden_size
+
+

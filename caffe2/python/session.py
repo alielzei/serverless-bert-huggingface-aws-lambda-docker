@@ -1,20 +1,18 @@
-## @package session
-# Module caffe2.python.session
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
-
-
 from caffe2.python import core, workspace
 from caffe2.python.task import Cluster, Task, TaskGroup, WorkspaceType
 
 
 class CompiledRunnable(object):
     """ Wrapper for compiled runnable returned from session.compile() """
+    
     def __init__(self, obj, session_class):
         self.obj = obj
         self.session_class = session_class
+
 
 
 class Session(object):
@@ -72,33 +70,25 @@ class Session(object):
         Workspace hierarchy rules: tasks running on separate private workspaces
         will only be able to share blobs defined on a common parent Workspace.
     """
-
     _compiled_cache = {}
-
+    
     def __init__(self):
         self._open = True
-
+    
     def is_open(self):
         return self._open
-
+    
     @classmethod
     def compile(cls, runnable, workspace_type=None, setup_net_list=None):
         if isinstance(runnable, CompiledRunnable):
-            assert cls == runnable.session_class, (
-                'Runnable was compiled for different session type. ' +
-                'Need: %s, got: %s' % (
-                    cls.__name__, runnable.session_class.__name__))
+            assert cls == runnable.session_class, 'Runnable was compiled for different session type. ' + 'Need: %s, got: %s' % (cls.__name__, runnable.session_class.__name__)
             return runnable
-
         if runnable in cls._compiled_cache:
             return cls._compiled_cache[runnable]
-
         if isinstance(runnable, TaskGroup):
             if workspace_type:
                 if runnable.workspace_type():
-                    assert runnable.workspace_type() == workspace_type, \
-                        "Require {} but already have {}".format(
-                            workspace_type, runnable.workspace_type())
+                    assert runnable.workspace_type() == workspace_type, 'Require {} but already have {}'.format(workspace_type, runnable.workspace_type())
                 else:
                     runnable._workspace_type = workspace_type
             tg = runnable
@@ -111,25 +101,18 @@ class Session(object):
             elif isinstance(runnable, core.ExecutionStep):
                 tg.add(Task(step=runnable))
             elif isinstance(runnable, core.Plan):
-                # ExecutionSteps in Plan() object is supposed to run sequentially, while
-                # tasks in TaskGroup run in parallel. So if we have multiple
-                # ExecutionSteps in Plan() object, we choose to have a root
-                # ExecutionStep to wrap all ExecutionSteps.
                 assert len(runnable.Steps()) > 0
                 if len(runnable.Steps()) == 1:
                     tg.add(Task(step=runnable.Steps()[0]))
                 else:
-                    # Task takes a list of ExecutionSteps and automatically wrap into
-                    # a root ExecutionStep
                     tg.add(Task(step=runnable.Steps()))
             else:
                 step = core.execution_step('runnable', runnable)
                 tg.add(Task(step=step))
-        compiled = CompiledRunnable(
-            cls._compile_task_group(tg, setup_net_list), session_class=cls)
+        compiled = CompiledRunnable(cls._compile_task_group(tg, setup_net_list), session_class=cls)
         cls._compiled_cache[runnable] = compiled
         return compiled
-
+    
     def run(self, runnable, workspace_type=None, setup_net_list=None):
         """Run the given runnable.
 
@@ -143,34 +126,34 @@ class Session(object):
         """
         assert self.is_open(), 'Session is closed.'
         assert runnable is not None, 'Got a none runnable.'
-        self._run_compiled(self.compile(runnable, workspace_type,
-                                        setup_net_list).obj)
-
+        self._run_compiled(self.compile(runnable, workspace_type, setup_net_list).obj)
+    
     def close(self):
         if self.is_open():
             self._do_close()
             self._open = False
-
+    
     def fetch_output(self, output):
         raise NotImplementedError()
-
+    
     def _run_compiled(self, task_group):
         raise NotImplementedError()
-
+    
     @classmethod
     def _compile_task_group(cls, task_group, setup_net_list=None):
         return task_group
-
+    
     def _do_close(self):
         pass
-
+    
     def __enter__(self):
         assert self._open, 'Session already closed.'
         return self
-
+    
     def __exit__(self, ex_type, value, traceback):
         if ex_type is None:
             self.close()
+
 
 
 class LocalSession(Session):
@@ -182,10 +165,11 @@ class LocalSession(Session):
     but this behavior may change in the future. Only tasks pointing to the
     same logical node are guaranteed to always run in the same workspace.
     """
+    
     def __init__(self, ws=None):
         Session.__init__(self)
-        self._ws = ws or workspace.C.Workspace.current
-
+        self._ws = (ws or workspace.C.Workspace.current)
+    
     @classmethod
     def _compile_task_group(cls, task_group, setup_net_list=None):
         with Cluster():
@@ -193,21 +177,19 @@ class LocalSession(Session):
         plan = core.Plan('task_group_plan')
         plan.AddStep(task.get_step())
         return (plan, task.output_list(), task.workspace_type)
-
+    
     def _run_compiled(self, compiled):
-        plan, output_list, workspace_type = compiled
-
-        # make sure the output blobs belong to the parent workspace
+        (plan, output_list, workspace_type) = compiled
         outputs = []
         for name in output_list.names():
             self._ws.create_blob(str(name))
             outputs.append(core.BlobReference(str(name)))
         output_list.set_values(outputs, _fetch_func=self._fetch_output)
-        task_ws = (
-            workspace.C.Workspace(self._ws)
-            if workspace_type == WorkspaceType.PRIVATE else self._ws)
+        task_ws = (workspace.C.Workspace(self._ws) if workspace_type == WorkspaceType.PRIVATE else self._ws)
         with workspace.WorkspaceGuard(task_ws):
             task_ws.run(plan)
-
+    
     def _fetch_output(self, output):
         return self._ws.blobs[str(output)].fetch()
+
+

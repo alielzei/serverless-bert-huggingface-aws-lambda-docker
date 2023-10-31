@@ -1,7 +1,8 @@
 from .module import Module
 
+
 class Flatten(Module):
-    r"""
+    """
     Flattens a contiguous range of dims into a tensor. For use with :class:`~nn.Sequential`.
     Args:
         start_dim: first dim to flatten (default = 1).
@@ -19,11 +20,13 @@ class Flatten(Module):
         >>> )
     """
     __constants__ = ['start_dim', 'end_dim']
-
+    
     def __init__(self, start_dim=1, end_dim=-1):
         super(Flatten, self).__init__()
         self.start_dim = start_dim
         self.end_dim = end_dim
-
+    
     def forward(self, input):
         return input.flatten(self.start_dim, self.end_dim)
+
+

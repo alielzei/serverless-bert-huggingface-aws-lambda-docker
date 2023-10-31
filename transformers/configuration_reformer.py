@@ -1,34 +1,13 @@
-# coding=utf-8
-# Copyright 2020 The Trax Authors and The HuggingFace Inc. team.
-# Copyright (c) 2018, NVIDIA CORPORATION.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """ Reformer model configuration """
 
 from .configuration_utils import PretrainedConfig
 from .utils import logging
-
-
 logger = logging.get_logger(__name__)
-
-REFORMER_PRETRAINED_CONFIG_ARCHIVE_MAP = {
-    "google/reformer-crime-and-punishment": "https://cdn.huggingface.co/google/reformer-crime-and-punishment/config.json",
-    "google/reformer-enwik8": "https://cdn.huggingface.co/google/reformer-enwik8/config.json",
-}
+REFORMER_PRETRAINED_CONFIG_ARCHIVE_MAP = {'google/reformer-crime-and-punishment': 'https://cdn.huggingface.co/google/reformer-crime-and-punishment/config.json', 'google/reformer-enwik8': 'https://cdn.huggingface.co/google/reformer-enwik8/config.json'}
 
 
 class ReformerConfig(PretrainedConfig):
-    r"""
+    """
     This is the configuration class to store the configuration of a :class:`~transformers.ReformerModel`. It is used to
     instantiate a Reformer model according to the specified arguments, defining the model architecture.
 
@@ -136,8 +115,7 @@ class ReformerConfig(PretrainedConfig):
             memory and time intensive the hashing becomes.
         pad_token_id (:obj:`int`, `optional`, defaults to 0):
             The token id for the padding token.
-        vocab_size (:obj:`int`, `optional`, defaults to 320):\
-            Vocabulary size of the BERT model. Defines the number of different tokens that can be represented by the
+        vocab_size (:obj:`int`, `optional`, defaults to 320):            Vocabulary size of the BERT model. Defines the number of different tokens that can be represented by the
             :obj:`inputs_ids` passed when calling :class:`~transformers.ReformerModel`.
         tie_word_embeddings (:obj:`bool`, `optional`, defaults to :obj:`False`):
             Whether to tie input and output embeddings.
@@ -155,51 +133,10 @@ class ReformerConfig(PretrainedConfig):
         >>> # Accessing the model configuration
         >>> configuration = model.config
     """
-    model_type = "reformer"
-
-    def __init__(
-        self,
-        attention_head_size=64,
-        attn_layers=["local", "lsh", "local", "lsh", "local", "lsh"],
-        axial_norm_std=1.0,
-        axial_pos_embds=True,
-        axial_pos_shape=[64, 64],
-        axial_pos_embds_dim=[64, 192],
-        chunk_size_lm_head=0,
-        eos_token_id=2,
-        feed_forward_size=512,
-        hash_seed=None,
-        hidden_act="relu",
-        hidden_dropout_prob=0.05,
-        hidden_size=256,
-        initializer_range=0.02,
-        is_decoder=False,
-        layer_norm_eps=1e-12,
-        local_num_chunks_before=1,
-        local_num_chunks_after=0,
-        local_attention_probs_dropout_prob=0.05,
-        local_attn_chunk_length=64,
-        lsh_attn_chunk_length=64,
-        lsh_attention_probs_dropout_prob=0.0,
-        lsh_num_chunks_before=1,
-        lsh_num_chunks_after=0,
-        max_position_embeddings=4096,
-        num_attention_heads=12,
-        num_buckets=None,
-        num_hashes=1,
-        pad_token_id=0,
-        vocab_size=320,
-        tie_word_embeddings=False,
-        **kwargs
-    ):
-        super().__init__(
-            pad_token_id=pad_token_id,
-            eos_token_id=eos_token_id,
-            is_decoder=is_decoder,
-            tie_word_embeddings=tie_word_embeddings,
-            **kwargs,
-        )
-
+    model_type = 'reformer'
+    
+    def __init__(self, attention_head_size=64, attn_layers=['local', 'lsh', 'local', 'lsh', 'local', 'lsh'], axial_norm_std=1.0, axial_pos_embds=True, axial_pos_shape=[64, 64], axial_pos_embds_dim=[64, 192], chunk_size_lm_head=0, eos_token_id=2, feed_forward_size=512, hash_seed=None, hidden_act='relu', hidden_dropout_prob=0.05, hidden_size=256, initializer_range=0.02, is_decoder=False, layer_norm_eps=1e-12, local_num_chunks_before=1, local_num_chunks_after=0, local_attention_probs_dropout_prob=0.05, local_attn_chunk_length=64, lsh_attn_chunk_length=64, lsh_attention_probs_dropout_prob=0.0, lsh_num_chunks_before=1, lsh_num_chunks_after=0, max_position_embeddings=4096, num_attention_heads=12, num_buckets=None, num_hashes=1, pad_token_id=0, vocab_size=320, tie_word_embeddings=False, **kwargs):
+        super().__init__(pad_token_id=pad_token_id, eos_token_id=eos_token_id, is_decoder=is_decoder, tie_word_embeddings=tie_word_embeddings, **kwargs)
         self.hash_seed = hash_seed
         self.vocab_size = vocab_size
         self.attention_head_size = attention_head_size
@@ -207,7 +144,7 @@ class ReformerConfig(PretrainedConfig):
         self.num_attention_heads = num_attention_heads
         self.num_hashes = num_hashes
         self.num_hidden_layers = len(attn_layers)
-        self.num_buckets = tuple(num_buckets) if isinstance(num_buckets, list) else num_buckets
+        self.num_buckets = (tuple(num_buckets) if isinstance(num_buckets, list) else num_buckets)
         self.lsh_attn_chunk_length = lsh_attn_chunk_length
         self.local_attn_chunk_length = local_attn_chunk_length
         self.lsh_num_chunks_after = lsh_num_chunks_after
@@ -228,3 +165,5 @@ class ReformerConfig(PretrainedConfig):
         self.axial_norm_std = axial_norm_std
         self.chunk_size_lm_head = chunk_size_lm_head
         self.attn_layers = attn_layers
+
+

@@ -6,7 +6,7 @@ and fall in three categories: 1) type of mapping, 2) API of mapping, 3) unsuppor
 mapping.
 """
 
-CONV_VERSION = 0,
+CONV_VERSION = (0, )
 CONV_INIT = 1
 CONV_DEVICE = 2
 CONV_MEM = 3
@@ -43,7 +43,6 @@ CONV_TYPE = 33
 CONV_LITERAL = 34
 CONV_NUMERIC_LITERAL = 35
 CONV_LAST = 36
-
 API_DRIVER = 37
 API_RUNTIME = 38
 API_BLAS = 39
@@ -53,8 +52,8 @@ API_LAST = 42
 API_FFT = 43
 API_RTC = 44
 API_ROCTX = 45
-
 HIP_UNSUPPORTED = 46
 API_PYTORCH = 1337
 API_CAFFE2 = 1338
 API_C10 = 1339
+

@@ -1,14 +1,13 @@
 """
 This module converts objects into numpy array.
 """
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
 import numpy as np
 import torch
 import six
-
 
 def make_np(x):
     """
@@ -18,26 +17,14 @@ def make_np(x):
     Returns:
         numpy.array: Numpy array
     """
-    if isinstance(x, np.ndarray):
-        return x
-    if isinstance(x, six.string_types):  # Caffe2 will pass name of blob(s) to fetch
-        return _prepare_caffe2(x)
-    if np.isscalar(x):
-        return np.array([x])
-    if isinstance(x, torch.Tensor):
-        return _prepare_pytorch(x)
-    raise NotImplementedError(
-        'Got {}, but numpy array, torch tensor, or caffe2 blob name are expected.'.format(type(x)))
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.utils.tensorboard._convert_np.make_np', 'make_np(x)', {'np': np, 'six': six, '_prepare_caffe2': _prepare_caffe2, 'torch': torch, '_prepare_pytorch': _prepare_pytorch, 'x': x}, 1)
 
 def _prepare_pytorch(x):
-    if isinstance(x, torch.autograd.Variable):
-        x = x.data
-    x = x.cpu().numpy()
-    return x
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.utils.tensorboard._convert_np._prepare_pytorch', '_prepare_pytorch(x)', {'torch': torch, 'x': x}, 1)
 
 def _prepare_caffe2(x):
-    from caffe2.python import workspace
-    x = workspace.FetchBlob(x)
-    return x
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.utils.tensorboard._convert_np._prepare_caffe2', '_prepare_caffe2(x)', {'x': x}, 1)
+

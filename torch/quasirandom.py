@@ -2,7 +2,7 @@ import torch
 
 
 class SobolEngine(object):
-    r"""
+    """
     The :class:`torch.quasirandom.SobolEngine` is an engine for generating
     (scrambled) Sobol sequences. Sobol sequences are an example of low
     discrepancy quasi-random sequences.
@@ -41,43 +41,34 @@ class SobolEngine(object):
     """
     MAXBIT = 30
     MAXDIM = 1111
-
+    
     def __init__(self, dimension, scramble=False, seed=None):
-        if dimension > self.MAXDIM or dimension < 1:
-            raise ValueError("Supported range of dimensionality "
-                             "for SobolEngine is [1, {}]".format(self.MAXDIM))
-
+        if (dimension > self.MAXDIM or dimension < 1):
+            raise ValueError('Supported range of dimensionality for SobolEngine is [1, {}]'.format(self.MAXDIM))
         self.seed = seed
         self.scramble = scramble
         self.dimension = dimension
-
-        cpu = torch.device("cpu")
-
+        cpu = torch.device('cpu')
         self.sobolstate = torch.zeros(dimension, self.MAXBIT, device=cpu, dtype=torch.long)
         torch._sobol_engine_initialize_state_(self.sobolstate, self.dimension)
-
         if self.scramble:
             g = torch.Generator()
             if self.seed is not None:
                 g.manual_seed(self.seed)
             else:
                 g.seed()
-
             shift_ints = torch.randint(2, (self.dimension, self.MAXBIT), device=cpu, generator=g)
             self.shift = torch.mv(shift_ints, torch.pow(2, torch.arange(0, self.MAXBIT, device=cpu)))
-
             ltm_dims = (self.dimension, self.MAXBIT, self.MAXBIT)
             ltm = torch.randint(2, ltm_dims, device=cpu, generator=g).tril()
-
             torch._sobol_engine_scramble_(self.sobolstate, ltm, self.dimension)
         else:
             self.shift = torch.zeros(self.dimension, device=cpu, dtype=torch.long)
-
         self.quasi = self.shift.clone(memory_format=torch.contiguous_format)
         self.num_generated = 0
-
+    
     def draw(self, n=1, out=None, dtype=torch.float32):
-        r"""
+        """
         Function to draw a sequence of :attr:`n` points from a Sobol sequence.
         Note that the samples are dependent on the previous samples. The size
         of the result is :math:`(n, dimension)`.
@@ -90,24 +81,23 @@ class SobolEngine(object):
                                                     returned tensor.
                                                     Default: ``torch.float32``
         """
-        result, self.quasi = torch._sobol_engine_draw(self.quasi, n, self.sobolstate,
-                                                      self.dimension, self.num_generated, dtype=dtype)
+        (result, self.quasi) = torch._sobol_engine_draw(self.quasi, n, self.sobolstate, self.dimension, self.num_generated, dtype=dtype)
         self.num_generated += n
         if out is not None:
             out.resize_as_(result).copy_(result)
             return out
         return result
-
+    
     def reset(self):
-        r"""
+        """
         Function to reset the ``SobolEngine`` to base state.
         """
         self.quasi.copy_(self.shift)
         self.num_generated = 0
         return self
-
+    
     def fast_forward(self, n):
-        r"""
+        """
         Function to fast-forward the state of the ``SobolEngine`` by
         :attr:`n` steps. This is equivalent to drawing :attr:`n` samples
         without using the samples.
@@ -118,7 +108,7 @@ class SobolEngine(object):
         torch._sobol_engine_ff_(self.quasi, n, self.sobolstate, self.dimension, self.num_generated)
         self.num_generated += n
         return self
-
+    
     def __repr__(self):
         fmt_string = ['dimension={}'.format(self.dimension)]
         if self.scramble:
@@ -126,3 +116,5 @@ class SobolEngine(object):
         if self.seed is not None:
             fmt_string += ['seed={}'.format(self.seed)]
         return self.__class__.__name__ + '(' + ', '.join(fmt_string) + ')'
+
+

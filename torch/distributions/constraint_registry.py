@@ -1,4 +1,4 @@
-r"""
+"""
 PyTorch provides two global :class:`ConstraintRegistry` objects that link
 :class:`~torch.distributions.constraints.Constraint` objects to
 :class:`~torch.distributions.transforms.Transform` objects. These objects both
@@ -66,24 +66,19 @@ object.
 """
 
 import numbers
-
 from torch.distributions import constraints, transforms
-
-__all__ = [
-    'ConstraintRegistry',
-    'biject_to',
-    'transform_to',
-]
+__all__ = ['ConstraintRegistry', 'biject_to', 'transform_to']
 
 
 class ConstraintRegistry(object):
     """
     Registry to link constraints to transforms.
     """
+    
     def __init__(self):
         self._registry = {}
         super(ConstraintRegistry, self).__init__()
-
+    
     def register(self, constraint, factory=None):
         """
         Registers a :class:`~torch.distributions.constraints.Constraint`
@@ -101,21 +96,15 @@ class ConstraintRegistry(object):
             factory (callable): A callable that inputs a constraint object and returns
                 a  :class:`~torch.distributions.transforms.Transform` object.
         """
-        # Support use as decorator.
         if factory is None:
             return lambda factory: self.register(constraint, factory)
-
-        # Support calling on singleton instances.
         if isinstance(constraint, constraints.Constraint):
             constraint = type(constraint)
-
-        if not isinstance(constraint, type) or not issubclass(constraint, constraints.Constraint):
-            raise TypeError('Expected constraint to be either a Constraint subclass or instance, '
-                            'but got {}'.format(constraint))
-
+        if (not isinstance(constraint, type) or not issubclass(constraint, constraints.Constraint)):
+            raise TypeError('Expected constraint to be either a Constraint subclass or instance, but got {}'.format(constraint))
         self._registry[constraint] = factory
         return factory
-
+    
     def __call__(self, constraint):
         """
         Looks up a transform to constrained space, given a constraint object.
@@ -135,22 +124,14 @@ class ConstraintRegistry(object):
         Raises:
             `NotImplementedError` if no transform has been registered.
         """
-        # Look up by Constraint subclass.
         try:
             factory = self._registry[type(constraint)]
         except KeyError:
-            raise NotImplementedError(
-                'Cannot transform {} constraints'.format(type(constraint).__name__))
+            raise NotImplementedError('Cannot transform {} constraints'.format(type(constraint).__name__))
         return factory(constraint)
-
 
 biject_to = ConstraintRegistry()
 transform_to = ConstraintRegistry()
-
-
-################################################################################
-# Registration Table
-################################################################################
 
 @biject_to.register(constraints.real)
 @biject_to.register(constraints.real_vector)
@@ -159,87 +140,56 @@ transform_to = ConstraintRegistry()
 def _transform_to_real(constraint):
     return transforms.identity_transform
 
-
 @biject_to.register(constraints.positive)
 @transform_to.register(constraints.positive)
 def _transform_to_positive(constraint):
     return transforms.ExpTransform()
-
 
 @biject_to.register(constraints.greater_than)
 @biject_to.register(constraints.greater_than_eq)
 @transform_to.register(constraints.greater_than)
 @transform_to.register(constraints.greater_than_eq)
 def _transform_to_greater_than(constraint):
-    return transforms.ComposeTransform([transforms.ExpTransform(),
-                                        transforms.AffineTransform(constraint.lower_bound, 1)])
-
+    return transforms.ComposeTransform([transforms.ExpTransform(), transforms.AffineTransform(constraint.lower_bound, 1)])
 
 @biject_to.register(constraints.less_than)
 @transform_to.register(constraints.less_than)
 def _transform_to_less_than(constraint):
-    return transforms.ComposeTransform([transforms.ExpTransform(),
-                                        transforms.AffineTransform(constraint.upper_bound, -1)])
-
+    return transforms.ComposeTransform([transforms.ExpTransform(), transforms.AffineTransform(constraint.upper_bound, -1)])
 
 @biject_to.register(constraints.interval)
 @biject_to.register(constraints.half_open_interval)
 @transform_to.register(constraints.interval)
 @transform_to.register(constraints.half_open_interval)
 def _transform_to_interval(constraint):
-    # Handle the special case of the unit interval.
-    lower_is_0 = isinstance(constraint.lower_bound, numbers.Number) and constraint.lower_bound == 0
-    upper_is_1 = isinstance(constraint.upper_bound, numbers.Number) and constraint.upper_bound == 1
-    if lower_is_0 and upper_is_1:
-        return transforms.SigmoidTransform()
-
-    loc = constraint.lower_bound
-    scale = constraint.upper_bound - constraint.lower_bound
-    return transforms.ComposeTransform([transforms.SigmoidTransform(),
-                                        transforms.AffineTransform(loc, scale)])
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributions.constraint_registry._transform_to_interval', '_transform_to_interval(constraint)', {'numbers': numbers, 'transforms': transforms, 'biject_to': biject_to, 'constraints': constraints, 'transform_to': transform_to, 'constraint': constraint}, 1)
 
 @biject_to.register(constraints.simplex)
 def _biject_to_simplex(constraint):
     return transforms.StickBreakingTransform()
 
-
 @transform_to.register(constraints.simplex)
 def _transform_to_simplex(constraint):
     return transforms.SoftmaxTransform()
 
-
-# TODO define a bijection for LowerCholeskyTransform
 @transform_to.register(constraints.lower_cholesky)
 def _transform_to_lower_cholesky(constraint):
     return transforms.LowerCholeskyTransform()
 
-
 @biject_to.register(constraints.cat)
 def _biject_to_cat(constraint):
-    return transforms.CatTransform([biject_to(c)
-                                    for c in constraint.cseq],
-                                   constraint.dim,
-                                   constraint.lengths)
-
+    return transforms.CatTransform([biject_to(c) for c in constraint.cseq], constraint.dim, constraint.lengths)
 
 @transform_to.register(constraints.cat)
 def _transform_to_cat(constraint):
-    return transforms.CatTransform([transform_to(c)
-                                    for c in constraint.cseq],
-                                   constraint.dim,
-                                   constraint.lengths)
-
+    return transforms.CatTransform([transform_to(c) for c in constraint.cseq], constraint.dim, constraint.lengths)
 
 @biject_to.register(constraints.stack)
 def _biject_to_stack(constraint):
-    return transforms.StackTransform(
-        [biject_to(c)
-         for c in constraint.cseq], constraint.dim)
-
+    return transforms.StackTransform([biject_to(c) for c in constraint.cseq], constraint.dim)
 
 @transform_to.register(constraints.stack)
 def _transform_to_stack(constraint):
-    return transforms.StackTransform(
-        [transform_to(c)
-         for c in constraint.cseq], constraint.dim)
+    return transforms.StackTransform([transform_to(c) for c in constraint.cseq], constraint.dim)
+

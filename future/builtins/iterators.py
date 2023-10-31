@@ -33,10 +33,8 @@ the standard library version is not portable, nor anywhere near complete.
 """
 
 from __future__ import division, absolute_import, print_function
-
 import itertools
 from future import utils
-
 if not utils.PY3:
     filter = itertools.ifilter
     map = itertools.imap
@@ -50,3 +48,4 @@ else:
     range = builtins.range
     zip = builtins.zip
     __all__ = []
+

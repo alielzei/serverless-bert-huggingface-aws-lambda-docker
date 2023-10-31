@@ -1,37 +1,13 @@
-# coding=utf-8
-# Copyright 2010, DPR authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """ DPR model configuration """
 
 from .configuration_utils import PretrainedConfig
 from .utils import logging
-
-
 logger = logging.get_logger(__name__)
-
-DPR_PRETRAINED_CONFIG_ARCHIVE_MAP = {
-    "facebook/dpr-ctx_encoder-single-nq-base": "https://s3.amazonaws.com/models.huggingface.co/bert/facebook/dpr-ctx_encoder-single-nq-base/config.json",
-    "facebook/dpr-question_encoder-single-nq-base": "https://s3.amazonaws.com/models.huggingface.co/bert/facebook/dpr-question_encoder-single-nq-base/config.json",
-    "facebook/dpr-reader-single-nq-base": "https://s3.amazonaws.com/models.huggingface.co/bert/facebook/dpr-reader-single-nq-base/config.json",
-    "facebook/dpr-ctx_encoder-multiset-base": "https://s3.amazonaws.com/models.huggingface.co/bert/facebook/dpr-ctx_encoder-multiset-base/config.json",
-    "facebook/dpr-question_encoder-multiset-base": "https://s3.amazonaws.com/models.huggingface.co/bert/facebook/dpr-question_encoder-multiset-base/config.json",
-    "facebook/dpr-reader-multiset-base": "https://s3.amazonaws.com/models.huggingface.co/bert/facebook/dpr-reader-multiset-base/config.json",
-}
+DPR_PRETRAINED_CONFIG_ARCHIVE_MAP = {'facebook/dpr-ctx_encoder-single-nq-base': 'https://s3.amazonaws.com/models.huggingface.co/bert/facebook/dpr-ctx_encoder-single-nq-base/config.json', 'facebook/dpr-question_encoder-single-nq-base': 'https://s3.amazonaws.com/models.huggingface.co/bert/facebook/dpr-question_encoder-single-nq-base/config.json', 'facebook/dpr-reader-single-nq-base': 'https://s3.amazonaws.com/models.huggingface.co/bert/facebook/dpr-reader-single-nq-base/config.json', 'facebook/dpr-ctx_encoder-multiset-base': 'https://s3.amazonaws.com/models.huggingface.co/bert/facebook/dpr-ctx_encoder-multiset-base/config.json', 'facebook/dpr-question_encoder-multiset-base': 'https://s3.amazonaws.com/models.huggingface.co/bert/facebook/dpr-question_encoder-multiset-base/config.json', 'facebook/dpr-reader-multiset-base': 'https://s3.amazonaws.com/models.huggingface.co/bert/facebook/dpr-reader-multiset-base/config.json'}
 
 
 class DPRConfig(PretrainedConfig):
-    r"""
+    """
     :class:`~transformers.DPRConfig` is the configuration class to store the configuration of a
     `DPRModel`.
 
@@ -76,29 +52,10 @@ class DPRConfig(PretrainedConfig):
             Dimension of the projection for the context and question encoders.
             If it is set to zero (default), then no projection is done.
     """
-    model_type = "dpr"
-
-    def __init__(
-        self,
-        vocab_size=30522,
-        hidden_size=768,
-        num_hidden_layers=12,
-        num_attention_heads=12,
-        intermediate_size=3072,
-        hidden_act="gelu",
-        hidden_dropout_prob=0.1,
-        attention_probs_dropout_prob=0.1,
-        max_position_embeddings=512,
-        type_vocab_size=2,
-        initializer_range=0.02,
-        layer_norm_eps=1e-12,
-        pad_token_id=0,
-        gradient_checkpointing=False,
-        projection_dim: int = 0,
-        **kwargs
-    ):
+    model_type = 'dpr'
+    
+    def __init__(self, vocab_size=30522, hidden_size=768, num_hidden_layers=12, num_attention_heads=12, intermediate_size=3072, hidden_act='gelu', hidden_dropout_prob=0.1, attention_probs_dropout_prob=0.1, max_position_embeddings=512, type_vocab_size=2, initializer_range=0.02, layer_norm_eps=1e-12, pad_token_id=0, gradient_checkpointing=False, projection_dim: int = 0, **kwargs):
         super().__init__(pad_token_id=pad_token_id, **kwargs)
-
         self.vocab_size = vocab_size
         self.hidden_size = hidden_size
         self.num_hidden_layers = num_hidden_layers
@@ -113,3 +70,5 @@ class DPRConfig(PretrainedConfig):
         self.layer_norm_eps = layer_norm_eps
         self.gradient_checkpointing = gradient_checkpointing
         self.projection_dim = projection_dim
+
+

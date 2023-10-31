@@ -1,22 +1,8 @@
-## @package tt_core
-# Module caffe2.python.tt_core
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
 import numpy as np
-
-"""
-The following methods are various utility methods for using the Tensor-Train
-decomposition, or TT-decomposition introduced by I. V. Oseledets (2011) in his
-paper (http://epubs.siam.org/doi/abs/10.1137/090752286).
-
-Broadly speaking, these methods are used to replace fully connected layers in
-neural networks with Tensor-Train layers introduced by A. Novikov et. al. (2015)
-in their paper (http://arxiv.org/abs/1509.06569). More details about each of
-the methods are provided in each respective docstring.
-"""
-
+'\nThe following methods are various utility methods for using the Tensor-Train\ndecomposition, or TT-decomposition introduced by I. V. Oseledets (2011) in his\npaper (http://epubs.siam.org/doi/abs/10.1137/090752286).\n\nBroadly speaking, these methods are used to replace fully connected layers in\nneural networks with Tensor-Train layers introduced by A. Novikov et. al. (2015)\nin their paper (http://arxiv.org/abs/1509.06569). More details about each of\nthe methods are provided in each respective docstring.\n'
 
 def init_tt_cores(inp_sizes, out_sizes, tt_ranks, seed=1234):
     """
@@ -43,59 +29,8 @@ def init_tt_cores(inp_sizes, out_sizes, tt_ranks, seed=1234):
     Returns:
         cores: One-dimensional list of cores concatentated along an axis
     """
-    np.random.seed(seed)
-
-    # Assert that the sizes of each input is correct
-    assert(len(inp_sizes) == len(out_sizes)), \
-           "The number of input dimensions (" + str(len(inp_sizes)) + \
-           ") must be equal to the number of output dimensions (" + \
-           str(len(out_sizes)) + ")."
-
-    assert(len(tt_ranks) == len(inp_sizes) + 1), \
-           "The number of tt-ranks (" + str(len(tt_ranks)) + ") must be " + \
-           "one more than the number of input and output dims (" + \
-           str(len(out_sizes)) + ")."
-
-    # Convert to numpy arrays
-    inp_sizes = np.array(inp_sizes)
-    out_sizes = np.array(out_sizes)
-    tt_ranks = np.array(tt_ranks)
-
-    # Initialize the cores array
-    cores_len = np.sum(
-        inp_sizes * out_sizes * tt_ranks[1:] * tt_ranks[:-1])
-    cores = np.zeros(cores_len)
-    cores_idx = 0
-    rv = 1
-
-    # Compute the full list of cores by computing each individual one
-    for i in range(inp_sizes.shape[0]):
-        shape = [tt_ranks[i],
-                 inp_sizes[i],
-                 out_sizes[i],
-                 tt_ranks[i + 1]]
-
-        # Precompute the shape of each core
-        tall_shape = (np.prod(shape[:3]), shape[3])
-
-        # Randomly initialize the current core using a normal distribution
-        curr_core = np.dot(rv, np.random.normal(
-            0, 1, size=(shape[0], np.prod(shape[1:]))))
-        curr_core = curr_core.reshape(tall_shape)
-
-        # Orthogonalize the initialized current core and append to cores list
-        if i < inp_sizes.shape[0] - 1:
-            curr_core, rv = np.linalg.qr(curr_core)
-        cores[cores_idx:cores_idx +
-              curr_core.size] = curr_core.flatten()
-        cores_idx += curr_core.size
-
-    # Normalize the list of arrays using this Glarot trick
-    glarot_style = (np.prod(inp_sizes) *
-                    np.prod(tt_ranks))**(1.0 / inp_sizes.shape[0])
-
-    return (0.1 / glarot_style) * np.array(cores).astype(np.float32)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('caffe2.python.tt_core.init_tt_cores', 'init_tt_cores(inp_sizes, out_sizes, tt_ranks, seed=1234)', {'np': np, 'inp_sizes': inp_sizes, 'out_sizes': out_sizes, 'tt_ranks': tt_ranks, 'seed': seed}, 1)
 
 def matrix_to_tt(W, inp_sizes, out_sizes, tt_ranks):
     """
@@ -129,66 +64,8 @@ def matrix_to_tt(W, inp_sizes, out_sizes, tt_ranks):
     Returns:
         new_cores: One-dimensional list of cores concatentated along an axis
    """
-
-    # Assert that the sizes of each input is correct
-    assert(len(inp_sizes) == len(out_sizes)), \
-           "The number of input dimensions (" + str(len(inp_sizes)) + \
-           ") must be equal to the number of output dimensions (" + \
-           str(len(out_sizes)) + ")."
-
-    assert(len(tt_ranks) == len(inp_sizes) + 1), \
-           "The number of tt-ranks (" + str(len(tt_ranks)) + ") must be " + \
-           "one more than the number of input and output dimensions (" + \
-           str(len(out_sizes)) + ")."
-
-    assert(W.shape[0] == np.prod(inp_sizes)), \
-           "The product of the input sizes (" + str(np.prod(inp_sizes)) + \
-           ") must be equal to first dimension of W (" + str(W.shape[0]) + ")."
-
-    assert(W.shape[1] == np.prod(out_sizes)), \
-           "The product of the output sizes (" + str(np.prod(out_sizes)) + \
-           ") must be equal to second dimension of W (" + str(W.shape[1]) + ")."
-
-    # W is transposed so that the multiplication X * W^T can be computed, just
-    # as it is in the FC layer.
-    W = W.transpose()
-
-    # Convert to numpy arrays
-    inp_sizes = np.array(inp_sizes)
-    out_sizes = np.array(out_sizes)
-    tt_ranks = np.array(tt_ranks)
-
-    # Copy the original weight matrix in order to permute and reshape the weight
-    # matrix. In addition, the inp_sizes and out_sizes are combined to a single
-    # sizes array to use the tt_svd helper method, which only consumes a single
-    # sizes array.
-    W_copy = W.copy()
-    total_inp_size = inp_sizes.size
-    W_copy = np.reshape(W_copy, np.concatenate((inp_sizes, out_sizes)))
-    order = np.repeat(np.arange(0, total_inp_size), 2) + \
-            np.tile([0, total_inp_size], total_inp_size)
-    W_copy = np.transpose(W_copy, axes=order)
-    W_copy = np.reshape(W_copy, inp_sizes * out_sizes)
-
-    # Use helper method to convert the W matrix copy into the preliminary
-    # cores array.
-    cores = tt_svd(W_copy, inp_sizes * out_sizes, tt_ranks)
-
-    # Permute the dimensions of each of the cores to be compatible with the
-    # TT-layer.
-    new_cores = np.zeros(cores.shape).astype(np.float32)
-    idx = 0
-    for i in range(len(inp_sizes)):
-        shape = (tt_ranks[i], inp_sizes[i], out_sizes[i], tt_ranks[i + 1])
-        current_core = cores[idx:idx + np.prod(shape)].reshape(shape)
-        current_core = current_core.transpose((1, 3, 0, 2))
-        new_cores[new_cores.shape[0] - idx - np.prod(shape):
-                  new_cores.shape[0] - idx] \
-                  = current_core.flatten()
-        idx += np.prod(shape)
-
-    return new_cores
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('caffe2.python.tt_core.matrix_to_tt', 'matrix_to_tt(W, inp_sizes, out_sizes, tt_ranks)', {'np': np, 'tt_svd': tt_svd, 'W': W, 'inp_sizes': inp_sizes, 'out_sizes': out_sizes, 'tt_ranks': tt_ranks}, 1)
 
 def tt_svd(W, sizes, tt_ranks):
     """
@@ -207,35 +84,9 @@ def tt_svd(W, sizes, tt_ranks):
     Returns:
         cores: One-dimensional list of cores concatentated along an axis
    """
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('caffe2.python.tt_core.tt_svd', 'tt_svd(W, sizes, tt_ranks)', {'np': np, 'W': W, 'sizes': sizes, 'tt_ranks': tt_ranks}, 1)
 
-    assert(len(tt_ranks) == len(sizes) + 1)
-
-    C = W.copy()
-    total_size = sizes.size
-    core = np.zeros(np.sum(tt_ranks[:-1] * sizes * tt_ranks[1:]),
-                    dtype='float32')
-
-    # Compute iterative reduced SVD operations and store each resulting U matrix
-    # as an individual core.
-    pos = 0
-    for i in range(0, total_size - 1):
-        shape = tt_ranks[i] * sizes[i]
-        C = np.reshape(C, [shape, -1])
-        U, S, V = np.linalg.svd(C, full_matrices=False)
-        U = U[:, 0:tt_ranks[i + 1]]
-        S = S[0:tt_ranks[i + 1]]
-        V = V[0:tt_ranks[i + 1], :]
-
-        core[pos:pos + tt_ranks[i] * sizes[i] * tt_ranks[i + 1]] = U.ravel()
-        pos += tt_ranks[i] * sizes[i] * tt_ranks[i + 1]
-        C = np.dot(np.diag(S), V)
-
-    core[pos:pos + tt_ranks[total_size - 1] *
-         sizes[total_size - 1] * tt_ranks[total_size]] = C.ravel()
-    return core
-
-
-# TODO(Surya) Write a method to convert an entire network where all fully
-# connected layers are replaced by an TT layer.
 def fc_net_to_tt_net(net):
     pass
+

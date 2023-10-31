@@ -1,30 +1,19 @@
 """This will be the home for the policy that hooks in the new
 code that adds all the email6 features.
 """
+
 from __future__ import unicode_literals
 from __future__ import division
 from __future__ import absolute_import
 from future.builtins import super
-
-from future.standard_library.email._policybase import (Policy, Compat32,
-                                                  compat32, _extend_docstrings)
+from future.standard_library.email._policybase import Policy, Compat32, compat32, _extend_docstrings
 from future.standard_library.email.utils import _has_surrogates
 from future.standard_library.email.headerregistry import HeaderRegistry as HeaderRegistry
+__all__ = ['Compat32', 'compat32', 'Policy', 'EmailPolicy', 'default', 'strict', 'SMTP', 'HTTP']
 
-__all__ = [
-    'Compat32',
-    'compat32',
-    'Policy',
-    'EmailPolicy',
-    'default',
-    'strict',
-    'SMTP',
-    'HTTP',
-    ]
 
 @_extend_docstrings
 class EmailPolicy(Policy):
-
     """+
     PROVISIONAL
 
@@ -64,17 +53,14 @@ class EmailPolicy(Policy):
                            treated as unstructured.  This list will be
                            completed before the extension is marked stable.)
     """
-
     refold_source = 'long'
     header_factory = HeaderRegistry()
-
+    
     def __init__(self, **kw):
-        # Ensure that each new instance gets a unique header factory
-        # (as opposed to clones, which share the factory).
         if 'header_factory' not in kw:
             object.__setattr__(self, 'header_factory', HeaderRegistry())
         super().__init__(**kw)
-
+    
     def header_max_count(self, name):
         """+
         The implementation for this class returns the max_count attribute from
@@ -82,17 +68,7 @@ class EmailPolicy(Policy):
         of type 'name'.
         """
         return self.header_factory[name].max_count
-
-    # The logic of the next three methods is chosen such that it is possible to
-    # switch a Message object between a Compat32 policy and a policy derived
-    # from this class and have the results stay consistent.  This allows a
-    # Message object constructed with this policy to be passed to a library
-    # that only handles Compat32 objects, or to receive such an object and
-    # convert it to use the newer style by just changing its policy.  It is
-    # also chosen because it postpones the relatively expensive full rfc5322
-    # parse until as late as possible when parsing from source, since in many
-    # applications only a few headers will actually be inspected.
-
+    
     def header_source_parse(self, sourcelines):
         """+
         The name is parsed as everything up to the ':' and returned unmodified.
@@ -102,10 +78,10 @@ class EmailPolicy(Policy):
         is the same as Compat32).
 
         """
-        name, value = sourcelines[0].split(':', 1)
+        (name, value) = sourcelines[0].split(':', 1)
         value = value.lstrip(' \t') + ''.join(sourcelines[1:])
         return (name, value.rstrip('\r\n'))
-
+    
     def header_store_parse(self, name, value):
         """+
         The name is returned unchanged.  If the input value has a 'name'
@@ -116,13 +92,12 @@ class EmailPolicy(Policy):
         CR or LF characters.
 
         """
-        if hasattr(value, 'name') and value.name.lower() == name.lower():
+        if (hasattr(value, 'name') and value.name.lower() == name.lower()):
             return (name, value)
-        if isinstance(value, str) and len(value.splitlines())>1:
-            raise ValueError("Header values may not contain linefeed "
-                             "or carriage return characters")
+        if (isinstance(value, str) and len(value.splitlines()) > 1):
+            raise ValueError('Header values may not contain linefeed or carriage return characters')
         return (name, self.header_factory(name, value))
-
+    
     def header_fetch_parse(self, name, value):
         """+
         If the value has a 'name' attribute, it is returned to unmodified.
@@ -135,7 +110,7 @@ class EmailPolicy(Policy):
         if hasattr(value, 'name'):
             return value
         return self.header_factory(name, ''.join(value.splitlines()))
-
+    
     def fold(self, name, value):
         """+
         Header folding is controlled by the refold_source policy setting.  A
@@ -156,7 +131,7 @@ class EmailPolicy(Policy):
 
         """
         return self._fold(name, value, refold_binary=True)
-
+    
     def fold_binary(self, name, value):
         """+
         The same as fold if cte_type is 7bit, except that the returned value is
@@ -168,26 +143,22 @@ class EmailPolicy(Policy):
         data consists of single byte characters or multibyte characters.
 
         """
-        folded = self._fold(name, value, refold_binary=self.cte_type=='7bit')
+        folded = self._fold(name, value, refold_binary=self.cte_type == '7bit')
         return folded.encode('ascii', 'surrogateescape')
-
+    
     def _fold(self, name, value, refold_binary=False):
         if hasattr(value, 'name'):
             return value.fold(policy=self)
-        maxlen = self.max_line_length if self.max_line_length else float('inf')
+        maxlen = (self.max_line_length if self.max_line_length else float('inf'))
         lines = value.splitlines()
-        refold = (self.refold_source == 'all' or
-                  self.refold_source == 'long' and
-                    (lines and len(lines[0])+len(name)+2 > maxlen or
-                     any(len(x) > maxlen for x in lines[1:])))
-        if refold or refold_binary and _has_surrogates(value):
+        refold = (self.refold_source == 'all' or (self.refold_source == 'long' and (((lines and len(lines[0]) + len(name) + 2 > maxlen) or any((len(x) > maxlen for x in lines[1:]))))))
+        if (refold or (refold_binary and _has_surrogates(value))):
             return self.header_factory(name, ''.join(lines)).fold(policy=self)
         return name + ': ' + self.linesep.join(lines) + self.linesep
 
-
 default = EmailPolicy()
-# Make the default policy use the class default header_factory
 del default.header_factory
 strict = default.clone(raise_on_defect=True)
 SMTP = default.clone(linesep='\r\n')
 HTTP = default.clone(linesep='\r\n', max_line_length=None)
+

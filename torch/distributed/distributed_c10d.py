@@ -2,42 +2,24 @@ import torch
 import warnings
 from torch._six import string_classes
 from datetime import timedelta
-
-# This module is wildcard imported from torch.distributed.
-# TODO: specify __all__
-
 from .constants import default_pg_timeout
-from .rendezvous import rendezvous, register_rendezvous_handler  # noqa: F401
-from . import (
-    AllreduceOptions,
-    AllreduceCoalescedOptions,
-    BroadcastOptions,
-    GatherOptions,
-    ReduceOptions,
-    ReduceScatterOptions,
-    ScatterOptions,
-)
+from .rendezvous import rendezvous, register_rendezvous_handler
+from . import AllreduceOptions, AllreduceCoalescedOptions, BroadcastOptions, GatherOptions, ReduceOptions, ReduceScatterOptions, ScatterOptions
 from . import ReduceOp
 from . import PrefixStore
-
-
 _MPI_AVAILABLE = True
 _NCCL_AVAILABLE = True
 _GLOO_AVAILABLE = True
-
-
 try:
-    from. import ProcessGroupMPI
+    from . import ProcessGroupMPI
 except ImportError:
     _MPI_AVAILABLE = False
-
 try:
-    from. import ProcessGroupNCCL
+    from . import ProcessGroupNCCL
 except ImportError:
     _NCCL_AVAILABLE = False
-
 try:
-    from. import ProcessGroupGloo
+    from . import ProcessGroupGloo
 except ImportError:
     _GLOO_AVAILABLE = False
 
@@ -58,49 +40,41 @@ class Backend(object):
               initial value of some fields. Users should neither use it directly
               nor assume its existence.
     """
-    UNDEFINED = "undefined"
-    GLOO = "gloo"
-    NCCL = "nccl"
-    MPI = "mpi"
-    TCP = "tcp"
-
+    UNDEFINED = 'undefined'
+    GLOO = 'gloo'
+    NCCL = 'nccl'
+    MPI = 'mpi'
+    TCP = 'tcp'
+    
     def __new__(cls, name):
         if not isinstance(name, string_classes):
-            raise ValueError("Backend name must be a string, but got: {}".format(name))
+            raise ValueError('Backend name must be a string, but got: {}'.format(name))
         value = getattr(Backend, name.upper(), Backend.UNDEFINED)
-
         if value == Backend.TCP:
-            raise ValueError("TCP backend has been deprecated. Please use "
-                             "Gloo or MPI backend for collective operations "
-                             "on CPU tensors.")
+            raise ValueError('TCP backend has been deprecated. Please use Gloo or MPI backend for collective operations on CPU tensors.')
         elif value == Backend.UNDEFINED:
             raise ValueError("Invalid backend: '{}'".format(name))
         return value
 
-# `_backend`, `dist_backend`, and `reduce_op` are here to maintain backward
-# compatibility with pre-c10d distributed package.
-# TODO: remove them when users are ready to take a hard dependency on PyTorch 1.
 _backend = Backend.UNDEFINED
 dist_backend = Backend
 
 
 class reduce_op(object):
-    r"""
+    """
     Deprecated enum-like class for reduction operations: ``SUM``, ``PRODUCT``,
     ``MIN``, and ``MAX``.
 
     :class:`~torch.distributed.ReduceOp` is recommended to use instead.
     """
-
+    
     def __init__(self):
-        # __members__ is a dict storing key-value pairs for enum classes
-        for k, v in ReduceOp.__members__.items():
+        for (k, v) in ReduceOp.__members__.items():
             setattr(self, k, v)
         self.__members__ = ReduceOp.__members__
-
+    
     def __getattribute__(self, key):
-        warnings.warn("torch.distributed.reduce_op is deprecated, please use "
-                      "torch.distributed.ReduceOp instead")
+        warnings.warn('torch.distributed.reduce_op is deprecated, please use torch.distributed.ReduceOp instead')
         return object.__getattribute__(self, key)
 
 reduce_op = reduce_op()
@@ -110,38 +84,25 @@ class group(object):
     WORLD = object()
 
 
+
 class GroupMember(object):
-    # Alias to group.WORLD for backward compatibility
     WORLD = group.WORLD
     NON_GROUP_MEMBER = object()
 
-
-# Cached process groups
-# For NCCL and GLOO pg, it is a map from ProcessGroup to (Backend, Store)
-# For MPI pg, it is a map from ProcessGroup to (Backend, None)
 _pg_map = {}
-# Process group's names, map from ProcessGroup to str
 _pg_names = {}
-# Process group's global rank to local rank mapping
 _pg_group_ranks = {}
-
-# Default process group state
 _default_pg = None
 _default_pg_init_method = None
-
-# Process group count for default naming
 _group_count = 0
-
 
 def _rank_not_in_group(group):
     """
     Helper that checks if the current process's rank is not in a given group
 
     """
-    if group == GroupMember.WORLD:
-        return False
-    return group == GroupMember.NON_GROUP_MEMBER
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d._rank_not_in_group', '_rank_not_in_group(group)', {'GroupMember': GroupMember, 'group': group}, 1)
 
 def _get_group_rank(group, rank):
     """
@@ -149,17 +110,8 @@ def _get_group_rank(group, rank):
     rank
 
     """
-    if group is GroupMember.WORLD:
-        raise RuntimeError("group.WORLD does not have local rank to global "
-                           "rank mapping")
-    if group not in _pg_group_ranks:
-        raise RuntimeError("The given group does not exist")
-    try:
-        group_rank = _pg_group_ranks[group][rank]
-    except KeyError:
-        raise RuntimeError("The global rank is not part of the group")
-    return group_rank
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d._get_group_rank', '_get_group_rank(group, rank)', {'GroupMember': GroupMember, '_pg_group_ranks': _pg_group_ranks, 'group': group, 'rank': rank}, 1)
 
 def _get_global_rank(group, group_rank):
     """
@@ -167,15 +119,8 @@ def _get_global_rank(group, group_rank):
     group
 
     """
-    if group is GroupMember.WORLD:
-        raise RuntimeError("group.WORLD does not have local rank to global "
-                           "rank mapping")
-    group_rank_map = _pg_group_ranks[group]
-    for rank, grp_rank in group_rank_map.items():
-        if grp_rank == group_rank:
-            return rank
-    raise RuntimeError("The group rank is not part of the group")
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d._get_global_rank', '_get_global_rank(group, group_rank)', {'GroupMember': GroupMember, '_pg_group_ranks': _pg_group_ranks, 'group': group, 'group_rank': group_rank}, 1)
 
 def _check_default_pg():
     """
@@ -183,22 +128,15 @@ def _check_default_pg():
     assertion
 
     """
-    assert _default_pg is not None, \
-        "Default process group is not initialized"
-
+    assert _default_pg is not None, 'Default process group is not initialized'
 
 def _get_group_size(group):
     """
     Helper that gets a given group's world size
 
     """
-    if group is GroupMember.WORLD:
-        _check_default_pg()
-        return _default_pg.size()
-    if group not in _pg_group_ranks:
-        raise RuntimeError("The given group does not exist")
-    return len(_pg_group_ranks[group])
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d._get_group_size', '_get_group_size(group)', {'GroupMember': GroupMember, '_check_default_pg': _check_default_pg, '_default_pg': _default_pg, '_pg_group_ranks': _pg_group_ranks, 'group': group}, 1)
 
 def _check_single_tensor(param, param_name):
     """
@@ -206,20 +144,15 @@ def _check_single_tensor(param, param_name):
 
     """
     if not isinstance(param, torch.Tensor):
-        raise RuntimeError("Invalid function argument. Expected parameter `{}` "
-                           "to be of type torch.Tensor.".format(param_name))
-
+        raise RuntimeError('Invalid function argument. Expected parameter `{}` to be of type torch.Tensor.'.format(param_name))
 
 def _check_tensor_list(param, param_name):
     """
     Helper to check that the parameter ``param_name`` is a list of tensors.
 
     """
-    if not isinstance(param, list) or \
-       not all(isinstance(p, torch.Tensor) for p in param):
-        raise RuntimeError("Invalid function argument. Expected parameter `{}` "
-                           "to be of type List[torch.Tensor].".format(param_name))
-
+    if (not isinstance(param, list) or not all((isinstance(p, torch.Tensor) for p in param))):
+        raise RuntimeError('Invalid function argument. Expected parameter `{}` to be of type List[torch.Tensor].'.format(param_name))
 
 def is_mpi_available():
     """
@@ -228,14 +161,12 @@ def is_mpi_available():
     """
     return _MPI_AVAILABLE
 
-
 def is_nccl_available():
     """
     Checks if the NCCL backend is available.
 
     """
     return _NCCL_AVAILABLE
-
 
 def is_gloo_available():
     """
@@ -244,7 +175,6 @@ def is_gloo_available():
     """
     return _GLOO_AVAILABLE
 
-
 def is_initialized():
     """
     Checking if the default process group has been initialized
@@ -252,29 +182,21 @@ def is_initialized():
     """
     return _default_pg is not None
 
-
 def _get_default_group():
     """
     Getting the default process group created by init_process_group
 
     """
-    if not is_initialized():
-        raise RuntimeError("Default process group has not been initialized, "
-                           "please make sure to call init_process_group.")
-    return _default_pg
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d._get_default_group', '_get_default_group()', {'is_initialized': is_initialized, '_default_pg': _default_pg}, 1)
 
 def _get_default_store():
     """
     Getting the default store created by init_process_group
 
     """
-    if not is_initialized():
-        raise RuntimeError("Default process group has not been initialized, "
-                           "please make sure to call init_process_group.")
-    _, default_store = _pg_map[_default_pg]
-    return default_store
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d._get_default_store', '_get_default_store()', {'is_initialized': is_initialized, '_pg_map': _pg_map, '_default_pg': _default_pg}, 1)
 
 def get_backend(group=group.WORLD):
     """
@@ -289,24 +211,10 @@ def get_backend(group=group.WORLD):
         The backend of the given process group as a lower case string.
 
     """
-    _check_default_pg()
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.get_backend', 'get_backend(group=group.WORLD)', {'_check_default_pg': _check_default_pg, 'GroupMember': GroupMember, '_default_pg': _default_pg, '_rank_not_in_group': _rank_not_in_group, '_pg_map': _pg_map, 'group': group}, 1)
 
-    if group == GroupMember.WORLD:
-        pg = _default_pg
-    else:
-        pg = group
-    if _rank_not_in_group(pg):
-        raise RuntimeError("Invalid process group specified")
-    return _pg_map.get(pg, None)[0]
-
-
-def init_process_group(backend,
-                       init_method=None,
-                       timeout=default_pg_timeout,
-                       world_size=-1,
-                       rank=-1,
-                       store=None,
-                       group_name=''):
+def init_process_group(backend, init_method=None, timeout=default_pg_timeout, world_size=-1, rank=-1, store=None, group_name=''):
     """
     Initializes the default distributed process group, and this will also
     initialize the distributed package.
@@ -351,69 +259,10 @@ def init_process_group(backend,
     on a system that supports MPI.
 
     """
-    global _pg_group_ranks
-    global _backend
-    global _default_pg
-    global _default_pg_init_method
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.init_process_group', "init_process_group(backend, init_method=None, timeout=default_pg_timeout, world_size=-1, rank=-1, store=None, group_name='')", {'timedelta': timedelta, 'Backend': Backend, '_new_process_group_helper': _new_process_group_helper, 'rendezvous': rendezvous, '_pg_group_ranks': _pg_group_ranks, '_pg_map': _pg_map, 'backend': backend, 'init_method': init_method, 'timeout': timeout, 'world_size': world_size, 'rank': rank, 'store': store, 'group_name': group_name, 'default_pg_timeout': default_pg_timeout}, 0)
 
-    if not isinstance(timeout, timedelta):
-        raise RuntimeError("Expected timeout argument to be of type"
-                           "datetime.timedelta")
-
-    if _default_pg is not None:
-        raise RuntimeError("trying to initialize the default process group "
-                           "twice!")
-
-    assert (store is None) or (init_method is None), \
-        "Cannot specify both init_method and store."
-
-    if store is not None:
-        assert world_size > 0, 'world_size must be positive if using store'
-        assert rank >= 0, 'rank must be non-negative if using store'
-    elif init_method is None:
-        init_method = "env://"
-
-    backend = Backend(backend)
-
-    if backend == Backend.MPI:
-        _default_pg = _new_process_group_helper(
-            -1,
-            -1,
-            [],
-            Backend.MPI,
-            None,
-            group_name=group_name,
-            timeout=timeout)
-    else:
-        # backward compatible API
-        if store is None:
-            rendezvous_iterator = rendezvous(
-                init_method, rank, world_size, timeout=timeout
-            )
-            store, rank, world_size = next(rendezvous_iterator)
-            store.set_timeout(timeout)
-
-        _default_pg = _new_process_group_helper(
-            world_size,
-            rank,
-            [],
-            backend,
-            store,
-            group_name=group_name,
-            timeout=timeout)
-
-    _pg_group_ranks[_default_pg] = {i: i for i in range(_default_pg.size())}
-    _backend = _pg_map[_default_pg][0]
-    _default_pg_init_method = init_method
-
-
-def _new_process_group_helper(world_size,
-                              rank,
-                              group_ranks,
-                              backend,
-                              store,
-                              group_name=None,
-                              timeout=default_pg_timeout):
+def _new_process_group_helper(world_size, rank, group_ranks, backend, store, group_name=None, timeout=default_pg_timeout):
     """
     Create a new distributed process group.
 
@@ -423,70 +272,8 @@ def _new_process_group_helper(world_size,
 
     This function is called with ``group_ranks == []`` for the default group.
     """
-    global _pg_map
-    global _group_count
-    global _pg_names
-
-    if not group_name:
-        group_name = str(_group_count)
-        _group_count += 1
-
-    if group_name in _pg_names.values():
-        raise RuntimeError("The specified group name has already been "
-                           "created, please use a different group name")
-
-    if not isinstance(timeout, timedelta):
-        raise RuntimeError("Expected timeout argument to be of type"
-                           "datetime.timedelta")
-
-    # The list of group ranks is empty if we're creating the default group.
-    is_default_group = (len(group_ranks) == 0)
-
-    backend = Backend(backend)
-    if backend == Backend.MPI:
-        if not is_mpi_available():
-            raise RuntimeError("Distributed package doesn't have MPI built in")
-        pg = ProcessGroupMPI.create(group_ranks)
-        if not pg:
-            return GroupMember.NON_GROUP_MEMBER
-        _pg_map[pg] = (Backend.MPI, None)
-        _pg_names[pg] = group_name
-    else:
-        # If this is a subgroup (which means group_ranks is specified),
-        # we check if the current process is a member of the new group.
-        if not is_default_group:
-            global_rank = _default_pg.rank()
-            if global_rank not in group_ranks:
-                return GroupMember.NON_GROUP_MEMBER
-
-        # Use the group name as prefix in the default store, such that
-        # a single store can be reused by multiple groups.
-        prefix_store = PrefixStore(group_name, store)
-
-        if backend == Backend.GLOO:
-            pg = ProcessGroupGloo(
-                prefix_store,
-                rank,
-                world_size,
-                timeout=timeout)
-            _pg_map[pg] = (Backend.GLOO, store)
-            _pg_names[pg] = group_name
-        elif backend == Backend.NCCL:
-            if not is_nccl_available():
-                raise RuntimeError("Distributed package doesn't have NCCL "
-                                   "built in")
-            pg = ProcessGroupNCCL(
-                prefix_store,
-                rank,
-                world_size,
-                timeout)
-            _pg_map[pg] = (Backend.NCCL, store)
-            _pg_names[pg] = group_name
-        else:
-            raise RuntimeError("Unsupported distributed backend by group")
-
-    return pg
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d._new_process_group_helper', '_new_process_group_helper(world_size, rank, group_ranks, backend, store, group_name=None, timeout=default_pg_timeout)', {'_pg_names': _pg_names, 'timedelta': timedelta, 'Backend': Backend, 'is_mpi_available': is_mpi_available, 'ProcessGroupMPI': ProcessGroupMPI, 'GroupMember': GroupMember, '_pg_map': _pg_map, '_default_pg': _default_pg, 'PrefixStore': PrefixStore, 'ProcessGroupGloo': ProcessGroupGloo, 'is_nccl_available': is_nccl_available, 'ProcessGroupNCCL': ProcessGroupNCCL, 'world_size': world_size, 'rank': rank, 'group_ranks': group_ranks, 'backend': backend, 'store': store, 'group_name': group_name, 'timeout': timeout, 'default_pg_timeout': default_pg_timeout}, 1)
 
 def destroy_process_group(group=group.WORLD):
     """
@@ -498,45 +285,8 @@ def destroy_process_group(group=group.WORLD):
                                         groups including the default one will
                                         be destroyed.
     """
-    global _pg_map
-    global _pg_names
-    global _pg_group_ranks
-    global _default_pg
-    global _default_pg_init_method
-    global _group_count
-
-    if group == GroupMember.NON_GROUP_MEMBER:
-        return
-
-    if group == GroupMember.WORLD:
-        pg = _default_pg
-    else:
-        pg = group
-
-    if _pg_map.get(pg, None) is None:
-        raise RuntimeError("Invalid process group specified")
-
-    if group == GroupMember.WORLD:
-        _default_pg = None
-        _default_pg_init_method = None
-        _pg_map.clear()
-        _pg_names.clear()
-        _pg_group_ranks.clear()
-
-        # when process group doesn't have an explicit name (only WORLD (default)
-        # process group can have an explicit name), we use global _group_counter
-        # to generate the name. We need to reset the counter on destruction to
-        # allow consistent value to be generated when we re-create process
-        # groups after some trainers recover from failure
-        #
-        # We only reset this when WORLD is being destroyed because if this
-        # process group is in good state, we aren't dealing with failures.
-        _group_count = 0
-    else:
-        del _pg_map[pg]
-        del _pg_names[pg]
-        del _pg_group_ranks[pg]
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.destroy_process_group', 'destroy_process_group(group=group.WORLD)', {'GroupMember': GroupMember, '_pg_map': _pg_map, '_pg_names': _pg_names, '_pg_group_ranks': _pg_group_ranks, 'group': group}, 1)
 
 def get_rank(group=group.WORLD):
     """
@@ -554,15 +304,8 @@ def get_rank(group=group.WORLD):
         -1, if not part of the group
 
     """
-    if _rank_not_in_group(group):
-        return -1
-
-    _check_default_pg()
-    if group == GroupMember.WORLD:
-        return _default_pg.rank()
-
-    return _get_group_rank(group, _default_pg.rank())
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.get_rank', 'get_rank(group=group.WORLD)', {'_rank_not_in_group': _rank_not_in_group, '_check_default_pg': _check_default_pg, 'GroupMember': GroupMember, '_default_pg': _default_pg, '_get_group_rank': _get_group_rank, 'group': group}, 1)
 
 def get_world_size(group=group.WORLD):
     """
@@ -576,16 +319,10 @@ def get_world_size(group=group.WORLD):
         -1, if not part of the group
 
     """
-    if _rank_not_in_group(group):
-        return -1
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.get_world_size', 'get_world_size(group=group.WORLD)', {'_rank_not_in_group': _rank_not_in_group, '_get_group_size': _get_group_size, 'group': group}, 1)
 
-    return _get_group_size(group)
-
-
-def isend(tensor,
-          dst,
-          group=group.WORLD,
-          tag=0):
+def isend(tensor, dst, group=group.WORLD, tag=0):
     """
     Sends a tensor asynchronously.
 
@@ -600,22 +337,10 @@ def isend(tensor,
         None, if not part of the group
 
     """
-    _check_single_tensor(tensor, "tensor")
-    if _rank_not_in_group(group):
-        return
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.isend', 'isend(tensor, dst, group=group.WORLD, tag=0)', {'_check_single_tensor': _check_single_tensor, '_rank_not_in_group': _rank_not_in_group, 'GroupMember': GroupMember, '_check_default_pg': _check_default_pg, '_default_pg': _default_pg, '_get_group_rank': _get_group_rank, 'tensor': tensor, 'dst': dst, 'group': group, 'tag': tag}, 1)
 
-    if group == GroupMember.WORLD:
-        _check_default_pg()
-        return _default_pg.send([tensor], dst, tag)
-    else:
-        group_dst_rank = _get_group_rank(group, dst)
-        return group.send([tensor], group_dst_rank, tag)
-
-
-def irecv(tensor,
-          src,
-          group=group.WORLD,
-          tag=0):
+def irecv(tensor, src, group=group.WORLD, tag=0):
     """
     Receives a tensor asynchronously.
 
@@ -630,22 +355,10 @@ def irecv(tensor,
         None, if not part of the group
 
     """
-    _check_single_tensor(tensor, "tensor")
-    if _rank_not_in_group(group):
-        return
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.irecv', 'irecv(tensor, src, group=group.WORLD, tag=0)', {'_check_single_tensor': _check_single_tensor, '_rank_not_in_group': _rank_not_in_group, 'GroupMember': GroupMember, '_check_default_pg': _check_default_pg, '_default_pg': _default_pg, '_get_group_rank': _get_group_rank, 'tensor': tensor, 'src': src, 'group': group, 'tag': tag}, 1)
 
-    if group == GroupMember.WORLD:
-        _check_default_pg()
-        return _default_pg.recv([tensor], src, tag)
-    else:
-        group_src_rank = _get_group_rank(group, src)
-        return group.recv([tensor], group_src_rank, tag)
-
-
-def send(tensor,
-         dst,
-         group=group.WORLD,
-         tag=0):
+def send(tensor, dst, group=group.WORLD, tag=0):
     """
     Sends a tensor synchronously.
 
@@ -656,22 +369,10 @@ def send(tensor,
         tag (int, optional): Tag to match send with remote recv
 
     """
-    _check_single_tensor(tensor, "tensor")
-    if _rank_not_in_group(group):
-        return
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.send', 'send(tensor, dst, group=group.WORLD, tag=0)', {'_check_single_tensor': _check_single_tensor, '_rank_not_in_group': _rank_not_in_group, 'GroupMember': GroupMember, '_check_default_pg': _check_default_pg, '_default_pg': _default_pg, '_get_group_rank': _get_group_rank, 'tensor': tensor, 'dst': dst, 'group': group, 'tag': tag}, 1)
 
-    if group == GroupMember.WORLD:
-        _check_default_pg()
-        _default_pg.send([tensor], dst, tag).wait()
-    else:
-        group_dst_rank = _get_group_rank(group, dst)
-        group.send([tensor], group_dst_rank, tag).wait()
-
-
-def recv(tensor,
-         src=None,
-         group=group.WORLD,
-         tag=0):
+def recv(tensor, src=None, group=group.WORLD, tag=0):
     """
     Receives a tensor synchronously.
 
@@ -687,38 +388,10 @@ def recv(tensor,
         -1, if not part of the group
 
     """
-    _check_single_tensor(tensor, "tensor")
-    if _rank_not_in_group(group):
-        return -1
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.recv', 'recv(tensor, src=None, group=group.WORLD, tag=0)', {'_check_single_tensor': _check_single_tensor, '_rank_not_in_group': _rank_not_in_group, 'GroupMember': GroupMember, '_check_default_pg': _check_default_pg, '_default_pg': _default_pg, '_get_global_rank': _get_global_rank, '_get_group_rank': _get_group_rank, 'tensor': tensor, 'src': src, 'group': group, 'tag': tag}, 1)
 
-    if group == GroupMember.WORLD:
-        _check_default_pg()
-        pg = _default_pg
-    else:
-        pg = group
-
-    if src is None:
-        work = pg.recv_anysource([tensor], tag)
-        work.wait()
-        src_rank = work.source_rank()
-        if group == GroupMember.WORLD:
-            return src_rank
-        else:
-            return _get_global_rank(pg, src_rank)
-    else:
-        if group == GroupMember.WORLD:
-            pg.recv([tensor], src, tag).wait()
-        else:
-            group_src_rank = _get_group_rank(pg, src)
-            pg.recv([tensor], group_src_rank, tag).wait()
-        return src
-
-
-def broadcast_multigpu(tensor_list,
-                       src,
-                       group=group.WORLD,
-                       async_op=False,
-                       src_tensor=0):
+def broadcast_multigpu(tensor_list, src, group=group.WORLD, async_op=False, src_tensor=0):
     """
     Broadcasts the tensor to the whole group with multiple GPU tensors
     per node.
@@ -749,30 +422,10 @@ def broadcast_multigpu(tensor_list,
         None, if not async_op or if not part of the group
 
     """
-    if _rank_not_in_group(group):
-        return
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.broadcast_multigpu', 'broadcast_multigpu(tensor_list, src, group=group.WORLD, async_op=False, src_tensor=0)', {'_rank_not_in_group': _rank_not_in_group, 'BroadcastOptions': BroadcastOptions, 'GroupMember': GroupMember, '_check_default_pg': _check_default_pg, '_default_pg': _default_pg, '_get_group_rank': _get_group_rank, 'tensor_list': tensor_list, 'src': src, 'group': group, 'async_op': async_op, 'src_tensor': src_tensor}, 1)
 
-    opts = BroadcastOptions()
-    opts.rootRank = src
-    opts.rootTensor = src_tensor
-
-    if group == GroupMember.WORLD:
-        _check_default_pg()
-        work = _default_pg.broadcast(tensor_list, opts)
-    else:
-        group_src_rank = _get_group_rank(group, src)
-        opts.rootRank = group_src_rank
-        work = group.broadcast(tensor_list, opts)
-    if async_op:
-        return work
-    else:
-        work.wait()
-
-
-def broadcast(tensor,
-              src,
-              group=group.WORLD,
-              async_op=False):
+def broadcast(tensor, src, group=group.WORLD, async_op=False):
     """
     Broadcasts the tensor to the whole group.
 
@@ -791,32 +444,11 @@ def broadcast(tensor,
         None, if not async_op or if not part of the group
 
     """
-    _check_single_tensor(tensor, "tensor")
-    if _rank_not_in_group(group):
-        return
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.broadcast', 'broadcast(tensor, src, group=group.WORLD, async_op=False)', {'_check_single_tensor': _check_single_tensor, '_rank_not_in_group': _rank_not_in_group, 'BroadcastOptions': BroadcastOptions, 'GroupMember': GroupMember, '_check_default_pg': _check_default_pg, '_default_pg': _default_pg, '_get_group_rank': _get_group_rank, 'tensor': tensor, 'src': src, 'group': group, 'async_op': async_op}, 1)
 
-    opts = BroadcastOptions()
-    opts.rootRank = src
-    opts.rootTensor = 0
-
-    if group == GroupMember.WORLD:
-        _check_default_pg()
-        work = _default_pg.broadcast([tensor], opts)
-    else:
-        group_src_rank = _get_group_rank(group, src)
-        opts.rootRank = group_src_rank
-        work = group.broadcast([tensor], opts)
-    if async_op:
-        return work
-    else:
-        work.wait()
-
-
-def all_reduce_multigpu(tensor_list,
-                        op=ReduceOp.SUM,
-                        group=group.WORLD,
-                        async_op=False):
-    r"""
+def all_reduce_multigpu(tensor_list, op=ReduceOp.SUM, group=group.WORLD, async_op=False):
+    """
     Reduces the tensor data across all machines in such a way that all get
     the final result. This function reduces a number of tensors on every node,
     while each tensor resides on different GPUs.
@@ -846,27 +478,10 @@ def all_reduce_multigpu(tensor_list,
         None, if not async_op or if not part of the group
 
     """
-    if _rank_not_in_group(group):
-        return
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.all_reduce_multigpu', 'all_reduce_multigpu(tensor_list, op=ReduceOp.SUM, group=group.WORLD, async_op=False)', {'_rank_not_in_group': _rank_not_in_group, 'AllreduceOptions': AllreduceOptions, 'GroupMember': GroupMember, '_check_default_pg': _check_default_pg, '_default_pg': _default_pg, 'tensor_list': tensor_list, 'op': op, 'group': group, 'async_op': async_op}, 1)
 
-    opts = AllreduceOptions()
-    opts.reduceOp = op
-    if group == GroupMember.WORLD:
-        _check_default_pg()
-        work = _default_pg.allreduce(tensor_list, opts)
-    else:
-        work = group.allreduce(tensor_list, opts)
-
-    if async_op:
-        return work
-    else:
-        work.wait()
-
-
-def all_reduce(tensor,
-               op=ReduceOp.SUM,
-               group=group.WORLD,
-               async_op=False):
+def all_reduce(tensor, op=ReduceOp.SUM, group=group.WORLD, async_op=False):
     """
     Reduces the tensor data across all machines in such a way that all get
     the final result.
@@ -887,28 +502,10 @@ def all_reduce(tensor,
         None, if not async_op or if not part of the group
 
     """
-    _check_single_tensor(tensor, "tensor")
-    if _rank_not_in_group(group):
-        return
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.all_reduce', 'all_reduce(tensor, op=ReduceOp.SUM, group=group.WORLD, async_op=False)', {'_check_single_tensor': _check_single_tensor, '_rank_not_in_group': _rank_not_in_group, 'AllreduceOptions': AllreduceOptions, 'GroupMember': GroupMember, '_check_default_pg': _check_default_pg, '_default_pg': _default_pg, 'tensor': tensor, 'op': op, 'group': group, 'async_op': async_op}, 1)
 
-    opts = AllreduceOptions()
-    opts.reduceOp = op
-    if group == GroupMember.WORLD:
-        _check_default_pg()
-        work = _default_pg.allreduce([tensor], opts)
-    else:
-        work = group.allreduce([tensor], opts)
-
-    if async_op:
-        return work
-    else:
-        work.wait()
-
-
-def all_reduce_coalesced(tensors,
-                         op=ReduceOp.SUM,
-                         group=group.WORLD,
-                         async_op=False):
+def all_reduce_coalesced(tensors, op=ReduceOp.SUM, group=group.WORLD, async_op=False):
     """
     WARNING: at this time individual shape checking is not implemented across nodes.
     For example, if the rank 0 node passes [torch.rand(4), torch.rand(2)] and the
@@ -938,30 +535,10 @@ def all_reduce_coalesced(tensors,
         None, if not async_op or if not part of the group.
 
     """
-    _check_tensor_list(tensors, "tensor")
-    if _rank_not_in_group(group):
-        return
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.all_reduce_coalesced', 'all_reduce_coalesced(tensors, op=ReduceOp.SUM, group=group.WORLD, async_op=False)', {'_check_tensor_list': _check_tensor_list, '_rank_not_in_group': _rank_not_in_group, 'AllreduceCoalescedOptions': AllreduceCoalescedOptions, 'GroupMember': GroupMember, '_check_default_pg': _check_default_pg, '_default_pg': _default_pg, 'tensors': tensors, 'op': op, 'group': group, 'async_op': async_op}, 1)
 
-    opts = AllreduceCoalescedOptions()
-    opts.reduceOp = op
-    if group == GroupMember.WORLD:
-        _check_default_pg()
-        work = _default_pg.allreduce_coalesced(tensors, opts)
-    else:
-        work = group.allreduce_coalesced(tensors, opts)
-
-    if async_op:
-        return work
-    else:
-        work.wait()
-
-
-def reduce_multigpu(tensor_list,
-                    dst,
-                    op=ReduceOp.SUM,
-                    group=group.WORLD,
-                    async_op=False,
-                    dst_tensor=0):
+def reduce_multigpu(tensor_list, dst, op=ReduceOp.SUM, group=group.WORLD, async_op=False, dst_tensor=0):
     """
     Reduces the tensor data on multiple GPUs across all machines. Each tensor
     in ``tensor_list`` should reside on a separate GPU
@@ -991,33 +568,10 @@ def reduce_multigpu(tensor_list,
         None, otherwise
 
     """
-    if _rank_not_in_group(group):
-        return
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.reduce_multigpu', 'reduce_multigpu(tensor_list, dst, op=ReduceOp.SUM, group=group.WORLD, async_op=False, dst_tensor=0)', {'_rank_not_in_group': _rank_not_in_group, 'ReduceOptions': ReduceOptions, 'GroupMember': GroupMember, '_check_default_pg': _check_default_pg, '_default_pg': _default_pg, '_get_group_rank': _get_group_rank, 'tensor_list': tensor_list, 'dst': dst, 'op': op, 'group': group, 'async_op': async_op, 'dst_tensor': dst_tensor}, 1)
 
-    opts = ReduceOptions()
-    opts.reduceOp = op
-    opts.rootRank = dst
-    opts.rootTensor = dst_tensor
-
-    if group == GroupMember.WORLD:
-        _check_default_pg()
-        work = _default_pg.reduce(tensor_list, opts)
-    else:
-        group_dst_rank = _get_group_rank(group, dst)
-        opts.rootRank = group_dst_rank
-        work = group.reduce(tensor_list, opts)
-
-    if async_op:
-        return work
-    else:
-        work.wait()
-
-
-def reduce(tensor,
-           dst,
-           op=ReduceOp.SUM,
-           group=group.WORLD,
-           async_op=False):
+def reduce(tensor, dst, op=ReduceOp.SUM, group=group.WORLD, async_op=False):
     """
     Reduces the tensor data across all machines.
 
@@ -1038,32 +592,10 @@ def reduce(tensor,
         None, if not async_op or if not part of the group
 
     """
-    _check_single_tensor(tensor, "tensor")
-    if _rank_not_in_group(group):
-        return
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.reduce', 'reduce(tensor, dst, op=ReduceOp.SUM, group=group.WORLD, async_op=False)', {'_check_single_tensor': _check_single_tensor, '_rank_not_in_group': _rank_not_in_group, 'ReduceOptions': ReduceOptions, 'GroupMember': GroupMember, '_check_default_pg': _check_default_pg, '_default_pg': _default_pg, '_get_group_rank': _get_group_rank, 'tensor': tensor, 'dst': dst, 'op': op, 'group': group, 'async_op': async_op}, 1)
 
-    opts = ReduceOptions()
-    opts.reduceOp = op
-    opts.rootRank = dst
-
-    if group == GroupMember.WORLD:
-        _check_default_pg()
-        work = _default_pg.reduce([tensor], opts)
-    else:
-        group_dst_rank = _get_group_rank(group, dst)
-        opts.rootRank = group_dst_rank
-        work = group.reduce([tensor], opts)
-
-    if async_op:
-        return work
-    else:
-        work.wait()
-
-
-def all_gather_multigpu(output_tensor_lists,
-                        input_tensor_list,
-                        group=group.WORLD,
-                        async_op=False):
+def all_gather_multigpu(output_tensor_lists, input_tensor_list, group=group.WORLD, async_op=False):
     """
     Gathers tensors from the whole group in a list.
     Each tensor in ``tensor_list`` should reside on a separate GPU
@@ -1103,25 +635,10 @@ def all_gather_multigpu(output_tensor_lists,
         None, if not async_op or if not part of the group
 
     """
-    if _rank_not_in_group(group):
-        return
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.all_gather_multigpu', 'all_gather_multigpu(output_tensor_lists, input_tensor_list, group=group.WORLD, async_op=False)', {'_rank_not_in_group': _rank_not_in_group, 'GroupMember': GroupMember, '_check_default_pg': _check_default_pg, '_default_pg': _default_pg, 'output_tensor_lists': output_tensor_lists, 'input_tensor_list': input_tensor_list, 'group': group, 'async_op': async_op}, 1)
 
-    if group == GroupMember.WORLD:
-        _check_default_pg()
-        work = _default_pg.allgather(output_tensor_lists, input_tensor_list)
-    else:
-        work = group.allgather(output_tensor_lists, input_tensor_list)
-
-    if async_op:
-        return work
-    else:
-        work.wait()
-
-
-def all_gather(tensor_list,
-               tensor,
-               group=group.WORLD,
-               async_op=False):
+def all_gather(tensor_list, tensor, group=group.WORLD, async_op=False):
     """
     Gathers tensors from the whole group in a list.
 
@@ -1137,26 +654,10 @@ def all_gather(tensor_list,
         None, if not async_op or if not part of the group
 
     """
-    _check_tensor_list(tensor_list, "tensor_list")
-    _check_single_tensor(tensor, "tensor")
-    if _rank_not_in_group(group):
-        return
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.all_gather', 'all_gather(tensor_list, tensor, group=group.WORLD, async_op=False)', {'_check_tensor_list': _check_tensor_list, '_check_single_tensor': _check_single_tensor, '_rank_not_in_group': _rank_not_in_group, 'GroupMember': GroupMember, '_check_default_pg': _check_default_pg, '_default_pg': _default_pg, 'tensor_list': tensor_list, 'tensor': tensor, 'group': group, 'async_op': async_op}, 1)
 
-    if group == GroupMember.WORLD:
-        _check_default_pg()
-        work = _default_pg.allgather([tensor_list], [tensor])
-    else:
-        work = group.allgather([tensor_list], [tensor])
-
-    if async_op:
-        return work
-    else:
-        work.wait()
-
-def all_gather_coalesced(output_tensor_lists,
-                         input_tensor_list,
-                         group=group.WORLD,
-                         async_op=False):
+def all_gather_coalesced(output_tensor_lists, input_tensor_list, group=group.WORLD, async_op=False):
     """
     Gathers input tensors from the whole group in a list in a coalesced manner.
 
@@ -1197,35 +698,10 @@ def all_gather_coalesced(output_tensor_lists,
     performance improvements but users of this function should take extra care
     to ensure that each node passes in tensors whose shapes match across nodes.
     """
-    # We only check basic compatibility with C++ params here, C++ code will
-    # do shape and type checking.
-    if _rank_not_in_group(group):
-        return
-    _check_tensor_list(input_tensor_list, "tensor_list")
-    if not isinstance(output_tensor_lists, list):
-        RuntimeError("Invalid function argument: "
-                     "output_tensor_lists should be a list")
-    for output_tensor_list in output_tensor_lists:
-        _check_tensor_list(output_tensor_list, "output_tensor_lists")
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.all_gather_coalesced', 'all_gather_coalesced(output_tensor_lists, input_tensor_list, group=group.WORLD, async_op=False)', {'_rank_not_in_group': _rank_not_in_group, '_check_tensor_list': _check_tensor_list, 'GroupMember': GroupMember, '_check_default_pg': _check_default_pg, '_default_pg': _default_pg, 'output_tensor_lists': output_tensor_lists, 'input_tensor_list': input_tensor_list, 'group': group, 'async_op': async_op}, 1)
 
-    if group == GroupMember.WORLD:
-        _check_default_pg()
-        work = _default_pg.allgather_coalesced(
-            output_tensor_lists, input_tensor_list)
-    else:
-        work = group.allgather_coalesced(output_tensor_lists, input_tensor_list)
-
-    if async_op:
-        return work
-    else:
-        work.wait()
-
-
-def gather(tensor,
-           gather_list=None,
-           dst=0,
-           group=group.WORLD,
-           async_op=False):
+def gather(tensor, gather_list=None, dst=0, group=group.WORLD, async_op=False):
     """
     Gathers a list of tensors in a single process.
 
@@ -1243,53 +719,10 @@ def gather(tensor,
         None, if not async_op or if not part of the group
 
     """
-    _check_single_tensor(tensor, "tensor")
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.gather', 'gather(tensor, gather_list=None, dst=0, group=group.WORLD, async_op=False)', {'_check_single_tensor': _check_single_tensor, '_check_tensor_list': _check_tensor_list, '_rank_not_in_group': _rank_not_in_group, 'get_rank': get_rank, 'GatherOptions': GatherOptions, 'GroupMember': GroupMember, '_check_default_pg': _check_default_pg, '_default_pg': _default_pg, '_get_group_rank': _get_group_rank, 'tensor': tensor, 'gather_list': gather_list, 'dst': dst, 'group': group, 'async_op': async_op}, 1)
 
-    # Parameter ``gather_list`` may be left unspecified on non-dst ranks.
-    if gather_list:
-        _check_tensor_list(gather_list, "gather_list")
-    else:
-        gather_list = []
-
-    if _rank_not_in_group(group):
-        return
-
-    my_rank = get_rank()
-    if dst == my_rank:
-        if not gather_list:
-            raise ValueError("Argument ``gather_list`` must be specified "
-                             "on destination rank.")
-        input_tensors = [tensor]
-        output_tensors = [gather_list]
-    else:
-        if gather_list:
-            raise ValueError("Argument ``gather_list`` must NOT be specified "
-                             "on non-destination ranks.")
-        input_tensors = [tensor]
-        output_tensors = []
-
-    opts = GatherOptions()
-    opts.rootRank = dst
-
-    if group == GroupMember.WORLD:
-        _check_default_pg()
-        work = _default_pg.gather(output_tensors, input_tensors, opts)
-    else:
-        group_dst_rank = _get_group_rank(group, dst)
-        opts.rootRank = group_dst_rank
-        work = group.gather(output_tensors, input_tensors, opts)
-
-    if async_op:
-        return work
-    else:
-        work.wait()
-
-
-def scatter(tensor,
-            scatter_list=None,
-            src=0,
-            group=group.WORLD,
-            async_op=False):
+def scatter(tensor, scatter_list=None, src=0, group=group.WORLD, async_op=False):
     """
     Scatters a list of tensors to all processes in a group.
 
@@ -1309,53 +742,10 @@ def scatter(tensor,
         None, if not async_op or if not part of the group
 
     """
-    _check_single_tensor(tensor, "tensor")
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.scatter', 'scatter(tensor, scatter_list=None, src=0, group=group.WORLD, async_op=False)', {'_check_single_tensor': _check_single_tensor, '_check_tensor_list': _check_tensor_list, '_rank_not_in_group': _rank_not_in_group, 'get_rank': get_rank, 'ScatterOptions': ScatterOptions, 'GroupMember': GroupMember, '_check_default_pg': _check_default_pg, '_default_pg': _default_pg, '_get_group_rank': _get_group_rank, 'tensor': tensor, 'scatter_list': scatter_list, 'src': src, 'group': group, 'async_op': async_op}, 1)
 
-    # Parameter ``scatter_list`` may be left unspecified on non-src ranks.
-    if scatter_list:
-        _check_tensor_list(scatter_list, "scatter_list")
-    else:
-        scatter_list = []
-
-    if _rank_not_in_group(group):
-        return
-
-    my_rank = get_rank()
-    if src == my_rank:
-        if not scatter_list:
-            raise ValueError("Argument ``scatter_list`` must be specified "
-                             "on source rank.")
-        input_tensors = [scatter_list]
-        output_tensors = [tensor]
-    else:
-        if scatter_list:
-            raise ValueError("Argument ``scatter_list`` must NOT be specified "
-                             "on non-source ranks.")
-        input_tensors = []
-        output_tensors = [tensor]
-
-    opts = ScatterOptions()
-    opts.rootRank = src
-
-    if group == GroupMember.WORLD:
-        _check_default_pg()
-        work = _default_pg.scatter(output_tensors, input_tensors, opts)
-    else:
-        group_src_rank = _get_group_rank(group, src)
-        opts.rootRank = group_src_rank
-        work = group.scatter(output_tensors, input_tensors, opts)
-
-    if async_op:
-        return work
-    else:
-        work.wait()
-
-
-def reduce_scatter_multigpu(output_tensor_list,
-                            input_tensor_lists,
-                            op=ReduceOp.SUM,
-                            group=group.WORLD,
-                            async_op=False):
+def reduce_scatter_multigpu(output_tensor_list, input_tensor_lists, op=ReduceOp.SUM, group=group.WORLD, async_op=False):
     """
     Reduce and scatter a list of tensors to the whole group.  Only nccl backend
     is currently supported.
@@ -1396,37 +786,10 @@ def reduce_scatter_multigpu(output_tensor_list,
         None, if not async_op or if not part of the group.
 
     """
-    if _rank_not_in_group(group):
-        return
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.reduce_scatter_multigpu', 'reduce_scatter_multigpu(output_tensor_list, input_tensor_lists, op=ReduceOp.SUM, group=group.WORLD, async_op=False)', {'_rank_not_in_group': _rank_not_in_group, 'ReduceScatterOptions': ReduceScatterOptions, 'GroupMember': GroupMember, '_check_default_pg': _check_default_pg, '_default_pg': _default_pg, 'output_tensor_list': output_tensor_list, 'input_tensor_lists': input_tensor_lists, 'op': op, 'group': group, 'async_op': async_op}, 1)
 
-    opts = ReduceScatterOptions()
-    opts.reduceOp = op
-
-    if group == GroupMember.WORLD:
-        _check_default_pg()
-        work = _default_pg.reduce_scatter(
-            output_tensor_list,
-            input_tensor_lists,
-            opts
-        )
-    else:
-        work = group.reduce_scatter(
-            output_tensor_list,
-            input_tensor_lists,
-            opts
-        )
-
-    if async_op:
-        return work
-    else:
-        work.wait()
-
-
-def reduce_scatter(output,
-                   input_list,
-                   op=ReduceOp.SUM,
-                   group=group.WORLD,
-                   async_op=False):
+def reduce_scatter(output, input_list, op=ReduceOp.SUM, group=group.WORLD, async_op=False):
     """
     Reduces, then scatters a list of tensors to all processes in a group.
 
@@ -1441,28 +804,10 @@ def reduce_scatter(output,
         None, if not async_op or if not part of the group.
 
     """
-    _check_single_tensor(output, "output")
-    _check_tensor_list(input_list, "input_list")
-    if _rank_not_in_group(group):
-        return
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.reduce_scatter', 'reduce_scatter(output, input_list, op=ReduceOp.SUM, group=group.WORLD, async_op=False)', {'_check_single_tensor': _check_single_tensor, '_check_tensor_list': _check_tensor_list, '_rank_not_in_group': _rank_not_in_group, 'ReduceScatterOptions': ReduceScatterOptions, 'GroupMember': GroupMember, '_check_default_pg': _check_default_pg, '_default_pg': _default_pg, 'output': output, 'input_list': input_list, 'op': op, 'group': group, 'async_op': async_op}, 1)
 
-    opts = ReduceScatterOptions()
-    opts.reduceOp = op
-
-    if group == GroupMember.WORLD:
-        _check_default_pg()
-        work = _default_pg.reduce_scatter([output], [input_list], opts)
-    else:
-        work = group.reduce_scatter([output], [input_list], opts)
-
-    if async_op:
-        return work
-    else:
-        work.wait()
-
-
-def barrier(group=group.WORLD,
-            async_op=False):
+def barrier(group=group.WORLD, async_op=False):
     """
     Synchronizes all processes.
 
@@ -1477,20 +822,8 @@ def barrier(group=group.WORLD,
         Async work handle, if async_op is set to True.
         None, if not async_op or if not part of the group
     """
-    if _rank_not_in_group(group):
-        return
-
-    if group == GroupMember.WORLD:
-        _check_default_pg()
-        work = _default_pg.barrier()
-    else:
-        work = group.barrier()
-
-    if async_op:
-        return work
-    else:
-        work.wait()
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.barrier', 'barrier(group=group.WORLD, async_op=False)', {'_rank_not_in_group': _rank_not_in_group, 'GroupMember': GroupMember, '_check_default_pg': _check_default_pg, '_default_pg': _default_pg, 'group': group, 'async_op': async_op}, 1)
 
 def new_group(ranks=None, timeout=default_pg_timeout, backend=None):
     """
@@ -1516,54 +849,6 @@ def new_group(ranks=None, timeout=default_pg_timeout, backend=None):
     Returns:
         A handle of distributed group that can be given to collective calls.
     """
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.distributed.distributed_c10d.new_group', 'new_group(ranks=None, timeout=default_pg_timeout, backend=None)', {'_check_default_pg': _check_default_pg, '_pg_map': _pg_map, '_default_pg': _default_pg, 'Backend': Backend, '_new_process_group_helper': _new_process_group_helper, '_pg_group_ranks': _pg_group_ranks, 'ranks': ranks, 'timeout': timeout, 'backend': backend, 'default_pg_timeout': default_pg_timeout}, 1)
 
-    _check_default_pg()
-
-    global _pg_group_ranks
-
-    default_backend, default_store = _pg_map[_default_pg]
-    global_rank = _default_pg.rank()
-    global_world_size = _default_pg.size()
-
-    # Default to the same backend as the global process group
-    # if the backend is not specified.
-    if not backend:
-        backend = default_backend
-
-    # checks the input ranks
-    if ranks is not None:
-        ranks = sorted(ranks)
-        group_world_size = len(ranks)
-        if group_world_size > global_world_size:
-            raise RuntimeError("the new group's world size should be less or "
-                               "equal to the world size set by "
-                               "init_process_group")
-        # check ranks' sanity
-        for rank in ranks:
-            if rank < 0 or rank >= global_world_size:
-                raise RuntimeError("The new group's rank should be within the "
-                                   "the world_size set by init_process_group")
-        if global_rank in ranks:
-            group_rank = ranks.index(global_rank)
-        else:
-            group_rank = None
-    else:
-        ranks = list(range(global_world_size))
-        group_world_size = global_world_size
-        group_rank = global_rank
-
-    backend = Backend(backend)
-    pg = _new_process_group_helper(group_world_size,
-                                   group_rank,
-                                   ranks,
-                                   backend,
-                                   default_store,
-                                   timeout=timeout)
-
-    # Create the global rank to group rank mapping
-    _pg_group_ranks[pg] = {
-        global_rank: group_rank
-        for group_rank, global_rank in enumerate(ranks)
-    }
-
-    return pg

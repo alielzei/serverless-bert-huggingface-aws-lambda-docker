@@ -5,16 +5,9 @@ from __future__ import unicode_literals
 import os
 from caffe2.proto import caffe2_pb2
 
-
 def _parseFile(filename):
-    out_net = caffe2_pb2.NetDef()
-    # TODO(bwasti): A more robust handler for pathnames.
-    dir_path = os.path.dirname(__file__)
-    with open('{dir_path}/{filename}'.format(dir_path=dir_path,
-                                             filename=filename), 'rb') as f:
-        out_net.ParseFromString(f.read())
-    return out_net
-
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('caffe2.python.models.__sym_init__._parseFile', '_parseFile(filename)', {'caffe2_pb2': caffe2_pb2, 'os': os, '__file__': __file__, 'filename': filename}, 1)
 init_net = _parseFile('init_net.pb')
 predict_net = _parseFile('predict_net.pb')
+

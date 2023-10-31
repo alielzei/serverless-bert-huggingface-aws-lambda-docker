@@ -1,31 +1,9 @@
-# coding=utf-8
-# Copyright 2019-present CNRS, Facebook Inc. and the HuggingFace Inc. team.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """ Flaubert configuration, based on XLM. """
 
 from .configuration_xlm import XLMConfig
 from .utils import logging
-
-
 logger = logging.get_logger(__name__)
-
-FLAUBERT_PRETRAINED_CONFIG_ARCHIVE_MAP = {
-    "flaubert/flaubert_small_cased": "https://s3.amazonaws.com/models.huggingface.co/bert/flaubert/flaubert_small_cased/config.json",
-    "flaubert/flaubert_base_uncased": "https://s3.amazonaws.com/models.huggingface.co/bert/flaubert/flaubert_base_uncased/config.json",
-    "flaubert/flaubert_base_cased": "https://s3.amazonaws.com/models.huggingface.co/bert/flaubert/flaubert_base_cased/config.json",
-    "flaubert/flaubert_large_cased": "https://s3.amazonaws.com/models.huggingface.co/bert/flaubert/flaubert_large_cased/config.json",
-}
+FLAUBERT_PRETRAINED_CONFIG_ARCHIVE_MAP = {'flaubert/flaubert_small_cased': 'https://s3.amazonaws.com/models.huggingface.co/bert/flaubert/flaubert_small_cased/config.json', 'flaubert/flaubert_base_uncased': 'https://s3.amazonaws.com/models.huggingface.co/bert/flaubert/flaubert_base_uncased/config.json', 'flaubert/flaubert_base_cased': 'https://s3.amazonaws.com/models.huggingface.co/bert/flaubert/flaubert_base_cased/config.json', 'flaubert/flaubert_large_cased': 'https://s3.amazonaws.com/models.huggingface.co/bert/flaubert/flaubert_large_cased/config.json'}
 
 
 class FlaubertConfig(XLMConfig):
@@ -137,11 +115,12 @@ class FlaubertConfig(XLMConfig):
             The ID of the language used by the model. This parameter is used when generating
             text in a given language.
     """
-
-    model_type = "flaubert"
-
+    model_type = 'flaubert'
+    
     def __init__(self, layerdrop=0.0, pre_norm=False, pad_token_id=2, bos_token_id=0, **kwargs):
         """Constructs FlaubertConfig."""
         super().__init__(pad_token_id=pad_token_id, bos_token_id=bos_token_id, **kwargs)
         self.layerdrop = layerdrop
         self.pre_norm = pre_norm
+
+

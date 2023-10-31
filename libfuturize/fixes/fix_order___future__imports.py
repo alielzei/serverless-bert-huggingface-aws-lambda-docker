@@ -17,20 +17,13 @@ This helps with testing of ``futurize``.
 from lib2to3 import fixer_base
 from libfuturize.fixer_util import future_import
 
+
 class FixOrderFutureImports(fixer_base.BaseFix):
     BM_compatible = True
-    PATTERN = "file_input"
-
+    PATTERN = 'file_input'
     run_order = 10
-
-    # def match(self, node):
-    #     """
-    #     Match only once per file
-    #     """
-    #     if hasattr(node, 'type') and node.type == syms.file_input:
-    #         return True
-    #     return False
-
+    
     def transform(self, node, results):
-        # TODO    # write me
         pass
+
+

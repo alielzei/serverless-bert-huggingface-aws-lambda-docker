@@ -1,65 +1,13 @@
-# coding=utf-8
-# Copyright 2018 The Open AI Team Authors and The HuggingFace Inc. team.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """Fast Tokenization classes for RoBERTa."""
 
 from typing import List, Optional
-
 from .tokenization_gpt2_fast import GPT2TokenizerFast
 from .tokenization_roberta import RobertaTokenizer
 from .utils import logging
-
-
 logger = logging.get_logger(__name__)
-
-VOCAB_FILES_NAMES = {"vocab_file": "vocab.json", "merges_file": "merges.txt", "tokenizer_file": "tokenizer.json"}
-
-PRETRAINED_VOCAB_FILES_MAP = {
-    "vocab_file": {
-        "roberta-base": "https://s3.amazonaws.com/models.huggingface.co/bert/roberta-base-vocab.json",
-        "roberta-large": "https://s3.amazonaws.com/models.huggingface.co/bert/roberta-large-vocab.json",
-        "roberta-large-mnli": "https://s3.amazonaws.com/models.huggingface.co/bert/roberta-large-mnli-vocab.json",
-        "distilroberta-base": "https://s3.amazonaws.com/models.huggingface.co/bert/distilroberta-base-vocab.json",
-        "roberta-base-openai-detector": "https://s3.amazonaws.com/models.huggingface.co/bert/roberta-base-vocab.json",
-        "roberta-large-openai-detector": "https://s3.amazonaws.com/models.huggingface.co/bert/roberta-large-vocab.json",
-    },
-    "merges_file": {
-        "roberta-base": "https://s3.amazonaws.com/models.huggingface.co/bert/roberta-base-merges.txt",
-        "roberta-large": "https://s3.amazonaws.com/models.huggingface.co/bert/roberta-large-merges.txt",
-        "roberta-large-mnli": "https://s3.amazonaws.com/models.huggingface.co/bert/roberta-large-mnli-merges.txt",
-        "distilroberta-base": "https://s3.amazonaws.com/models.huggingface.co/bert/distilroberta-base-merges.txt",
-        "roberta-base-openai-detector": "https://s3.amazonaws.com/models.huggingface.co/bert/roberta-base-merges.txt",
-        "roberta-large-openai-detector": "https://s3.amazonaws.com/models.huggingface.co/bert/roberta-large-merges.txt",
-    },
-    "tokenizer_file": {
-        "roberta-base": "https://s3.amazonaws.com/models.huggingface.co/bert/roberta-base-tokenizer.json",
-        "roberta-large": "https://s3.amazonaws.com/models.huggingface.co/bert/roberta-large-tokenizer.json",
-        "roberta-large-mnli": "https://s3.amazonaws.com/models.huggingface.co/bert/roberta-large-mnli-tokenizer.json",
-        "distilroberta-base": "https://s3.amazonaws.com/models.huggingface.co/bert/distilroberta-base-tokenizer.json",
-        "roberta-base-openai-detector": "https://s3.amazonaws.com/models.huggingface.co/bert/roberta-base-tokenizer.json",
-        "roberta-large-openai-detector": "https://s3.amazonaws.com/models.huggingface.co/bert/roberta-large-tokenizer.json",
-    },
-}
-
-PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES = {
-    "roberta-base": 512,
-    "roberta-large": 512,
-    "roberta-large-mnli": 512,
-    "distilroberta-base": 512,
-    "roberta-base-openai-detector": 512,
-    "roberta-large-openai-detector": 512,
-}
+VOCAB_FILES_NAMES = {'vocab_file': 'vocab.json', 'merges_file': 'merges.txt', 'tokenizer_file': 'tokenizer.json'}
+PRETRAINED_VOCAB_FILES_MAP = {'vocab_file': {'roberta-base': 'https://s3.amazonaws.com/models.huggingface.co/bert/roberta-base-vocab.json', 'roberta-large': 'https://s3.amazonaws.com/models.huggingface.co/bert/roberta-large-vocab.json', 'roberta-large-mnli': 'https://s3.amazonaws.com/models.huggingface.co/bert/roberta-large-mnli-vocab.json', 'distilroberta-base': 'https://s3.amazonaws.com/models.huggingface.co/bert/distilroberta-base-vocab.json', 'roberta-base-openai-detector': 'https://s3.amazonaws.com/models.huggingface.co/bert/roberta-base-vocab.json', 'roberta-large-openai-detector': 'https://s3.amazonaws.com/models.huggingface.co/bert/roberta-large-vocab.json'}, 'merges_file': {'roberta-base': 'https://s3.amazonaws.com/models.huggingface.co/bert/roberta-base-merges.txt', 'roberta-large': 'https://s3.amazonaws.com/models.huggingface.co/bert/roberta-large-merges.txt', 'roberta-large-mnli': 'https://s3.amazonaws.com/models.huggingface.co/bert/roberta-large-mnli-merges.txt', 'distilroberta-base': 'https://s3.amazonaws.com/models.huggingface.co/bert/distilroberta-base-merges.txt', 'roberta-base-openai-detector': 'https://s3.amazonaws.com/models.huggingface.co/bert/roberta-base-merges.txt', 'roberta-large-openai-detector': 'https://s3.amazonaws.com/models.huggingface.co/bert/roberta-large-merges.txt'}, 'tokenizer_file': {'roberta-base': 'https://s3.amazonaws.com/models.huggingface.co/bert/roberta-base-tokenizer.json', 'roberta-large': 'https://s3.amazonaws.com/models.huggingface.co/bert/roberta-large-tokenizer.json', 'roberta-large-mnli': 'https://s3.amazonaws.com/models.huggingface.co/bert/roberta-large-mnli-tokenizer.json', 'distilroberta-base': 'https://s3.amazonaws.com/models.huggingface.co/bert/distilroberta-base-tokenizer.json', 'roberta-base-openai-detector': 'https://s3.amazonaws.com/models.huggingface.co/bert/roberta-base-tokenizer.json', 'roberta-large-openai-detector': 'https://s3.amazonaws.com/models.huggingface.co/bert/roberta-large-tokenizer.json'}}
+PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES = {'roberta-base': 512, 'roberta-large': 512, 'roberta-large-mnli': 512, 'distilroberta-base': 512, 'roberta-base-openai-detector': 512, 'roberta-large-openai-detector': 512}
 
 
 class RobertaTokenizerFast(GPT2TokenizerFast):
@@ -134,55 +82,22 @@ class RobertaTokenizerFast(GPT2TokenizerFast):
         trim_offsets (:obj:`bool`, `optional`, defaults to :obj:`True`):
             Whether the post processing step should trim offsets to avoid including whitespaces.
     """
-
     vocab_files_names = VOCAB_FILES_NAMES
     pretrained_vocab_files_map = PRETRAINED_VOCAB_FILES_MAP
     max_model_input_sizes = PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES
-    model_input_names = ["attention_mask"]
+    model_input_names = ['attention_mask']
     slow_tokenizer_class = RobertaTokenizer
-
-    def __init__(
-        self,
-        vocab_file,
-        merges_file,
-        tokenizer_file=None,
-        errors="replace",
-        bos_token="<s>",
-        eos_token="</s>",
-        sep_token="</s>",
-        cls_token="<s>",
-        unk_token="<unk>",
-        pad_token="<pad>",
-        mask_token="<mask>",
-        add_prefix_space=False,
-        **kwargs
-    ):
-        super().__init__(
-            vocab_file,
-            merges_file,
-            tokenizer_file=tokenizer_file,
-            errors=errors,
-            bos_token=bos_token,
-            eos_token=eos_token,
-            sep_token=sep_token,
-            cls_token=cls_token,
-            unk_token=unk_token,
-            pad_token=pad_token,
-            mask_token=mask_token,
-            add_prefix_space=add_prefix_space,
-            **kwargs,
-        )
-
+    
+    def __init__(self, vocab_file, merges_file, tokenizer_file=None, errors='replace', bos_token='<s>', eos_token='</s>', sep_token='</s>', cls_token='<s>', unk_token='<unk>', pad_token='<pad>', mask_token='<mask>', add_prefix_space=False, **kwargs):
+        super().__init__(vocab_file, merges_file, tokenizer_file=tokenizer_file, errors=errors, bos_token=bos_token, eos_token=eos_token, sep_token=sep_token, cls_token=cls_token, unk_token=unk_token, pad_token=pad_token, mask_token=mask_token, add_prefix_space=add_prefix_space, **kwargs)
+    
     def build_inputs_with_special_tokens(self, token_ids_0, token_ids_1=None):
         output = [self.bos_token_id] + token_ids_0 + [self.eos_token_id]
         if token_ids_1 is None:
             return output
-
         return output + [self.eos_token_id] + token_ids_1 + [self.eos_token_id]
-
-    def create_token_type_ids_from_sequences(
-        self, token_ids_0: List[int], token_ids_1: Optional[List[int]] = None
-    ) -> List[int]:
+    
+    def create_token_type_ids_from_sequences(self, token_ids_0: List[int], token_ids_1: Optional[List[int]] = None) -> List[int]:
         """
         Create a mask from the two sequences passed to be used in a sequence-pair classification task.
         RoBERTa does not make use of token type ids, therefore a list of zeros is returned.
@@ -198,7 +113,8 @@ class RobertaTokenizerFast(GPT2TokenizerFast):
         """
         sep = [self.sep_token_id]
         cls = [self.cls_token_id]
-
         if token_ids_1 is None:
             return len(cls + token_ids_0 + sep) * [0]
         return len(cls + token_ids_0 + sep + sep + token_ids_1 + sep) * [0]
+
+

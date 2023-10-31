@@ -3,63 +3,44 @@ from .. import functional as F
 
 
 class _InstanceNorm(_NormBase):
-    def __init__(self, num_features, eps=1e-5, momentum=0.1, affine=False,
-                 track_running_stats=False):
-        super(_InstanceNorm, self).__init__(
-            num_features, eps, momentum, affine, track_running_stats)
-
+    
+    def __init__(self, num_features, eps=1e-05, momentum=0.1, affine=False, track_running_stats=False):
+        super(_InstanceNorm, self).__init__(num_features, eps, momentum, affine, track_running_stats)
+    
     def _check_input_dim(self, input):
         raise NotImplementedError
-
-    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
-                              missing_keys, unexpected_keys, error_msgs):
+    
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs):
         version = local_metadata.get('version', None)
-        # at version 1: removed running_mean and running_var when
-        # track_running_stats=False (default)
-        if version is None and not self.track_running_stats:
+        if (version is None and not self.track_running_stats):
             running_stats_keys = []
             for name in ('running_mean', 'running_var'):
                 key = prefix + name
                 if key in state_dict:
                     running_stats_keys.append(key)
             if len(running_stats_keys) > 0:
-                error_msgs.append(
-                    'Unexpected running stats buffer(s) {names} for {klass} '
-                    'with track_running_stats=False. If state_dict is a '
-                    'checkpoint saved before 0.4.0, this may be expected '
-                    'because {klass} does not track running stats by default '
-                    'since 0.4.0. Please remove these keys from state_dict. If '
-                    'the running stats are actually needed, instead set '
-                    'track_running_stats=True in {klass} to enable them. See '
-                    'the documentation of {klass} for details.'
-                    .format(names=" and ".join('"{}"'.format(k) for k in running_stats_keys),
-                            klass=self.__class__.__name__))
+                error_msgs.append('Unexpected running stats buffer(s) {names} for {klass} with track_running_stats=False. If state_dict is a checkpoint saved before 0.4.0, this may be expected because {klass} does not track running stats by default since 0.4.0. Please remove these keys from state_dict. If the running stats are actually needed, instead set track_running_stats=True in {klass} to enable them. See the documentation of {klass} for details.'.format(names=' and '.join(('"{}"'.format(k) for k in running_stats_keys)), klass=self.__class__.__name__))
                 for key in running_stats_keys:
                     state_dict.pop(key)
-
-        super(_InstanceNorm, self)._load_from_state_dict(
-            state_dict, prefix, local_metadata, strict,
-            missing_keys, unexpected_keys, error_msgs)
-
+        super(_InstanceNorm, self)._load_from_state_dict(state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs)
+    
     def forward(self, input):
         self._check_input_dim(input)
+        return F.instance_norm(input, self.running_mean, self.running_var, self.weight, self.bias, (self.training or not self.track_running_stats), self.momentum, self.eps)
 
-        return F.instance_norm(
-            input, self.running_mean, self.running_var, self.weight, self.bias,
-            self.training or not self.track_running_stats, self.momentum, self.eps)
 
 
 class InstanceNorm1d(_InstanceNorm):
-    r"""Applies Instance Normalization over a 3D input (a mini-batch of 1D
+    """Applies Instance Normalization over a 3D input (a mini-batch of 1D
     inputs with optional additional channel dimension) as described in the paper
     `Instance Normalization: The Missing Ingredient for Fast Stylization`_ .
 
     .. math::
 
-        y = \frac{x - \mathrm{E}[x]}{ \sqrt{\mathrm{Var}[x] + \epsilon}} * \gamma + \beta
+        y = rac{x - \mathrm{E}[x]}{ \sqrt{\mathrm{Var}[x] + \epsilon}} * \gamma + eta
 
     The mean and standard-deviation are calculated per-dimension separately
-    for each object in a mini-batch. :math:`\gamma` and :math:`\beta` are learnable parameter vectors
+    for each object in a mini-batch. :math:`\gamma` and :math:`eta` are learnable parameter vectors
     of size `C` (where `C` is the input size) if :attr:`affine` is ``True``.
 
     By default, this layer uses instance statistics computed from input data in
@@ -74,7 +55,7 @@ class InstanceNorm1d(_InstanceNorm):
         This :attr:`momentum` argument is different from one used in optimizer
         classes and the conventional notion of momentum. Mathematically, the
         update rule for running statistics here is
-        :math:`\hat{x}_\text{new} = (1 - \text{momentum}) \times \hat{x} + \text{momemtum} \times x_t`,
+        :math:`\hat{x}_	ext{new} = (1 - 	ext{momentum}) 	imes \hat{x} + 	ext{momemtum} 	imes x_t`,
         where :math:`\hat{x}` is the estimated statistic and :math:`x_t` is the
         new observed value.
 
@@ -116,31 +97,26 @@ class InstanceNorm1d(_InstanceNorm):
     .. _`Instance Normalization: The Missing Ingredient for Fast Stylization`:
         https://arxiv.org/abs/1607.08022
     """
-
+    
     def _check_input_dim(self, input):
         if input.dim() == 2:
-            raise ValueError(
-                'InstanceNorm1d returns 0-filled tensor to 2D tensor.'
-                'This is because InstanceNorm1d reshapes inputs to'
-                '(1, N * C, ...) from (N, C,...) and this makes'
-                'variances 0.'
-            )
+            raise ValueError('InstanceNorm1d returns 0-filled tensor to 2D tensor.This is because InstanceNorm1d reshapes inputs to(1, N * C, ...) from (N, C,...) and this makesvariances 0.')
         if input.dim() != 3:
-            raise ValueError('expected 3D input (got {}D input)'
-                             .format(input.dim()))
+            raise ValueError('expected 3D input (got {}D input)'.format(input.dim()))
+
 
 
 class InstanceNorm2d(_InstanceNorm):
-    r"""Applies Instance Normalization over a 4D input (a mini-batch of 2D inputs
+    """Applies Instance Normalization over a 4D input (a mini-batch of 2D inputs
     with additional channel dimension) as described in the paper
     `Instance Normalization: The Missing Ingredient for Fast Stylization`_ .
 
     .. math::
 
-        y = \frac{x - \mathrm{E}[x]}{ \sqrt{\mathrm{Var}[x] + \epsilon}} * \gamma + \beta
+        y = rac{x - \mathrm{E}[x]}{ \sqrt{\mathrm{Var}[x] + \epsilon}} * \gamma + eta
 
     The mean and standard-deviation are calculated per-dimension separately
-    for each object in a mini-batch. :math:`\gamma` and :math:`\beta` are learnable parameter vectors
+    for each object in a mini-batch. :math:`\gamma` and :math:`eta` are learnable parameter vectors
     of size `C` (where `C` is the input size) if :attr:`affine` is ``True``.
 
     By default, this layer uses instance statistics computed from input data in
@@ -155,7 +131,7 @@ class InstanceNorm2d(_InstanceNorm):
         This :attr:`momentum` argument is different from one used in optimizer
         classes and the conventional notion of momentum. Mathematically, the
         update rule for running statistics here is
-        :math:`\hat{x}_\text{new} = (1 - \text{momentum}) \times \hat{x} + \text{momemtum} \times x_t`,
+        :math:`\hat{x}_	ext{new} = (1 - 	ext{momentum}) 	imes \hat{x} + 	ext{momemtum} 	imes x_t`,
         where :math:`\hat{x}` is the estimated statistic and :math:`x_t` is the
         new observed value.
 
@@ -197,24 +173,24 @@ class InstanceNorm2d(_InstanceNorm):
     .. _`Instance Normalization: The Missing Ingredient for Fast Stylization`:
         https://arxiv.org/abs/1607.08022
     """
-
+    
     def _check_input_dim(self, input):
         if input.dim() != 4:
-            raise ValueError('expected 4D input (got {}D input)'
-                             .format(input.dim()))
+            raise ValueError('expected 4D input (got {}D input)'.format(input.dim()))
+
 
 
 class InstanceNorm3d(_InstanceNorm):
-    r"""Applies Instance Normalization over a 5D input (a mini-batch of 3D inputs
+    """Applies Instance Normalization over a 5D input (a mini-batch of 3D inputs
     with additional channel dimension) as described in the paper
     `Instance Normalization: The Missing Ingredient for Fast Stylization`_ .
 
     .. math::
 
-        y = \frac{x - \mathrm{E}[x]}{ \sqrt{\mathrm{Var}[x] + \epsilon}} * \gamma + \beta
+        y = rac{x - \mathrm{E}[x]}{ \sqrt{\mathrm{Var}[x] + \epsilon}} * \gamma + eta
 
     The mean and standard-deviation are calculated per-dimension separately
-    for each object in a mini-batch. :math:`\gamma` and :math:`\beta` are learnable parameter vectors
+    for each object in a mini-batch. :math:`\gamma` and :math:`eta` are learnable parameter vectors
     of size C (where C is the input size) if :attr:`affine` is ``True``.
 
     By default, this layer uses instance statistics computed from input data in
@@ -229,7 +205,7 @@ class InstanceNorm3d(_InstanceNorm):
         This :attr:`momentum` argument is different from one used in optimizer
         classes and the conventional notion of momentum. Mathematically, the
         update rule for running statistics here is
-        :math:`\hat{x}_\text{new} = (1 - \text{momentum}) \times \hat{x} + \text{momemtum} \times x_t`,
+        :math:`\hat{x}_	ext{new} = (1 - 	ext{momentum}) 	imes \hat{x} + 	ext{momemtum} 	imes x_t`,
         where :math:`\hat{x}` is the estimated statistic and :math:`x_t` is the
         new observed value.
 
@@ -271,8 +247,9 @@ class InstanceNorm3d(_InstanceNorm):
     .. _`Instance Normalization: The Missing Ingredient for Fast Stylization`:
         https://arxiv.org/abs/1607.08022
     """
-
+    
     def _check_input_dim(self, input):
         if input.dim() != 5:
-            raise ValueError('expected 5D input (got {}D input)'
-                             .format(input.dim()))
+            raise ValueError('expected 5D input (got {}D input)'.format(input.dim()))
+
+

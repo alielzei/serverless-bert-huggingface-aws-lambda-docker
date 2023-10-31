@@ -3,7 +3,7 @@ from .. import functional as F
 
 
 class Upsample(Module):
-    r"""Upsamples a given multi-channel 1D (temporal), 2D (spatial) or 3D (volumetric) data.
+    """Upsamples a given multi-channel 1D (temporal), 2D (spatial) or 3D (volumetric) data.
 
     The input data is assumed to be of the form
     `minibatch x channels x [optional depth] x [optional height] x width`.
@@ -35,13 +35,13 @@ class Upsample(Module):
           or :math:`(N, C, D_{out}, H_{out}, W_{out})`, where
 
     .. math::
-        D_{out} = \left\lfloor D_{in} \times \text{scale\_factor} \right\rfloor
+        D_{out} = \left\lfloor D_{in} 	imes 	ext{scale\_factor} ightfloor
 
     .. math::
-        H_{out} = \left\lfloor H_{in} \times \text{scale\_factor} \right\rfloor
+        H_{out} = \left\lfloor H_{in} 	imes 	ext{scale\_factor} ightfloor
 
     .. math::
-        W_{out} = \left\lfloor W_{in} \times \text{scale\_factor} \right\rfloor
+        W_{out} = \left\lfloor W_{in} 	imes 	ext{scale\_factor} ightfloor
 
     .. warning::
         With ``align_corners = True``, the linearly interpolating modes
@@ -115,21 +115,21 @@ class Upsample(Module):
                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000]]]])
     """
     __constants__ = ['size', 'scale_factor', 'mode', 'align_corners', 'name']
-
+    
     def __init__(self, size=None, scale_factor=None, mode='nearest', align_corners=None):
         super(Upsample, self).__init__()
         self.name = type(self).__name__
         self.size = size
         if isinstance(scale_factor, tuple):
-            self.scale_factor = tuple(float(factor) for factor in scale_factor)
+            self.scale_factor = tuple((float(factor) for factor in scale_factor))
         else:
-            self.scale_factor = float(scale_factor) if scale_factor else None
+            self.scale_factor = (float(scale_factor) if scale_factor else None)
         self.mode = mode
         self.align_corners = align_corners
-
+    
     def forward(self, input):
         return F.interpolate(input, self.size, self.scale_factor, self.mode, self.align_corners)
-
+    
     def extra_repr(self):
         if self.scale_factor is not None:
             info = 'scale_factor=' + str(self.scale_factor)
@@ -139,8 +139,9 @@ class Upsample(Module):
         return info
 
 
+
 class UpsamplingNearest2d(Upsample):
-    r"""Applies a 2D nearest neighbor upsampling to an input signal composed of several input
+    """Applies a 2D nearest neighbor upsampling to an input signal composed of several input
     channels.
 
     To specify the scale, it takes either the :attr:`size` or the :attr:`scale_factor`
@@ -161,10 +162,10 @@ class UpsamplingNearest2d(Upsample):
         - Output: :math:`(N, C, H_{out}, W_{out})` where
 
     .. math::
-          H_{out} = \left\lfloor H_{in} \times \text{scale\_factor} \right\rfloor
+          H_{out} = \left\lfloor H_{in} 	imes 	ext{scale\_factor} ightfloor
 
     .. math::
-          W_{out} = \left\lfloor W_{in} \times \text{scale\_factor} \right\rfloor
+          W_{out} = \left\lfloor W_{in} 	imes 	ext{scale\_factor} ightfloor
 
     Examples::
 
@@ -180,12 +181,14 @@ class UpsamplingNearest2d(Upsample):
                   [ 3.,  3.,  4.,  4.],
                   [ 3.,  3.,  4.,  4.]]]])
     """
+    
     def __init__(self, size=None, scale_factor=None):
         super(UpsamplingNearest2d, self).__init__(size, scale_factor, mode='nearest')
 
 
+
 class UpsamplingBilinear2d(Upsample):
-    r"""Applies a 2D bilinear upsampling to an input signal composed of several input
+    """Applies a 2D bilinear upsampling to an input signal composed of several input
     channels.
 
     To specify the scale, it takes either the :attr:`size` or the :attr:`scale_factor`
@@ -207,10 +210,10 @@ class UpsamplingBilinear2d(Upsample):
         - Output: :math:`(N, C, H_{out}, W_{out})` where
 
     .. math::
-        H_{out} = \left\lfloor H_{in} \times \text{scale\_factor} \right\rfloor
+        H_{out} = \left\lfloor H_{in} 	imes 	ext{scale\_factor} ightfloor
 
     .. math::
-        W_{out} = \left\lfloor W_{in} \times \text{scale\_factor} \right\rfloor
+        W_{out} = \left\lfloor W_{in} 	imes 	ext{scale\_factor} ightfloor
 
     Examples::
 
@@ -226,5 +229,8 @@ class UpsamplingBilinear2d(Upsample):
                   [ 2.3333,  2.6667,  3.0000,  3.3333],
                   [ 3.0000,  3.3333,  3.6667,  4.0000]]]])
     """
+    
     def __init__(self, size=None, scale_factor=None):
         super(UpsamplingBilinear2d, self).__init__(size, scale_factor, mode='bilinear', align_corners=True)
+
+

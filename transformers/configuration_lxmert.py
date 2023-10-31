@@ -1,33 +1,13 @@
-# coding=utf-8
-# Copyright 2018, Hao Tan, Mohit Bansal
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """ LXMERT model configuration """
-
 
 from .configuration_utils import PretrainedConfig
 from .utils import logging
-
-
 logger = logging.get_logger(__name__)
-
-LXMERT_PRETRAINED_CONFIG_ARCHIVE_MAP = {
-    "unc-nlp/lxmert-base-uncased": "",
-}
+LXMERT_PRETRAINED_CONFIG_ARCHIVE_MAP = {'unc-nlp/lxmert-base-uncased': ''}
 
 
 class LxmertConfig(PretrainedConfig):
-    r"""
+    """
     This is the configuration class to store the configuration of a :class:`~transformers.LxmertModel` or a
     :class:`~transformers.TFLxmertModel`. It is used to instantiate a LXMERT model according to the specified
     arguments, defining the model architecture.
@@ -114,44 +94,9 @@ class LxmertConfig(PretrainedConfig):
             Whether or not the model should return the hidden states from the vision, langauge, and cross-modality
             layers should be returned.
     """
-
-    model_type = "lxmert"
-
-    def __init__(
-        self,
-        vocab_size=30522,
-        hidden_size=768,
-        num_attention_heads=12,
-        num_labels=2,
-        num_qa_labels=9500,
-        num_object_labels=1600,
-        num_attr_labels=400,
-        intermediate_size=3072,
-        hidden_act="gelu",
-        hidden_dropout_prob=0.1,
-        attention_probs_dropout_prob=0.1,
-        max_position_embeddings=512,
-        type_vocab_size=2,
-        initializer_range=0.02,
-        layer_norm_eps=1e-12,
-        pad_token_id=0,
-        l_layers=9,
-        x_layers=5,
-        r_layers=5,
-        visual_feat_dim=2048,
-        visual_pos_dim=4,
-        visual_loss_normalizer=6.67,
-        task_matched=True,
-        task_mask_lm=True,
-        task_obj_predict=True,
-        task_qa=True,
-        visual_obj_loss=True,
-        visual_attr_loss=True,
-        visual_feat_loss=True,
-        output_attentions=False,
-        output_hidden_states=False,
-        **kwargs,
-    ):
+    model_type = 'lxmert'
+    
+    def __init__(self, vocab_size=30522, hidden_size=768, num_attention_heads=12, num_labels=2, num_qa_labels=9500, num_object_labels=1600, num_attr_labels=400, intermediate_size=3072, hidden_act='gelu', hidden_dropout_prob=0.1, attention_probs_dropout_prob=0.1, max_position_embeddings=512, type_vocab_size=2, initializer_range=0.02, layer_norm_eps=1e-12, pad_token_id=0, l_layers=9, x_layers=5, r_layers=5, visual_feat_dim=2048, visual_pos_dim=4, visual_loss_normalizer=6.67, task_matched=True, task_mask_lm=True, task_obj_predict=True, task_qa=True, visual_obj_loss=True, visual_attr_loss=True, visual_feat_loss=True, output_attentions=False, output_hidden_states=False, **kwargs):
         super().__init__(**kwargs)
         self.vocab_size = vocab_size
         self.hidden_size = hidden_size
@@ -183,4 +128,6 @@ class LxmertConfig(PretrainedConfig):
         self.visual_feat_loss = visual_feat_loss
         self.output_hidden_states = output_hidden_states
         self.output_attentions = self.output_attentions
-        self.num_hidden_layers = {"vision": r_layers, "cross_encoder": x_layers, "language": l_layers}
+        self.num_hidden_layers = {'vision': r_layers, 'cross_encoder': x_layers, 'language': l_layers}
+
+

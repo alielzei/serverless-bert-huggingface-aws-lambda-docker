@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 requests.certs
 ~~~~~~~~~~~~~~
@@ -11,7 +9,8 @@ If you are packaging Requests, e.g., for a Linux distribution or a managed
 environment, you can change the definition of where() to return a separately
 packaged CA bundle.
 """
-from certifi import where
 
-if __name__ == "__main__":
+from certifi import where
+if __name__ == '__main__':
     print(where())
+

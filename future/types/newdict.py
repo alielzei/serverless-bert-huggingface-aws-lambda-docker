@@ -17,16 +17,14 @@ The keys, values and items methods now return iterators on Python 2.x
 """
 
 import sys
-
 from future.utils import with_metaclass
 from future.types.newobject import newobject
-
-
 _builtin_dict = dict
 ver = sys.version_info
 
 
 class BaseNewDict(type):
+    
     def __instancecheck__(cls, instance):
         if cls == newdict:
             return isinstance(instance, _builtin_dict)
@@ -34,13 +32,12 @@ class BaseNewDict(type):
             return issubclass(instance.__class__, cls)
 
 
+
 class newdict(with_metaclass(BaseNewDict, _builtin_dict)):
     """
     A backport of the Python 3 dict object to Py2
     """
-
-    if ver >= (3,):
-        # Inherit items, keys and values from `dict` in 3.x
+    if ver >= (3, ):
         pass
     elif ver >= (2, 7):
         items = dict.viewitems
@@ -50,7 +47,7 @@ class newdict(with_metaclass(BaseNewDict, _builtin_dict)):
         items = dict.iteritems
         keys = dict.iterkeys
         values = dict.itervalues
-
+    
     def __new__(cls, *args, **kwargs):
         """
         dict() -> new empty dictionary
@@ -63,14 +60,13 @@ class newdict(with_metaclass(BaseNewDict, _builtin_dict)):
         dict(**kwargs) -> new dictionary initialized with the name=value pairs
             in the keyword argument list.  For example:  dict(one=1, two=2)
         """
-
         return super(newdict, cls).__new__(cls, *args)
-
+    
     def __native__(self):
         """
         Hook for the future.utils.native() function
         """
         return dict(self)
 
-
 __all__ = ['newdict']
+

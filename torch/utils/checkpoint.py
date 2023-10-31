@@ -2,58 +2,25 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import torch
 import warnings
 
-
 def detach_variable(inputs):
-    if isinstance(inputs, tuple):
-        out = []
-        for inp in inputs:
-            if not isinstance(inp, torch.Tensor):
-                out.append(inp)
-                continue
-
-            x = inp.detach()
-            x.requires_grad = inp.requires_grad
-            out.append(x)
-        return tuple(out)
-    else:
-        raise RuntimeError(
-            "Only tuple of tensors is supported. Got Unsupported input type: ", type(inputs).__name__)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.utils.checkpoint.detach_variable', 'detach_variable(inputs)', {'torch': torch, 'inputs': inputs}, 1)
 
 def check_backward_validity(inputs):
-    if not any(inp.requires_grad for inp in inputs if isinstance(inp, torch.Tensor)):
-        warnings.warn("None of the inputs have requires_grad=True. Gradients will be None")
+    if not any((inp.requires_grad for inp in inputs if isinstance(inp, torch.Tensor))):
+        warnings.warn('None of the inputs have requires_grad=True. Gradients will be None')
 
-
-# We can't know if the run_fn will internally move some args to different devices,
-# which would require logic to preserve rng states for those devices as well.
-# We could paranoically stash and restore ALL the rng states for all visible devices,
-# but that seems very wasteful for most cases.  Compromise:  Stash the RNG state for
-# the device of all Tensor args.
-#
-# To consider:  maybe get_device_states and set_device_states should reside in torch/random.py?
 def get_device_states(*args):
-    # This will not error out if "arg" is a CPU tensor or a non-tensor type because
-    # the conditionals short-circuit.
-    fwd_gpu_devices = list(set(arg.get_device() for arg in args
-                               if isinstance(arg, torch.Tensor) and arg.is_cuda))
-
-    fwd_gpu_states = []
-    for device in fwd_gpu_devices:
-        with torch.cuda.device(device):
-            fwd_gpu_states.append(torch.cuda.get_rng_state())
-
-    return fwd_gpu_devices, fwd_gpu_states
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.utils.checkpoint.get_device_states', 'get_device_states(*args)', {'torch': torch, 'args': args}, 2)
 
 def set_device_states(devices, states):
-    for device, state in zip(devices, states):
-        with torch.cuda.device(device):
-            torch.cuda.set_rng_state(state)
+    import custom_funtemplate
+    custom_funtemplate.rewrite_template('torch.utils.checkpoint.set_device_states', 'set_device_states(devices, states)', {'torch': torch, 'devices': devices, 'states': states}, 0)
 
 
 class CheckpointFunction(torch.autograd.Function):
-
+    
     @staticmethod
     def forward(ctx, run_function, preserve_rng_state, *args):
         check_backward_validity(args)
@@ -61,29 +28,22 @@ class CheckpointFunction(torch.autograd.Function):
         ctx.preserve_rng_state = preserve_rng_state
         if preserve_rng_state:
             ctx.fwd_cpu_state = torch.get_rng_state()
-            # Don't eagerly initialize the cuda context by accident.
-            # (If the user intends that the context is initialized later, within their
-            # run_function, we SHOULD actually stash the cuda state here.  Unfortunately,
-            # we have no way to anticipate this will happen before we run the function.)
             ctx.had_cuda_in_fwd = False
             if torch.cuda._initialized:
                 ctx.had_cuda_in_fwd = True
-                ctx.fwd_gpu_devices, ctx.fwd_gpu_states = get_device_states(*args)
+                (ctx.fwd_gpu_devices, ctx.fwd_gpu_states) = get_device_states(*args)
         ctx.save_for_backward(*args)
         with torch.no_grad():
             outputs = run_function(*args)
         return outputs
-
+    
     @staticmethod
     def backward(ctx, *args):
         if not torch.autograd._is_checkpoint_valid():
-            raise RuntimeError("Checkpointing is not compatible with .grad(), please use .backward() if possible")
+            raise RuntimeError('Checkpointing is not compatible with .grad(), please use .backward() if possible')
         inputs = ctx.saved_tensors
-        # Stash the surrounding rng state, and mimic the state that was
-        # present at this time during forward.  Restore the surrounding state
-        # when we're done.
         rng_devices = []
-        if ctx.preserve_rng_state and ctx.had_cuda_in_fwd:
+        if (ctx.preserve_rng_state and ctx.had_cuda_in_fwd):
             rng_devices = ctx.fwd_gpu_devices
         with torch.random.fork_rng(devices=rng_devices, enabled=ctx.preserve_rng_state):
             if ctx.preserve_rng_state:
@@ -93,17 +53,15 @@ class CheckpointFunction(torch.autograd.Function):
             detached_inputs = detach_variable(inputs)
             with torch.enable_grad():
                 outputs = ctx.run_function(*detached_inputs)
-
         if isinstance(outputs, torch.Tensor):
-            outputs = (outputs,)
+            outputs = (outputs, )
         torch.autograd.backward(outputs, args)
-        grads = tuple(inp.grad if isinstance(inp, torch.Tensor) else inp
-                      for inp in detached_inputs)
+        grads = tuple(((inp.grad if isinstance(inp, torch.Tensor) else inp) for inp in detached_inputs))
         return (None, None) + grads
 
 
 def checkpoint(function, *args, **kwargs):
-    r"""Checkpoint a model or part of the model
+    """Checkpoint a model or part of the model
 
     Checkpointing works by trading compute for memory. Rather than storing all
     intermediate activations of the entire computation graph for computing
@@ -147,16 +105,11 @@ def checkpoint(function, *args, **kwargs):
     Returns:
         Output of running :attr:`function` on :attr:`*args`
     """
-    # Hack to mix *args with **kwargs in a python 2.7-compliant way
-    preserve = kwargs.pop('preserve_rng_state', True)
-    if kwargs:
-        raise ValueError("Unexpected keyword arguments: " + ",".join(arg for arg in kwargs))
-
-    return CheckpointFunction.apply(function, preserve, *args)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.utils.checkpoint.checkpoint', 'checkpoint(function, *args, **kwargs)', {'CheckpointFunction': CheckpointFunction, 'function': function, 'args': args, 'kwargs': kwargs}, 1)
 
 def checkpoint_sequential(functions, segments, input, **kwargs):
-    r"""A helper function for checkpointing sequential models.
+    """A helper function for checkpointing sequential models.
 
     Sequential models execute a list of modules/functions in order
     (sequentially). Therefore, we can divide such a model in various segments
@@ -195,26 +148,6 @@ def checkpoint_sequential(functions, segments, input, **kwargs):
         >>> model = nn.Sequential(...)
         >>> input_var = checkpoint_sequential(model, chunks, input_var)
     """
-    # Hack for keyword-only parameter in a python 2.7-compliant way
-    preserve = kwargs.pop('preserve_rng_state', True)
-    if kwargs:
-        raise ValueError("Unexpected keyword arguments: " + ",".join(arg for arg in kwargs))
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.utils.checkpoint.checkpoint_sequential', 'checkpoint_sequential(functions, segments, input, **kwargs)', {'torch': torch, 'checkpoint': checkpoint, 'functions': functions, 'segments': segments, 'input': input, 'kwargs': kwargs}, 1)
 
-    def run_function(start, end, functions):
-        def forward(input):
-            for j in range(start, end + 1):
-                input = functions[j](input)
-            return input
-        return forward
-
-    if isinstance(functions, torch.nn.Sequential):
-        functions = list(functions.children())
-
-    segment_size = len(functions) // segments
-    # the last chunk has to be non-volatile
-    end = -1
-    for start in range(0, segment_size * (segments - 1), segment_size):
-        end = start + segment_size - 1
-        input = checkpoint(run_function(start, end, functions), input,
-                           preserve_rng_state=preserve)
-    return run_function(end + 1, len(functions) - 1, functions)(input)

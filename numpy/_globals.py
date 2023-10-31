@@ -15,16 +15,9 @@ That was not the case when the singleton classes were defined in the numpy
 motivated this module.
 
 """
+
 import enum
-
-__ALL__ = [
-    'ModuleDeprecationWarning', 'VisibleDeprecationWarning',
-    '_NoValue', '_CopyMode'
-    ]
-
-
-# Disallow reloading this module so as to preserve the identities of the
-# classes defined here.
+__ALL__ = ['ModuleDeprecationWarning', 'VisibleDeprecationWarning', '_NoValue', '_CopyMode']
 if '_is_loaded' in globals():
     raise RuntimeError('Reloading numpy._globals is not allowed')
 _is_loaded = True
@@ -39,7 +32,7 @@ class ModuleDeprecationWarning(DeprecationWarning):
     nose tester will let pass without making tests fail.
 
     """
-
+    
 
 ModuleDeprecationWarning.__module__ = 'numpy'
 
@@ -52,7 +45,7 @@ class VisibleDeprecationWarning(UserWarning):
     the usage is most likely a user bug.
 
     """
-
+    
 
 VisibleDeprecationWarning.__module__ = 'numpy'
 
@@ -77,15 +70,14 @@ class _NoValueType:
 
     """
     __instance = None
+    
     def __new__(cls):
-        # ensure that only one instance exists
         if not cls.__instance:
             cls.__instance = super().__new__(cls)
         return cls.__instance
-
+    
     def __repr__(self):
-        return "<no value>"
-
+        return '<no value>'
 
 _NoValue = _NoValueType()
 
@@ -106,20 +98,16 @@ class _CopyMode(enum.Enum):
     Note that the buffer-protocol could in theory do copies.  NumPy currently
     assumes an object exporting the buffer protocol will never do this.
     """
-
     ALWAYS = True
     IF_NEEDED = False
     NEVER = 2
-
+    
     def __bool__(self):
-        # For backwards compatibility
         if self == _CopyMode.ALWAYS:
             return True
-
         if self == _CopyMode.IF_NEEDED:
             return False
-
-        raise ValueError(f"{self} is neither True nor False.")
-
+        raise ValueError(f'{self} is neither True nor False.')
 
 _CopyMode.__module__ = 'numpy'
+

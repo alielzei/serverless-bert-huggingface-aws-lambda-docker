@@ -1,33 +1,13 @@
-# coding=utf-8
-# Copyright 2019-present, the HuggingFace Inc. team, The Google AI Language Team and Facebook, Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """ RetriBERT model configuration """
 
 from .configuration_utils import PretrainedConfig
 from .utils import logging
-
-
 logger = logging.get_logger(__name__)
-
-# TODO: uploadto AWS
-RETRIBERT_PRETRAINED_CONFIG_ARCHIVE_MAP = {
-    "retribert-base-uncased": "https://s3.amazonaws.com/models.huggingface.co/bert/distilbert-base-uncased-config.json",
-}
+RETRIBERT_PRETRAINED_CONFIG_ARCHIVE_MAP = {'retribert-base-uncased': 'https://s3.amazonaws.com/models.huggingface.co/bert/distilbert-base-uncased-config.json'}
 
 
 class RetriBertConfig(PretrainedConfig):
-    r"""
+    """
     This is the configuration class to store the configuration of a :class:`~transformers.RetriBertModel`.
     It is used to instantiate a RetriBertModel model according to the specified arguments, defining the model
     architecture.
@@ -70,29 +50,10 @@ class RetriBertConfig(PretrainedConfig):
         projection_dim (:obj:`int`, `optional`, defaults to 128):
             Final dimension of the query and document representation after projection
     """
-    model_type = "retribert"
-
-    def __init__(
-        self,
-        vocab_size=30522,
-        hidden_size=768,
-        num_hidden_layers=8,
-        num_attention_heads=12,
-        intermediate_size=3072,
-        hidden_act="gelu",
-        hidden_dropout_prob=0.1,
-        attention_probs_dropout_prob=0.1,
-        max_position_embeddings=512,
-        type_vocab_size=2,
-        initializer_range=0.02,
-        layer_norm_eps=1e-12,
-        share_encoders=True,
-        projection_dim=128,
-        pad_token_id=0,
-        **kwargs
-    ):
+    model_type = 'retribert'
+    
+    def __init__(self, vocab_size=30522, hidden_size=768, num_hidden_layers=8, num_attention_heads=12, intermediate_size=3072, hidden_act='gelu', hidden_dropout_prob=0.1, attention_probs_dropout_prob=0.1, max_position_embeddings=512, type_vocab_size=2, initializer_range=0.02, layer_norm_eps=1e-12, share_encoders=True, projection_dim=128, pad_token_id=0, **kwargs):
         super().__init__(pad_token_id=pad_token_id, **kwargs)
-
         self.vocab_size = vocab_size
         self.hidden_size = hidden_size
         self.num_hidden_layers = num_hidden_layers
@@ -107,3 +68,5 @@ class RetriBertConfig(PretrainedConfig):
         self.layer_norm_eps = layer_norm_eps
         self.share_encoders = share_encoders
         self.projection_dim = projection_dim
+
+

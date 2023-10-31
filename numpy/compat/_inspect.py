@@ -5,11 +5,10 @@ significantly contributes to numpy import times. Importing this copy has almost
 no overhead.
 
 """
-import types
 
+import types
 __all__ = ['getargspec', 'formatargspec']
 
-# ----------------------------------------------------------- type-checking
 def ismethod(object):
     """Return true if the object is an instance method.
 
@@ -54,13 +53,10 @@ def iscode(object):
         co_nlocals      number of local variables
         co_stacksize    virtual machine stack space required
         co_varnames     tuple of names of arguments and local variables
-        
+
     """
     return isinstance(object, types.CodeType)
-
-# ------------------------------------------------ argument list extraction
-# These constants are from Python's compile.h.
-CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, CO_VARKEYWORDS = 1, 2, 4, 8
+(CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, CO_VARKEYWORDS) = (1, 2, 4, 8)
 
 def getargs(co):
     """Get information about the arguments accepted by a code object.
@@ -70,20 +66,14 @@ def getargs(co):
     'varargs' and 'varkw' are the names of the * and ** arguments or None.
 
     """
-
     if not iscode(co):
         raise TypeError('arg is not a code object')
-
     nargs = co.co_argcount
     names = co.co_varnames
     args = list(names[:nargs])
-
-    # The following acrobatics are for anonymous (tuple) arguments.
-    # Which we do not need to support, so remove to avoid importing
-    # the dis module.
     for i in range(nargs):
         if args[i][:1] in ['', '.']:
-            raise TypeError("tuple function arguments are not supported")
+            raise TypeError('tuple function arguments are not supported')
     varargs = None
     if co.co_flags & CO_VARARGS:
         varargs = co.co_varnames[nargs]
@@ -91,7 +81,7 @@ def getargs(co):
     varkw = None
     if co.co_flags & CO_VARKEYWORDS:
         varkw = co.co_varnames[nargs]
-    return args, varargs, varkw
+    return (args, varargs, varkw)
 
 def getargspec(func):
     """Get the names and default values of a function's arguments.
@@ -102,13 +92,12 @@ def getargspec(func):
     'defaults' is an n-tuple of the default values of the last n arguments.
 
     """
-
     if ismethod(func):
         func = func.__func__
     if not isfunction(func):
         raise TypeError('arg is not a Python function')
-    args, varargs, varkw = getargs(func.__code__)
-    return args, varargs, varkw, func.__defaults__
+    (args, varargs, varkw) = getargs(func.__code__)
+    return (args, varargs, varkw, func.__defaults__)
 
 def getargvalues(frame):
     """Get information about arguments passed into a particular frame.
@@ -117,10 +106,10 @@ def getargvalues(frame):
     'args' is a list of the argument names (it may contain nested lists).
     'varargs' and 'varkw' are the names of the * and ** arguments or None.
     'locals' is the locals dictionary of the given frame.
-    
+
     """
-    args, varargs, varkw = getargs(frame.f_code)
-    return args, varargs, varkw, frame.f_locals
+    (args, varargs, varkw) = getargs(frame.f_code)
+    return (args, varargs, varkw, frame.f_locals)
 
 def joinseq(seq):
     if len(seq) == 1:
@@ -137,12 +126,7 @@ def strseq(object, convert, join=joinseq):
     else:
         return convert(object)
 
-def formatargspec(args, varargs=None, varkw=None, defaults=None,
-                  formatarg=str,
-                  formatvarargs=lambda name: '*' + name,
-                  formatvarkw=lambda name: '**' + name,
-                  formatvalue=lambda value: '=' + repr(value),
-                  join=joinseq):
+def formatargspec(args, varargs=None, varkw=None, defaults=None, formatarg=str, formatvarargs=lambda name: '*' + name, formatvarkw=lambda name: '**' + name, formatvalue=lambda value: '=' + repr(value), join=joinseq):
     """Format an argument spec from the 4 values returned by getargspec.
 
     The first four arguments are (args, varargs, varkw, defaults).  The
@@ -156,7 +140,7 @@ def formatargspec(args, varargs=None, varkw=None, defaults=None,
         firstdefault = len(args) - len(defaults)
     for i in range(len(args)):
         spec = strseq(args[i], formatarg, join)
-        if defaults and i >= firstdefault:
+        if (defaults and i >= firstdefault):
             spec = spec + formatvalue(defaults[i - firstdefault])
         specs.append(spec)
     if varargs is not None:
@@ -165,12 +149,7 @@ def formatargspec(args, varargs=None, varkw=None, defaults=None,
         specs.append(formatvarkw(varkw))
     return '(' + ', '.join(specs) + ')'
 
-def formatargvalues(args, varargs, varkw, locals,
-                    formatarg=str,
-                    formatvarargs=lambda name: '*' + name,
-                    formatvarkw=lambda name: '**' + name,
-                    formatvalue=lambda value: '=' + repr(value),
-                    join=joinseq):
+def formatargvalues(args, varargs, varkw, locals, formatarg=str, formatvarargs=lambda name: '*' + name, formatvarkw=lambda name: '**' + name, formatvalue=lambda value: '=' + repr(value), join=joinseq):
     """Format an argument spec from the 4 values returned by getargvalues.
 
     The first four arguments are (args, varargs, varkw, locals).  The
@@ -179,13 +158,6 @@ def formatargvalues(args, varargs, varkw, locals,
     argument is an optional function to format the sequence of arguments.
 
     """
-    def convert(name, locals=locals,
-                formatarg=formatarg, formatvalue=formatvalue):
-        return formatarg(name) + formatvalue(locals[name])
-    specs = [strseq(arg, convert, join) for arg in args]
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.compat._inspect.formatargvalues', "formatargvalues(args, varargs, varkw, locals, formatarg=str, formatvarargs=lambda name: '*' + name, formatvarkw=lambda name: '**' + name, formatvalue=lambda value: '=' + repr(value), join=joinseq)", {'strseq': strseq, 'args': args, 'varargs': varargs, 'varkw': varkw, 'locals': locals, 'formatarg': formatarg, 'formatvarargs': formatvarargs, 'formatvarkw': formatvarkw, 'formatvalue': formatvalue, 'join': join, 'str': str, 'joinseq': joinseq}, 1)
 
-    if varargs:
-        specs.append(formatvarargs(varargs) + formatvalue(locals[varargs]))
-    if varkw:
-        specs.append(formatvarkw(varkw) + formatvalue(locals[varkw]))
-    return '(' + ', '.join(specs) + ')'

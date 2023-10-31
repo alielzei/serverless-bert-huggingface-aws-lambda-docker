@@ -72,43 +72,18 @@ See Also
 `numpy.polynomial`
 
 """
-__all__ = [
-    'polyzero', 'polyone', 'polyx', 'polydomain', 'polyline', 'polyadd',
-    'polysub', 'polymulx', 'polymul', 'polydiv', 'polypow', 'polyval',
-    'polyvalfromroots', 'polyder', 'polyint', 'polyfromroots', 'polyvander',
-    'polyfit', 'polytrim', 'polyroots', 'Polynomial', 'polyval2d', 'polyval3d',
-    'polygrid2d', 'polygrid3d', 'polyvander2d', 'polyvander3d']
 
+__all__ = ['polyzero', 'polyone', 'polyx', 'polydomain', 'polyline', 'polyadd', 'polysub', 'polymulx', 'polymul', 'polydiv', 'polypow', 'polyval', 'polyvalfromroots', 'polyder', 'polyint', 'polyfromroots', 'polyvander', 'polyfit', 'polytrim', 'polyroots', 'Polynomial', 'polyval2d', 'polyval3d', 'polygrid2d', 'polygrid3d', 'polyvander2d', 'polyvander3d']
 import numpy as np
 import numpy.linalg as la
 from numpy.core.multiarray import normalize_axis_index
-
 from . import polyutils as pu
 from ._polybase import ABCPolyBase
-
 polytrim = pu.trimcoef
-
-#
-# These are constant arrays are of integer type so as to be compatible
-# with the widest range of other types, such as Decimal.
-#
-
-# Polynomial default domain.
 polydomain = np.array([-1, 1])
-
-# Polynomial coefficients representing zero.
 polyzero = np.array([0])
-
-# Polynomial coefficients representing one.
 polyone = np.array([1])
-
-# Polynomial coefficients representing the identity x.
 polyx = np.array([0, 1])
-
-#
-# Polynomial series functions
-#
-
 
 def polyline(off, scl):
     """
@@ -146,7 +121,6 @@ def polyline(off, scl):
         return np.array([off, scl])
     else:
         return np.array([off])
-
 
 def polyfromroots(roots):
     """
@@ -211,7 +185,6 @@ def polyfromroots(roots):
     """
     return pu._fromroots(polyline, polymul, roots)
 
-
 def polyadd(c1, c2):
     """
     Add one polynomial to another.
@@ -246,7 +219,6 @@ def polyadd(c1, c2):
 
     """
     return pu._add(c1, c2)
-
 
 def polysub(c1, c2):
     """
@@ -284,7 +256,6 @@ def polysub(c1, c2):
     """
     return pu._sub(c1, c2)
 
-
 def polymulx(c):
     """Multiply a polynomial by x.
 
@@ -313,17 +284,8 @@ def polymulx(c):
     .. versionadded:: 1.5.0
 
     """
-    # c is a trimmed copy
-    [c] = pu.as_series([c])
-    # The zero series needs special treatment
-    if len(c) == 1 and c[0] == 0:
-        return c
-
-    prd = np.empty(len(c) + 1, dtype=c.dtype)
-    prd[0] = c[0]*0
-    prd[1:] = c
-    return prd
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.polynomial.polymulx', 'polymulx(c)', {'pu': pu, 'np': np, 'c': c}, 1)
 
 def polymul(c1, c2):
     """
@@ -357,11 +319,9 @@ def polymul(c1, c2):
     array([  3.,   8.,  14.,   8.,   3.])
 
     """
-    # c1, c2 are trimmed copies
     [c1, c2] = pu.as_series([c1, c2])
     ret = np.convolve(c1, c2)
     return pu.trimseq(ret)
-
 
 def polydiv(c1, c2):
     """
@@ -396,30 +356,26 @@ def polydiv(c1, c2):
     (array([ 0.33333333]), array([ 2.66666667,  1.33333333])) # may vary
 
     """
-    # c1, c2 are trimmed copies
     [c1, c2] = pu.as_series([c1, c2])
     if c2[-1] == 0:
         raise ZeroDivisionError()
-
-    # note: this is more efficient than `pu._div(polymul, c1, c2)`
     lc1 = len(c1)
     lc2 = len(c2)
     if lc1 < lc2:
-        return c1[:1]*0, c1
+        return (c1[:1] * 0, c1)
     elif lc2 == 1:
-        return c1/c2[-1], c1[:1]*0
+        return (c1 / c2[-1], c1[:1] * 0)
     else:
         dlen = lc1 - lc2
         scl = c2[-1]
-        c2 = c2[:-1]/scl
+        c2 = c2[:-1] / scl
         i = dlen
         j = lc1 - 1
         while i >= 0:
-            c1[i:j] -= c2*c1[j]
+            c1[i:j] -= c2 * c1[j]
             i -= 1
             j -= 1
-        return c1[j+1:]/scl, pu.trimseq(c1[:j+1])
-
+        return (c1[j + 1:] / scl, pu.trimseq(c1[:j + 1]))
 
 def polypow(c, pow, maxpower=None):
     """Raise a polynomial to a power.
@@ -455,10 +411,7 @@ def polypow(c, pow, maxpower=None):
     array([ 1., 4., 10., 12., 9.])
 
     """
-    # note: this is more efficient than `pu._pow(polymul, c1, c2)`, as it
-    # avoids calling `as_series` repeatedly
     return pu._pow(np.convolve, c, pow, maxpower)
-
 
 def polyder(c, m=1, scl=1, axis=0):
     """
@@ -514,33 +467,29 @@ def polyder(c, m=1, scl=1, axis=0):
     """
     c = np.array(c, ndmin=1, copy=True)
     if c.dtype.char in '?bBhHiIlLqQpP':
-        # astype fails with NA
         c = c + 0.0
     cdt = c.dtype
-    cnt = pu._deprecate_as_int(m, "the order of derivation")
-    iaxis = pu._deprecate_as_int(axis, "the axis")
+    cnt = pu._deprecate_as_int(m, 'the order of derivation')
+    iaxis = pu._deprecate_as_int(axis, 'the axis')
     if cnt < 0:
-        raise ValueError("The order of derivation must be non-negative")
+        raise ValueError('The order of derivation must be non-negative')
     iaxis = normalize_axis_index(iaxis, c.ndim)
-
     if cnt == 0:
         return c
-
     c = np.moveaxis(c, iaxis, 0)
     n = len(c)
     if cnt >= n:
-        c = c[:1]*0
+        c = c[:1] * 0
     else:
         for i in range(cnt):
             n = n - 1
             c *= scl
-            der = np.empty((n,) + c.shape[1:], dtype=cdt)
+            der = np.empty((n, ) + c.shape[1:], dtype=cdt)
             for j in range(n, 0, -1):
-                der[j - 1] = j*c[j]
+                der[j - 1] = j * c[j]
             c = der
     c = np.moveaxis(c, 0, iaxis)
     return c
-
 
 def polyint(c, m=1, k=[], lbnd=0, scl=1, axis=0):
     """
@@ -622,44 +571,40 @@ def polyint(c, m=1, k=[], lbnd=0, scl=1, axis=0):
     """
     c = np.array(c, ndmin=1, copy=True)
     if c.dtype.char in '?bBhHiIlLqQpP':
-        # astype doesn't preserve mask attribute.
         c = c + 0.0
     cdt = c.dtype
     if not np.iterable(k):
         k = [k]
-    cnt = pu._deprecate_as_int(m, "the order of integration")
-    iaxis = pu._deprecate_as_int(axis, "the axis")
+    cnt = pu._deprecate_as_int(m, 'the order of integration')
+    iaxis = pu._deprecate_as_int(axis, 'the axis')
     if cnt < 0:
-        raise ValueError("The order of integration must be non-negative")
+        raise ValueError('The order of integration must be non-negative')
     if len(k) > cnt:
-        raise ValueError("Too many integration constants")
+        raise ValueError('Too many integration constants')
     if np.ndim(lbnd) != 0:
-        raise ValueError("lbnd must be a scalar.")
+        raise ValueError('lbnd must be a scalar.')
     if np.ndim(scl) != 0:
-        raise ValueError("scl must be a scalar.")
+        raise ValueError('scl must be a scalar.')
     iaxis = normalize_axis_index(iaxis, c.ndim)
-
     if cnt == 0:
         return c
-
-    k = list(k) + [0]*(cnt - len(k))
+    k = list(k) + [0] * (cnt - len(k))
     c = np.moveaxis(c, iaxis, 0)
     for i in range(cnt):
         n = len(c)
         c *= scl
-        if n == 1 and np.all(c[0] == 0):
+        if (n == 1 and np.all(c[0] == 0)):
             c[0] += k[i]
         else:
-            tmp = np.empty((n + 1,) + c.shape[1:], dtype=cdt)
-            tmp[0] = c[0]*0
+            tmp = np.empty((n + 1, ) + c.shape[1:], dtype=cdt)
+            tmp[0] = c[0] * 0
             tmp[1] = c[0]
             for j in range(1, n):
-                tmp[j + 1] = c[j]/(j + 1)
+                tmp[j + 1] = c[j] / (j + 1)
             tmp[0] += k[i] - polyval(lbnd, tmp)
             c = tmp
     c = np.moveaxis(c, 0, iaxis)
     return c
-
 
 def polyval(x, c, tensor=True):
     """
@@ -744,18 +689,15 @@ def polyval(x, c, tensor=True):
     """
     c = np.array(c, ndmin=1, copy=False)
     if c.dtype.char in '?bBhHiIlLqQpP':
-        # astype fails with NA
         c = c + 0.0
     if isinstance(x, (tuple, list)):
         x = np.asarray(x)
-    if isinstance(x, np.ndarray) and tensor:
-        c = c.reshape(c.shape + (1,)*x.ndim)
-
-    c0 = c[-1] + x*0
+    if (isinstance(x, np.ndarray) and tensor):
+        c = c.reshape(c.shape + (1, ) * x.ndim)
+    c0 = c[-1] + x * 0
     for i in range(2, len(c) + 1):
-        c0 = c[-i] + c0*x
+        c0 = c[-i] + c0 * x
     return c0
-
 
 def polyvalfromroots(x, r, tensor=True):
     """
@@ -763,7 +705,7 @@ def polyvalfromroots(x, r, tensor=True):
 
     If `r` is of length `N`, this function returns the value
 
-    .. math:: p(x) = \\prod_{n=1}^{N} (x - r_n)
+    .. math:: p(x) = \prod_{n=1}^{N} (x - r_n)
 
     The parameter `x` is converted to an array only if it is a tuple or a
     list, otherwise it is treated as a scalar. In either case, either `x`
@@ -832,18 +774,8 @@ def polyvalfromroots(x, r, tensor=True):
     >>> polyvalfromroots(b, r, tensor=False)
     array([-0.,  0.])
     """
-    r = np.array(r, ndmin=1, copy=False)
-    if r.dtype.char in '?bBhHiIlLqQpP':
-        r = r.astype(np.double)
-    if isinstance(x, (tuple, list)):
-        x = np.asarray(x)
-    if isinstance(x, np.ndarray):
-        if tensor:
-            r = r.reshape(r.shape + (1,)*x.ndim)
-        elif x.ndim >= r.ndim:
-            raise ValueError("x.ndim must be < r.ndim when tensor == False")
-    return np.prod(x - r, axis=0)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.polynomial.polynomial.polyvalfromroots', 'polyvalfromroots(x, r, tensor=True)', {'np': np, 'x': x, 'r': r, 'tensor': tensor}, 1)
 
 def polyval2d(x, y, c):
     """
@@ -851,7 +783,7 @@ def polyval2d(x, y, c):
 
     This function returns the value
 
-    .. math:: p(x,y) = \\sum_{i,j} c_{i,j} * x^i * y^j
+    .. math:: p(x,y) = \sum_{i,j} c_{i,j} * x^i * y^j
 
     The parameters `x` and `y` are converted to arrays only if they are
     tuples or a lists, otherwise they are treated as a scalars and they
@@ -894,14 +826,13 @@ def polyval2d(x, y, c):
     """
     return pu._valnd(polyval, c, x, y)
 
-
 def polygrid2d(x, y, c):
     """
     Evaluate a 2-D polynomial on the Cartesian product of x and y.
 
     This function returns the values:
 
-    .. math:: p(a,b) = \\sum_{i,j} c_{i,j} * a^i * b^j
+    .. math:: p(a,b) = \sum_{i,j} c_{i,j} * a^i * b^j
 
     where the points `(a, b)` consist of all pairs formed by taking
     `a` from `x` and `b` from `y`. The resulting points form a grid with
@@ -947,14 +878,13 @@ def polygrid2d(x, y, c):
     """
     return pu._gridnd(polyval, c, x, y)
 
-
 def polyval3d(x, y, z, c):
     """
     Evaluate a 3-D polynomial at points (x, y, z).
 
     This function returns the values:
 
-    .. math:: p(x,y,z) = \\sum_{i,j,k} c_{i,j,k} * x^i * y^j * z^k
+    .. math:: p(x,y,z) = \sum_{i,j,k} c_{i,j,k} * x^i * y^j * z^k
 
     The parameters `x`, `y`, and `z` are converted to arrays only if
     they are tuples or a lists, otherwise they are treated as a scalars and
@@ -998,14 +928,13 @@ def polyval3d(x, y, z, c):
     """
     return pu._valnd(polyval, c, x, y, z)
 
-
 def polygrid3d(x, y, z, c):
     """
     Evaluate a 3-D polynomial on the Cartesian product of x, y and z.
 
     This function returns the values:
 
-    .. math:: p(a,b,c) = \\sum_{i,j,k} c_{i,j,k} * a^i * b^j * c^k
+    .. math:: p(a,b,c) = \sum_{i,j,k} c_{i,j,k} * a^i * b^j * c^k
 
     where the points `(a, b, c)` consist of all triples formed by taking
     `a` from `x`, `b` from `y`, and `c` from `z`. The resulting points form
@@ -1054,7 +983,6 @@ def polygrid3d(x, y, z, c):
     """
     return pu._gridnd(polyval, c, x, y, z)
 
-
 def polyvander(x, deg):
     """Vandermonde matrix of given degree.
 
@@ -1093,21 +1021,19 @@ def polyvander(x, deg):
     polyvander2d, polyvander3d
 
     """
-    ideg = pu._deprecate_as_int(deg, "deg")
+    ideg = pu._deprecate_as_int(deg, 'deg')
     if ideg < 0:
-        raise ValueError("deg must be non-negative")
-
+        raise ValueError('deg must be non-negative')
     x = np.array(x, copy=False, ndmin=1) + 0.0
-    dims = (ideg + 1,) + x.shape
+    dims = (ideg + 1, ) + x.shape
     dtyp = x.dtype
     v = np.empty(dims, dtype=dtyp)
-    v[0] = x*0 + 1
+    v[0] = x * 0 + 1
     if ideg > 0:
         v[1] = x
         for i in range(2, ideg + 1):
-            v[i] = v[i-1]*x
+            v[i] = v[i - 1] * x
     return np.moveaxis(v, 0, -1)
-
 
 def polyvander2d(x, y, deg):
     """Pseudo-Vandermonde matrix of given degrees.
@@ -1155,7 +1081,6 @@ def polyvander2d(x, y, deg):
 
     """
     return pu._vander_nd_flat((polyvander, polyvander), (x, y), deg)
-
 
 def polyvander3d(x, y, z, deg):
     """Pseudo-Vandermonde matrix of given degrees.
@@ -1209,7 +1134,6 @@ def polyvander3d(x, y, z, deg):
 
     """
     return pu._vander_nd_flat((polyvander, polyvander, polyvander), (x, y, z), deg)
-
 
 def polyfit(x, y, deg, rcond=None, full=False, w=None):
     """
@@ -1304,7 +1228,7 @@ def polyfit(x, y, deg, rcond=None, full=False, w=None):
     The solution is the coefficients of the polynomial `p` that minimizes
     the sum of the weighted squared errors
 
-    .. math:: E = \\sum_j w_j^2 * |y_j - p(x_j)|^2,
+    .. math:: E = \sum_j w_j^2 * |y_j - p(x_j)|^2,
 
     where the :math:`w_j` are the weights. This problem is solved by
     setting up the (typically) over-determined matrix equation:
@@ -1361,7 +1285,6 @@ def polyfit(x, y, deg, rcond=None, full=False, w=None):
     """
     return pu._fit(polyvander, x, y, deg, rcond, full, w)
 
-
 def polycompanion(c):
     """
     Return the companion matrix of c.
@@ -1387,20 +1310,17 @@ def polycompanion(c):
     .. versionadded:: 1.7.0
 
     """
-    # c is a trimmed copy
     [c] = pu.as_series([c])
     if len(c) < 2:
         raise ValueError('Series must have maximum degree of at least 1.')
     if len(c) == 2:
-        return np.array([[-c[0]/c[1]]])
-
+        return np.array([[-c[0] / c[1]]])
     n = len(c) - 1
     mat = np.zeros((n, n), dtype=c.dtype)
-    bot = mat.reshape(-1)[n::n+1]
+    bot = mat.reshape(-1)[n::n + 1]
     bot[...] = 1
-    mat[:, -1] -= c[:-1]/c[-1]
+    mat[:, -1] -= c[:-1] / c[-1]
     return mat
-
 
 def polyroots(c):
     """
@@ -1408,7 +1328,7 @@ def polyroots(c):
 
     Return the roots (a.k.a. "zeros") of the polynomial
 
-    .. math:: p(x) = \\sum_i c[i] * x^i.
+    .. math:: p(x) = \sum_i c[i] * x^i.
 
     Parameters
     ----------
@@ -1451,23 +1371,16 @@ def polyroots(c):
     array([  0.00000000e+00+0.j,   0.00000000e+00+1.j,   2.77555756e-17-1.j]) # may vary
 
     """
-    # c is a trimmed copy
     [c] = pu.as_series([c])
     if len(c) < 2:
         return np.array([], dtype=c.dtype)
     if len(c) == 2:
-        return np.array([-c[0]/c[1]])
-
-    # rotated companion matrix reduces error
-    m = polycompanion(c)[::-1,::-1]
+        return np.array([-c[0] / c[1]])
+    m = polycompanion(c)[::-1, ::-1]
     r = la.eigvals(m)
     r.sort()
     return r
 
-
-#
-# polynomial class
-#
 
 class Polynomial(ABCPolyBase):
     """A power series class.
@@ -1491,7 +1404,6 @@ class Polynomial(ABCPolyBase):
         .. versionadded:: 1.6.0
 
     """
-    # Virtual Functions
     _add = staticmethod(polyadd)
     _sub = staticmethod(polysub)
     _mul = staticmethod(polymul)
@@ -1504,33 +1416,33 @@ class Polynomial(ABCPolyBase):
     _line = staticmethod(polyline)
     _roots = staticmethod(polyroots)
     _fromroots = staticmethod(polyfromroots)
-
-    # Virtual properties
     domain = np.array(polydomain)
     window = np.array(polydomain)
     basis_name = None
-
+    
     @classmethod
     def _str_term_unicode(cls, i, arg_str):
         if i == '1':
-            return f"·{arg_str}"
+            return f'·{arg_str}'
         else:
-            return f"·{arg_str}{i.translate(cls._superscript_mapping)}"
-
+            return f'·{arg_str}{i.translate(cls._superscript_mapping)}'
+    
     @staticmethod
     def _str_term_ascii(i, arg_str):
         if i == '1':
-            return f" {arg_str}"
+            return f' {arg_str}'
         else:
-            return f" {arg_str}**{i}"
-
+            return f' {arg_str}**{i}'
+    
     @staticmethod
     def _repr_latex_term(i, arg_str, needs_parens):
         if needs_parens:
-            arg_str = rf"\left({arg_str}\right)"
+            arg_str = f'\\left({arg_str}\\right)'
         if i == 0:
             return '1'
         elif i == 1:
             return arg_str
         else:
-            return f"{arg_str}^{{{i}}}"
+            return f'{arg_str}^{{{i}}}'
+
+

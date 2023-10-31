@@ -1,41 +1,13 @@
-# coding=utf-8
-# Copyright 2020, Hugging Face
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """ Funnel Transformer model configuration """
 
 from .configuration_utils import PretrainedConfig
 from .utils import logging
-
-
 logger = logging.get_logger(__name__)
-
-FUNNEL_PRETRAINED_CONFIG_ARCHIVE_MAP = {
-    "funnel-transformer/small": "https://s3.amazonaws.com/models.huggingface.co/bert/funnel-transformer/small/config.json",
-    "funnel-transformer/small-base": "https://s3.amazonaws.com/models.huggingface.co/bert/funnel-transformer/small-base/config.json",
-    "funnel-transformer/medium": "https://s3.amazonaws.com/models.huggingface.co/bert/funnel-transformer/medium/config.json",
-    "funnel-transformer/medium-base": "https://s3.amazonaws.com/models.huggingface.co/bert/funnel-transformer/medium-base/config.json",
-    "funnel-transformer/intermediate": "https://s3.amazonaws.com/models.huggingface.co/bert/funnel-transformer/intermediate/config.json",
-    "funnel-transformer/intermediate-base": "https://s3.amazonaws.com/models.huggingface.co/bert/funnel-transformer/intermediate-base/config.json",
-    "funnel-transformer/large": "https://s3.amazonaws.com/models.huggingface.co/bert/funnel-transformer/large/config.json",
-    "funnel-transformer/large-base": "https://s3.amazonaws.com/models.huggingface.co/bert/funnel-transformer/large-base/config.json",
-    "funnel-transformer/xlarge": "https://s3.amazonaws.com/models.huggingface.co/bert/funnel-transformer/xlarge/config.json",
-    "funnel-transformer/xlarge-base": "https://s3.amazonaws.com/models.huggingface.co/bert/funnel-transformer/xlarge-base/config.json",
-}
+FUNNEL_PRETRAINED_CONFIG_ARCHIVE_MAP = {'funnel-transformer/small': 'https://s3.amazonaws.com/models.huggingface.co/bert/funnel-transformer/small/config.json', 'funnel-transformer/small-base': 'https://s3.amazonaws.com/models.huggingface.co/bert/funnel-transformer/small-base/config.json', 'funnel-transformer/medium': 'https://s3.amazonaws.com/models.huggingface.co/bert/funnel-transformer/medium/config.json', 'funnel-transformer/medium-base': 'https://s3.amazonaws.com/models.huggingface.co/bert/funnel-transformer/medium-base/config.json', 'funnel-transformer/intermediate': 'https://s3.amazonaws.com/models.huggingface.co/bert/funnel-transformer/intermediate/config.json', 'funnel-transformer/intermediate-base': 'https://s3.amazonaws.com/models.huggingface.co/bert/funnel-transformer/intermediate-base/config.json', 'funnel-transformer/large': 'https://s3.amazonaws.com/models.huggingface.co/bert/funnel-transformer/large/config.json', 'funnel-transformer/large-base': 'https://s3.amazonaws.com/models.huggingface.co/bert/funnel-transformer/large-base/config.json', 'funnel-transformer/xlarge': 'https://s3.amazonaws.com/models.huggingface.co/bert/funnel-transformer/xlarge/config.json', 'funnel-transformer/xlarge-base': 'https://s3.amazonaws.com/models.huggingface.co/bert/funnel-transformer/xlarge-base/config.json'}
 
 
 class FunnelConfig(PretrainedConfig):
-    r"""
+    """
     This is the configuration class to store the configuration of a :class:`~transformers.FunnelModel` or a
     :class:`~transformers.TFBertModel`. It is used to instantiate a Funnel Transformer model according to the specified
     arguments, defining the model architecture. Instantiating a configuration with the defaults will yield a similar
@@ -104,42 +76,14 @@ class FunnelConfig(PretrainedConfig):
             Whether or not to apply the pooling only to the query or to query, key and values for the attention
             layers.
     """
-    model_type = "funnel"
-
-    def __init__(
-        self,
-        vocab_size=30522,
-        block_sizes=[4, 4, 4],
-        block_repeats=None,
-        num_decoder_layers=2,
-        d_model=768,
-        n_head=12,
-        d_head=64,
-        d_inner=3072,
-        hidden_act="gelu_new",
-        hidden_dropout=0.1,
-        attention_dropout=0.1,
-        activation_dropout=0.0,
-        max_position_embeddings=512,
-        type_vocab_size=3,
-        initializer_range=0.1,
-        initializer_std=None,
-        layer_norm_eps=1e-9,
-        pooling_type="mean",
-        attention_type="relative_shift",
-        separate_cls=True,
-        truncate_seq=True,
-        pool_q_only=True,
-        **kwargs
-    ):
+    model_type = 'funnel'
+    
+    def __init__(self, vocab_size=30522, block_sizes=[4, 4, 4], block_repeats=None, num_decoder_layers=2, d_model=768, n_head=12, d_head=64, d_inner=3072, hidden_act='gelu_new', hidden_dropout=0.1, attention_dropout=0.1, activation_dropout=0.0, max_position_embeddings=512, type_vocab_size=3, initializer_range=0.1, initializer_std=None, layer_norm_eps=1e-09, pooling_type='mean', attention_type='relative_shift', separate_cls=True, truncate_seq=True, pool_q_only=True, **kwargs):
         super().__init__(**kwargs)
-
         self.vocab_size = vocab_size
         self.block_sizes = block_sizes
-        self.block_repeats = [1] * len(block_sizes) if block_repeats is None else block_repeats
-        assert len(block_sizes) == len(
-            self.block_repeats
-        ), "`block_sizes` and `block_repeats` should have the same length."
+        self.block_repeats = ([1] * len(block_sizes) if block_repeats is None else block_repeats)
+        assert len(block_sizes) == len(self.block_repeats), '`block_sizes` and `block_repeats` should have the same length.'
         self.num_decoder_layers = num_decoder_layers
         self.d_model = d_model
         self.n_head = n_head
@@ -154,32 +98,28 @@ class FunnelConfig(PretrainedConfig):
         self.initializer_range = initializer_range
         self.initializer_std = initializer_std
         self.layer_norm_eps = layer_norm_eps
-        assert pooling_type in [
-            "mean",
-            "max",
-        ], f"Got {pooling_type} for `pooling_type` but only 'mean' and 'max' are supported."
+        assert pooling_type in ['mean', 'max'], f"Got {pooling_type} for `pooling_type` but only 'mean' and 'max' are supported."
         self.pooling_type = pooling_type
-        assert attention_type in [
-            "relative_shift",
-            "factorized",
-        ], f"Got {attention_type} for `attention_type` but only 'relative_shift' and 'factorized' are supported."
+        assert attention_type in ['relative_shift', 'factorized'], f"Got {attention_type} for `attention_type` but only 'relative_shift' and 'factorized' are supported."
         self.attention_type = attention_type
         self.separate_cls = separate_cls
         self.truncate_seq = truncate_seq
         self.pool_q_only = pool_q_only
-
+    
     @property
     def hidden_size(self):
         return self.d_model
-
+    
     @property
     def num_attention_heads(self):
         return self.n_head
-
+    
     @property
     def num_hidden_layers(self):
         return sum(self.block_sizes)
-
+    
     @property
     def num_blocks(self):
         return len(self.block_sizes)
+
+

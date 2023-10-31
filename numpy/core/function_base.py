@@ -2,27 +2,18 @@ import functools
 import warnings
 import operator
 import types
-
 from . import numeric as _nx
 from .numeric import result_type, NaN, asanyarray, ndim
 from numpy.core.multiarray import add_docstring
 from numpy.core import overrides
-
 __all__ = ['logspace', 'linspace', 'geomspace']
+array_function_dispatch = functools.partial(overrides.array_function_dispatch, module='numpy')
 
-
-array_function_dispatch = functools.partial(
-    overrides.array_function_dispatch, module='numpy')
-
-
-def _linspace_dispatcher(start, stop, num=None, endpoint=None, retstep=None,
-                         dtype=None, axis=None):
+def _linspace_dispatcher(start, stop, num=None, endpoint=None, retstep=None, dtype=None, axis=None):
     return (start, stop)
 
-
 @array_function_dispatch(_linspace_dispatcher)
-def linspace(start, stop, num=50, endpoint=True, retstep=False, dtype=None,
-             axis=0):
+def linspace(start, stop, num=50, endpoint=True, retstep=False, dtype=None, axis=0):
     """
     Return evenly spaced numbers over a specified interval.
 
@@ -120,75 +111,52 @@ def linspace(start, stop, num=50, endpoint=True, retstep=False, dtype=None,
     """
     num = operator.index(num)
     if num < 0:
-        raise ValueError("Number of samples, %s, must be non-negative." % num)
-    div = (num - 1) if endpoint else num
-
-    # Convert float/complex array scalars to float, gh-3504
-    # and make sure one can use variables that have an __array_interface__, gh-6634
+        raise ValueError('Number of samples, %s, must be non-negative.' % num)
+    div = (num - 1 if endpoint else num)
     start = asanyarray(start) * 1.0
-    stop  = asanyarray(stop)  * 1.0
-
+    stop = asanyarray(stop) * 1.0
     dt = result_type(start, stop, float(num))
     if dtype is None:
         dtype = dt
         integer_dtype = False
     else:
         integer_dtype = _nx.issubdtype(dtype, _nx.integer)
-
     delta = stop - start
-    y = _nx.arange(0, num, dtype=dt).reshape((-1,) + (1,) * ndim(delta))
-    # In-place multiplication y *= delta/div is faster, but prevents the multiplicant
-    # from overriding what class is produced, and thus prevents, e.g. use of Quantities,
-    # see gh-7142. Hence, we multiply in place only for standard scalar types.
+    y = _nx.arange(0, num, dtype=dt).reshape((-1, ) + (1, ) * ndim(delta))
     if div > 0:
         _mult_inplace = _nx.isscalar(delta)
         step = delta / div
-        any_step_zero = (
-            step == 0 if _mult_inplace else _nx.asanyarray(step == 0).any())
+        any_step_zero = (step == 0 if _mult_inplace else _nx.asanyarray(step == 0).any())
         if any_step_zero:
-            # Special handling for denormal numbers, gh-5437
             y /= div
             if _mult_inplace:
                 y *= delta
             else:
                 y = y * delta
+        elif _mult_inplace:
+            y *= step
         else:
-            if _mult_inplace:
-                y *= step
-            else:
-                y = y * step
+            y = y * step
     else:
-        # sequences with 0 items or 1 item with endpoint=True (i.e. div <= 0)
-        # have an undefined step
         step = NaN
-        # Multiply with delta to allow possible override of output class.
         y = y * delta
-
     y += start
-
-    if endpoint and num > 1:
+    if (endpoint and num > 1):
         y[-1] = stop
-
     if axis != 0:
         y = _nx.moveaxis(y, 0, axis)
-
     if integer_dtype:
         _nx.floor(y, out=y)
-
     if retstep:
-        return y.astype(dtype, copy=False), step
+        return (y.astype(dtype, copy=False), step)
     else:
         return y.astype(dtype, copy=False)
 
-
-def _logspace_dispatcher(start, stop, num=None, endpoint=None, base=None,
-                         dtype=None, axis=None):
+def _logspace_dispatcher(start, stop, num=None, endpoint=None, base=None, dtype=None, axis=None):
     return (start, stop)
 
-
 @array_function_dispatch(_logspace_dispatcher)
-def logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None,
-             axis=0):
+def logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, axis=0):
     """
     Return numbers spaced evenly on a log scale.
 
@@ -279,16 +247,11 @@ def logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None,
     >>> plt.show()
 
     """
-    y = linspace(start, stop, num=num, endpoint=endpoint, axis=axis)
-    if dtype is None:
-        return _nx.power(base, y)
-    return _nx.power(base, y).astype(dtype, copy=False)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.core.function_base.logspace', 'logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, axis=0)', {'linspace': linspace, '_nx': _nx, 'array_function_dispatch': array_function_dispatch, '_logspace_dispatcher': _logspace_dispatcher, 'start': start, 'stop': stop, 'num': num, 'endpoint': endpoint, 'base': base, 'dtype': dtype, 'axis': axis}, 1)
 
-
-def _geomspace_dispatcher(start, stop, num=None, endpoint=None, dtype=None,
-                          axis=None):
+def _geomspace_dispatcher(start, stop, num=None, endpoint=None, dtype=None, axis=None):
     return (start, stop)
-
 
 @array_function_dispatch(_geomspace_dispatcher)
 def geomspace(start, stop, num=50, endpoint=True, dtype=None, axis=0):
@@ -394,59 +357,8 @@ def geomspace(start, stop, num=50, endpoint=True, dtype=None, axis=0):
     >>> plt.show()
 
     """
-    start = asanyarray(start)
-    stop = asanyarray(stop)
-    if _nx.any(start == 0) or _nx.any(stop == 0):
-        raise ValueError('Geometric sequence cannot include zero')
-
-    dt = result_type(start, stop, float(num), _nx.zeros((), dtype))
-    if dtype is None:
-        dtype = dt
-    else:
-        # complex to dtype('complex128'), for instance
-        dtype = _nx.dtype(dtype)
-
-    # Promote both arguments to the same dtype in case, for instance, one is
-    # complex and another is negative and log would produce NaN otherwise.
-    # Copy since we may change things in-place further down.
-    start = start.astype(dt, copy=True)
-    stop = stop.astype(dt, copy=True)
-
-    out_sign = _nx.ones(_nx.broadcast(start, stop).shape, dt)
-    # Avoid negligible real or imaginary parts in output by rotating to
-    # positive real, calculating, then undoing rotation
-    if _nx.issubdtype(dt, _nx.complexfloating):
-        all_imag = (start.real == 0.) & (stop.real == 0.)
-        if _nx.any(all_imag):
-            start[all_imag] = start[all_imag].imag
-            stop[all_imag] = stop[all_imag].imag
-            out_sign[all_imag] = 1j
-
-    both_negative = (_nx.sign(start) == -1) & (_nx.sign(stop) == -1)
-    if _nx.any(both_negative):
-        _nx.negative(start, out=start, where=both_negative)
-        _nx.negative(stop, out=stop, where=both_negative)
-        _nx.negative(out_sign, out=out_sign, where=both_negative)
-
-    log_start = _nx.log10(start)
-    log_stop = _nx.log10(stop)
-    result = logspace(log_start, log_stop, num=num,
-                      endpoint=endpoint, base=10.0, dtype=dtype)
-
-    # Make sure the endpoints match the start and stop arguments. This is
-    # necessary because np.exp(np.log(x)) is not necessarily equal to x.
-    if num > 0:
-        result[0] = start
-        if num > 1 and endpoint:
-            result[-1] = stop
-
-    result = out_sign * result
-
-    if axis != 0:
-        result = _nx.moveaxis(result, 0, axis)
-
-    return result.astype(dtype, copy=False)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('numpy.core.function_base.geomspace', 'geomspace(start, stop, num=50, endpoint=True, dtype=None, axis=0)', {'asanyarray': asanyarray, '_nx': _nx, 'result_type': result_type, 'logspace': logspace, 'array_function_dispatch': array_function_dispatch, '_geomspace_dispatcher': _geomspace_dispatcher, 'start': start, 'stop': stop, 'num': num, 'endpoint': endpoint, 'dtype': dtype, 'axis': axis}, 1)
 
 def _needs_add_docstring(obj):
     """
@@ -456,29 +368,19 @@ def _needs_add_docstring(obj):
     This function errs on the side of being overly conservative.
     """
     Py_TPFLAGS_HEAPTYPE = 1 << 9
-
     if isinstance(obj, (types.FunctionType, types.MethodType, property)):
         return False
-
-    if isinstance(obj, type) and obj.__flags__ & Py_TPFLAGS_HEAPTYPE:
+    if (isinstance(obj, type) and obj.__flags__ & Py_TPFLAGS_HEAPTYPE):
         return False
-
     return True
 
-
 def _add_docstring(obj, doc, warn_on_python):
-    if warn_on_python and not _needs_add_docstring(obj):
-        warnings.warn(
-            "add_newdoc was used on a pure-python object {}. "
-            "Prefer to attach it directly to the source."
-            .format(obj),
-            UserWarning,
-            stacklevel=3)
+    if (warn_on_python and not _needs_add_docstring(obj)):
+        warnings.warn('add_newdoc was used on a pure-python object {}. Prefer to attach it directly to the source.'.format(obj), UserWarning, stacklevel=3)
     try:
         add_docstring(obj, doc)
     except Exception:
         pass
-
 
 def add_newdoc(place, obj, doc, warn_on_python=True):
     """
@@ -530,8 +432,9 @@ def add_newdoc(place, obj, doc, warn_on_python=True):
     if isinstance(doc, str):
         _add_docstring(new, doc.strip(), warn_on_python)
     elif isinstance(doc, tuple):
-        attr, docstring = doc
+        (attr, docstring) = doc
         _add_docstring(getattr(new, attr), docstring.strip(), warn_on_python)
     elif isinstance(doc, list):
-        for attr, docstring in doc:
+        for (attr, docstring) in doc:
             _add_docstring(getattr(new, attr), docstring.strip(), warn_on_python)
+

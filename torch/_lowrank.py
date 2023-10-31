@@ -2,18 +2,11 @@
 """
 
 __all__ = ['svd_lowrank', 'pca_lowrank']
-
 import torch
-from . import _linalg_utils as _utils 
+from . import _linalg_utils as _utils
 from ._overrides import has_torch_function, handle_torch_function
 
-
-def get_approximate_basis(A,        # type: Tensor
-                          q,        # type: int
-                          niter=2,  # type: Optional[int]
-                          M=None    # type: Optional[Tensor]
-                          ):
-    # type: (...) -> Tensor
+def get_approximate_basis(A, q, niter=2, M=None):
     """Return tensor :math:`Q` with :math:`q` orthonormal columns such
     that :math:`Q Q^H A` approximates :math:`A`. If :math:`M` is
     specified, then :math:`Q` is such that :math:`Q Q^H (A - M)`
@@ -55,35 +48,13 @@ def get_approximate_basis(A,        # type: Tensor
           arXiv:0909.4061 [math.NA; math.PR], 2009 (available at
           `arXiv <http://arxiv.org/abs/0909.4061>`_).
     """
-
-    niter = 2 if niter is None else niter
-    m, n = A.shape[-2:]
-    dtype = _utils.get_floating_dtype(A)
-    matmul = _utils.matmul
-
-    R = torch.randn(n, q, dtype=dtype, device=A.device)
-
-    A_H = _utils.transjugate(A)
-    if M is None:
-        (Q, _) = matmul(A, R).qr()
-        for i in range(niter):
-            (Q, _) = matmul(A_H, Q).qr()
-            (Q, _) = matmul(A, Q).qr()
-    else:
-        M_H = _utils.transjugate(M)
-        (Q, _) = (matmul(A, R) - matmul(M, R)).qr()
-        for i in range(niter):
-            (Q, _) = (matmul(A_H, Q) - matmul(M_H, Q)).qr()
-            (Q, _) = (matmul(A, Q) - matmul(M, Q)).qr()
-
-    return Q
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch._lowrank.get_approximate_basis', 'get_approximate_basis(A, q, niter=2, M=None)', {'_utils': _utils, 'torch': torch, 'A': A, 'q': q, 'niter': niter, 'M': M}, 1)
 
 def svd_lowrank(A, q=6, niter=2, M=None):
-    # type: (Tensor, Optional[int], Optional[int], Optional[Tensor]) -> Tuple[Tensor, Tensor, Tensor]
     """Return the singular value decomposition ``(U, S, V)`` of a matrix,
     batches of matrices, or a sparse matrix :math:`A` such that
-    :math:`A \approx U diag(S) V^T`. In case :math:`M` is given, then
+    :math:`A pprox U diag(S) V^T`. In case :math:`M` is given, then
     SVD is computed for the matrix :math:`A - M`.
 
     .. note:: The implementation is based on the Algorithm 5.1 from
@@ -120,53 +91,15 @@ def svd_lowrank(A, q=6, niter=2, M=None):
           `arXiv <http://arxiv.org/abs/0909.4061>`_).
 
     """
-    if not torch.jit.is_scripting():
-        tensor_ops = (A, M)
-        if (not set(map(type, tensor_ops)).issubset((torch.Tensor, type(None))) and has_torch_function(tensor_ops)):
-            return handle_torch_function(svd_lowrank, tensor_ops, A, q=q, niter=niter, M=M)
-    return _svd_lowrank(A, q=q, niter=niter, M=M)
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch._lowrank.svd_lowrank', 'svd_lowrank(A, q=6, niter=2, M=None)', {'torch': torch, 'has_torch_function': has_torch_function, 'handle_torch_function': handle_torch_function, 'svd_lowrank': svd_lowrank, '_svd_lowrank': _svd_lowrank, 'A': A, 'q': q, 'niter': niter, 'M': M}, 1)
 
 def _svd_lowrank(A, q=6, niter=2, M=None):
-    # type: (Tensor, Optional[int], Optional[int], Optional[Tensor]) -> Tuple[Tensor, Tensor, Tensor]
-    q = 6 if q is None else q
-    m, n = A.shape[-2:]
-    matmul = _utils.matmul
-    if M is None:
-        M_t = None
-    else:
-        M_t = _utils.transpose(M)
-    A_t = _utils.transpose(A)
-
-    # Algorithm 5.1 in Halko et al 2009, slightly modified to reduce
-    # the number conjugate and transpose operations
-    if m < n:
-        # computing the SVD approximation of a transpose in order to
-        # keep B shape minimal
-        Q = get_approximate_basis(A_t, q, niter=niter, M=M_t)
-        Q_c = _utils.conjugate(Q)
-        if M is None:
-            B_t = matmul(A, Q_c)
-        else:
-            B_t = matmul(A, Q_c) - matmul(M, Q_c)
-        U, S, V = torch.svd(B_t)
-        V = Q.matmul(V)
-    else:
-        Q = get_approximate_basis(A, q, niter=niter, M=M)
-        Q_c = _utils.conjugate(Q)
-        if M is None:
-            B = matmul(A_t, Q_c)
-        else:
-            B = matmul(A_t, Q_c) - matmul(M_t, Q_c)
-        U, S, V = torch.svd(_utils.transpose(B))
-        U = Q.matmul(U)
-
-    return U, S, V
-
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch._lowrank._svd_lowrank', '_svd_lowrank(A, q=6, niter=2, M=None)', {'_utils': _utils, 'get_approximate_basis': get_approximate_basis, 'torch': torch, 'A': A, 'q': q, 'niter': niter, 'M': M}, 3)
 
 def pca_lowrank(A, q=None, center=True, niter=2):
-    # type: (Tensor, Optional[int], bool, int) -> Tuple[Tensor, Tensor, Tensor]
-    r"""Performs linear Principal Component Analysis (PCA) on a low-rank
+    """Performs linear Principal Component Analysis (PCA) on a low-rank
     matrix, batches of such matrices, or sparse matrix.
 
     This function returns a namedtuple ``(U, S, V)`` which is the
@@ -225,47 +158,6 @@ def pca_lowrank(A, q=None, center=True, niter=2):
           `arXiv <http://arxiv.org/abs/0909.4061>`_).
 
     """
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch._lowrank.pca_lowrank', 'pca_lowrank(A, q=None, center=True, niter=2)', {'torch': torch, 'has_torch_function': has_torch_function, 'handle_torch_function': handle_torch_function, 'pca_lowrank': pca_lowrank, '_utils': _utils, '_svd_lowrank': _svd_lowrank, 'A': A, 'q': q, 'center': center, 'niter': niter}, 1)
 
-    if not torch.jit.is_scripting():
-        if type(A) is not torch.Tensor and has_torch_function((A,)):
-            return handle_torch_function(pca_lowrank, (A,), A, q=q, center=center, niter=niter)
-
-    (m, n) = A.shape[-2:]
-
-    if q is None:
-        q = min(6, m, n)
-    elif not (q >= 0 and q <= min(m, n)):
-        raise ValueError('q(={}) must be non-negative integer'
-                         ' and not greater than min(m, n)={}'
-                         .format(q, min(m, n)))
-    if not (niter >= 0):
-        raise ValueError('niter(={}) must be non-negative integer'
-                         .format(niter))
-
-    dtype = _utils.get_floating_dtype(A)
-
-    if not center:
-        return _svd_lowrank(A, q, niter=niter, M=None)
-
-    if _utils.is_sparse(A):
-        if len(A.shape) != 2:
-            raise ValueError('pca_lowrank input is expected to be 2-dimensional tensor')
-        c = torch.sparse.sum(A, dim=(-2,)) / m
-        # reshape c
-        column_indices = c.indices()[0]
-        indices = torch.zeros(2, len(column_indices),
-                              dtype=column_indices.dtype,
-                              device=column_indices.device)
-        indices[0] = column_indices
-        C_t = torch.sparse_coo_tensor(
-            indices, c.values(), (n, 1), dtype=dtype, device=A.device)
-
-        ones_m1_t = torch.ones(A.shape[:-2] + (1, m), dtype=dtype, device=A.device)
-        M = _utils.transpose(torch.sparse.mm(C_t, ones_m1_t))
-        return _svd_lowrank(A, q, niter=niter, M=M)
-    else:
-        c = A.sum(dim=(-2,)) / m
-        C = c.reshape(A.shape[:-2] + (1, n))
-        ones_m1 = torch.ones(A.shape[:-1] + (1, ), dtype=dtype, device=A.device)
-        M = ones_m1.matmul(C)
-        return _svd_lowrank(A - M, q, niter=niter, M=None)

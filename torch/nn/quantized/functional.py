@@ -1,21 +1,17 @@
-r""" Functional interface (quantized)."""
+""" Functional interface (quantized)."""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
-
 import torch
 from torch._jit_internal import List as _List
 from torch.nn.modules.utils import _pair, _triple
 
-# Although some of the functions and docstrings are mirrored from the torch.nn,
-# we want to have them here for future changes.
-
-def avg_pool2d(input, kernel_size, stride=None, padding=0, ceil_mode=False,
-               count_include_pad=True, divisor_override=None):
-    r"""
-    Applies 2D average-pooling operation in :math:`kH \times kW` regions by step size
-    :math:`sH \times sW` steps. The number of output features is equal to the number of
+def avg_pool2d(input, kernel_size, stride=None, padding=0, ceil_mode=False, count_include_pad=True, divisor_override=None):
+    """
+    Applies 2D average-pooling operation in :math:`kH 	imes kW` regions by step size
+    :math:`sH 	imes sW` steps. The number of output features is equal to the number of
     input planes.
 
     .. note:: The input quantization parameters propagate to the output.
@@ -23,7 +19,7 @@ def avg_pool2d(input, kernel_size, stride=None, padding=0, ceil_mode=False,
     See :class:`~torch.nn.quantized.AvgPool2d` for details and output shape.
 
     Args:
-        input: quantized input tensor :math:`(\text{minibatch} , \text{in\_channels} , iH , iW)`
+        input: quantized input tensor :math:`(	ext{minibatch} , 	ext{in\_channels} , iH , iW)`
         kernel_size: size of the pooling region. Can be a single number or a
           tuple `(kH, kW)`
         stride: stride of the pooling operation. Can be a single number or a
@@ -37,23 +33,19 @@ def avg_pool2d(input, kernel_size, stride=None, padding=0, ceil_mode=False,
         divisor_override: if specified, it will be used as divisor, otherwise
              size of the pooling region will be used. Default: None
     """
-    if not input.is_quantized:
-        raise ValueError("Input to 'quantized.avg_pool2d' must be quantized!")
-    return torch.nn.functional.avg_pool2d(input, kernel_size, stride, padding,
-                                          ceil_mode, count_include_pad,
-                                          divisor_override)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.nn.quantized.functional.avg_pool2d', 'avg_pool2d(input, kernel_size, stride=None, padding=0, ceil_mode=False, count_include_pad=True, divisor_override=None)', {'torch': torch, 'input': input, 'kernel_size': kernel_size, 'stride': stride, 'padding': padding, 'ceil_mode': ceil_mode, 'count_include_pad': count_include_pad, 'divisor_override': divisor_override}, 1)
 
-def avg_pool3d(input, kernel_size, stride=None, padding=0, ceil_mode=False,
-               count_include_pad=True, divisor_override=None):
-    r"""
-    Applies 3D average-pooling operation in :math:`kD \ times kH \times kW` regions by step size
-    :math:`sD \times sH \times sW` steps. The number of output features is equal to the number of
+def avg_pool3d(input, kernel_size, stride=None, padding=0, ceil_mode=False, count_include_pad=True, divisor_override=None):
+    """
+    Applies 3D average-pooling operation in :math:`kD \ times kH 	imes kW` regions by step size
+    :math:`sD 	imes sH 	imes sW` steps. The number of output features is equal to the number of
     input planes.
 
     .. note:: The input quantization parameters propagate to the output.
 
     Args:
-        input: quantized input tensor :math:`(\text{minibatch} , \text{in\_channels} , iH , iW)`
+        input: quantized input tensor :math:`(	ext{minibatch} , 	ext{in\_channels} , iH , iW)`
         kernel_size: size of the pooling region. Can be a single number or a
           tuple `(kD, kH, kW)`
         stride: stride of the pooling operation. Can be a single number or a
@@ -67,15 +59,11 @@ def avg_pool3d(input, kernel_size, stride=None, padding=0, ceil_mode=False,
         divisor_override: if specified, it will be used as divisor, otherwise
              size of the pooling region will be used. Default: None
     """
-    if not input.is_quantized:
-        raise ValueError("Input to 'quantized.avg_pool3d' must be quantized!")
-    return torch.nn.functional.avg_pool3d(input, kernel_size, stride, padding,
-                                          ceil_mode, count_include_pad,
-                                          divisor_override)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.nn.quantized.functional.avg_pool3d', 'avg_pool3d(input, kernel_size, stride=None, padding=0, ceil_mode=False, count_include_pad=True, divisor_override=None)', {'torch': torch, 'input': input, 'kernel_size': kernel_size, 'stride': stride, 'padding': padding, 'ceil_mode': ceil_mode, 'count_include_pad': count_include_pad, 'divisor_override': divisor_override}, 1)
 
 def adaptive_avg_pool2d(input, output_size):
-    # type: (Tensor, BroadcastingList2[int]) -> Tensor
-    r"""
+    """
     Applies a 2D adaptive average pooling over a quantized input signal composed
     of several quantized input planes.
 
@@ -87,32 +75,27 @@ def adaptive_avg_pool2d(input, output_size):
         output_size: the target output size (single integer or
                      double-integer tuple)
     """
-    if not input.is_quantized:
-        raise ValueError("Input to 'quantized.adaptive_avg_pool2d' must be quantized!")
-    return torch.nn.functional.adaptive_avg_pool2d(input, output_size)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.nn.quantized.functional.adaptive_avg_pool2d', 'adaptive_avg_pool2d(input, output_size)', {'torch': torch, 'input': input, 'output_size': output_size}, 1)
 
-def conv2d(input, weight, bias,
-           stride=1, padding=0, dilation=1, groups=1,
-           padding_mode='zeros',
-           scale=1.0, zero_point=0,
-           dtype=torch.quint8):
-    r"""
+def conv2d(input, weight, bias, stride=1, padding=0, dilation=1, groups=1, padding_mode='zeros', scale=1.0, zero_point=0, dtype=torch.quint8):
+    """
     Applies a 2D convolution over a quantized 2D input composed of several input
     planes.
 
     See :class:`~torch.nn.quantized.Conv2d` for details and output shape.
 
     Args:
-        input: quantized input tensor of shape :math:`(\text{minibatch} , \text{in\_channels} , iH , iW)`
-        weight: quantized filters of shape :math:`(\text{out\_channels} , \frac{\text{in\_channels}}{\text{groups}} , kH , kW)`
-        bias: **non-quantized** bias tensor of shape :math:`(\text{out\_channels})`. The tensor type must be `torch.float`.
+        input: quantized input tensor of shape :math:`(	ext{minibatch} , 	ext{in\_channels} , iH , iW)`
+        weight: quantized filters of shape :math:`(	ext{out\_channels} , rac{	ext{in\_channels}}{	ext{groups}} , kH , kW)`
+        bias: **non-quantized** bias tensor of shape :math:`(	ext{out\_channels})`. The tensor type must be `torch.float`.
         stride: the stride of the convolving kernel. Can be a single number or a
           tuple `(sH, sW)`. Default: 1
         padding: implicit paddings on both sides of the input. Can be a
           single number or a tuple `(padH, padW)`. Default: 0
         dilation: the spacing between kernel elements. Can be a single number or
           a tuple `(dH, dW)`. Default: 1
-        groups: split input into groups, :math:`\text{in\_channels}` should be divisible by the
+        groups: split input into groups, :math:`	ext{in\_channels}` should be divisible by the
           number of groups. Default: 1
         padding_mode: the padding mode to use. Only "zeros" is supported for quantized convolution at the moment. Default: "zeros"
         scale: quantization scale for the output. Default: 1.0
@@ -133,29 +116,12 @@ def conv2d(input, weight, bias,
         >>> q_filters = torch.quantize_per_tensor(filters, scale, zero_point, dtype_filters)
         >>> q_inputs = torch.quantize_per_tensor(inputs, scale, zero_point, dtype_inputs)
         >>> qF.conv2d(q_inputs, q_filters, bias, padding=1, scale=scale, zero_point=zero_point)
-    """  # noqa: E501
-    if padding_mode != 'zeros':
-        raise NotImplementedError("Only zero-padding is supported!")
-    if input.dtype != torch.quint8:
-        raise NotImplementedError("Only torch.quint8 is supported for activation tensor!")
-    if weight.dtype != torch.qint8:
-        raise NotImplementedError("Only torch.qint8 is supported for weight tensor!")
-    if input.ndim != 4:
-        raise ValueError("Input shape must be `(N, C, H, W)`!")
-    stride = _pair(stride)
-    padding = _pair(padding)
-    dilation = _pair(dilation)
+    """
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.nn.quantized.functional.conv2d', "conv2d(input, weight, bias, stride=1, padding=0, dilation=1, groups=1, padding_mode='zeros', scale=1.0, zero_point=0, dtype=torch.quint8)", {'torch': torch, '_pair': _pair, 'input': input, 'weight': weight, 'bias': bias, 'stride': stride, 'padding': padding, 'dilation': dilation, 'groups': groups, 'padding_mode': padding_mode, 'scale': scale, 'zero_point': zero_point, 'dtype': dtype}, 1)
 
-    prepacked_weight = torch.ops.quantized.conv2d_prepack(
-        weight, bias, stride, padding, dilation, groups)
-    return torch.ops.quantized.conv2d(input,
-                                      prepacked_weight,
-                                      stride, padding, dilation,
-                                      groups, scale, zero_point)
-
-def conv3d(input, weight, bias, stride=1, padding=0, dilation=1, groups=1,
-           padding_mode='zeros', scale=1.0, zero_point=0, dtype=torch.quint8):
-    r"""
+def conv3d(input, weight, bias, stride=1, padding=0, dilation=1, groups=1, padding_mode='zeros', scale=1.0, zero_point=0, dtype=torch.quint8):
+    """
     Applies a 3D convolution over a quantized 3D input composed of several input
     planes.
 
@@ -163,18 +129,18 @@ def conv3d(input, weight, bias, stride=1, padding=0, dilation=1, groups=1,
 
     Args:
         input: quantized input tensor of shape
-          :math:`(\text{minibatch} , \text{in\_channels} , iD , iH , iW)`
+          :math:`(	ext{minibatch} , 	ext{in\_channels} , iD , iH , iW)`
         weight: quantized filters of shape
-          :math:`(\text{out\_channels} , \frac{\text{in\_channels}}{\text{groups}} , kD , kH , kW)`
+          :math:`(	ext{out\_channels} , rac{	ext{in\_channels}}{	ext{groups}} , kD , kH , kW)`
         bias: **non-quantized** bias tensor of shape
-          :math:`(\text{out\_channels})`. The tensor type must be `torch.float`.
+          :math:`(	ext{out\_channels})`. The tensor type must be `torch.float`.
         stride: the stride of the convolving kernel. Can be a single number or a
           tuple `(sD, sH, sW)`. Default: 1
         padding: implicit paddings on both sides of the input. Can be a
           single number or a tuple `(padD, padH, padW)`. Default: 0
         dilation: the spacing between kernel elements. Can be a single number or
           a tuple `(dD, dH, dW)`. Default: 1
-        groups: split input into groups, :math:`\text{in\_channels}` should be
+        groups: split input into groups, :math:`	ext{in\_channels}` should be
           divisible by the number of groups. Default: 1
         padding_mode: the padding mode to use. Only "zeros" is supported for
           quantized convolution at the moment. Default: "zeros"
@@ -196,27 +162,12 @@ def conv3d(input, weight, bias, stride=1, padding=0, dilation=1, groups=1,
         >>> q_filters = torch.quantize_per_tensor(filters, scale, zero_point, dtype_filters)
         >>> q_inputs = torch.quantize_per_tensor(inputs, scale, zero_point, dtype_inputs)
         >>> qF.conv3d(q_inputs, q_filters, bias, padding=1, scale=scale, zero_point=zero_point)
-    """  # noqa: E501
-    if padding_mode != 'zeros':
-        raise NotImplementedError("Only zero-padding is supported!")
-    if input.dtype != torch.quint8:
-        raise NotImplementedError("Only torch.quint8 is supported for activation tensor!")
-    if weight.dtype != torch.qint8:
-        raise NotImplementedError("Only torch.qint8 is supported for weight tensor!")
-    if input.ndim != 5:
-        raise ValueError("Input shape must be `(N, C, D, H, W)`!")
-    stride = _triple(stride)
-    padding = _triple(padding)
-    dilation = _triple(dilation)
-
-    prepacked_weight = torch.ops.quantized.conv3d_prepack(
-        weight, bias, stride, padding, dilation, groups)
-    return torch.ops.quantized.conv3d(
-        input, prepacked_weight, stride, padding, dilation, groups, scale,
-        zero_point)
+    """
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.nn.quantized.functional.conv3d', "conv3d(input, weight, bias, stride=1, padding=0, dilation=1, groups=1, padding_mode='zeros', scale=1.0, zero_point=0, dtype=torch.quint8)", {'torch': torch, '_triple': _triple, 'input': input, 'weight': weight, 'bias': bias, 'stride': stride, 'padding': padding, 'dilation': dilation, 'groups': groups, 'padding_mode': padding_mode, 'scale': scale, 'zero_point': zero_point, 'dtype': dtype}, 1)
 
 def interpolate(input, size=None, scale_factor=None, mode='nearest', align_corners=None):
-    r"""Down/up samples the input to either the given :attr:`size` or the given
+    """Down/up samples the input to either the given :attr:`size` or the given
     :attr:`scale_factor`
 
     See :func:`torch.nn.functional.interpolate` for implementation details.
@@ -251,14 +202,11 @@ def interpolate(input, size=None, scale_factor=None, mode='nearest', align_corne
             is ``'bilinear'``.
             Default: ``False``
     """
-    if not input.is_quantized:
-        raise ValueError("Input to 'quantized.interpolate' must be quantized!")
-    return torch.nn.functional.interpolate(input, size, scale_factor, mode,
-                                           align_corners)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.nn.quantized.functional.interpolate', "interpolate(input, size=None, scale_factor=None, mode='nearest', align_corners=None)", {'torch': torch, 'input': input, 'size': size, 'scale_factor': scale_factor, 'mode': mode, 'align_corners': align_corners}, 1)
 
 def linear(input, weight, bias=None, scale=None, zero_point=None):
-    # type: (Tensor, Tensor, Optional[Tensor], Optional[float], Optional[int]) -> Tensor
-    r"""
+    """
     Applies a linear transformation to the incoming quantized data:
     :math:`y = xA^T + b`.
     See :class:`~torch.nn.quantized.Linear`
@@ -282,32 +230,22 @@ def linear(input, weight, bias=None, scale=None, zero_point=None):
         - Bias: :math:`(out\_features)`
         - Output: :math:`(N, *, out\_features)`
     """
-    if scale is None:
-        scale = input.q_scale()
-    if zero_point is None:
-        zero_point = input.q_zero_point()
-    _packed_params = torch.ops.quantized.linear_prepack(weight, bias)
-    return torch.ops.quantized.linear(input, _packed_params, scale, zero_point)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.nn.quantized.functional.linear', 'linear(input, weight, bias=None, scale=None, zero_point=None)', {'torch': torch, 'input': input, 'weight': weight, 'bias': bias, 'scale': scale, 'zero_point': zero_point}, 1)
 
-def max_pool2d(input, kernel_size, stride=None, padding=0, dilation=1,
-               ceil_mode=False, return_indices=False):
-    r"""Applies a 2D max pooling over a quantized input signal composed of
+def max_pool2d(input, kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, return_indices=False):
+    """Applies a 2D max pooling over a quantized input signal composed of
     several quantized input planes.
 
     .. note:: The input quantization parameters are propagated to the output.
 
     See :class:`~torch.nn.quantized.MaxPool2d` for details.
     """
-    if return_indices:
-        raise NotImplementedError("return_indices is not yet implemented!")
-    if stride is None:
-        stride = torch.jit.annotate(_List[int], [])
-    return torch.nn.functional.max_pool2d(input, kernel_size, stride, padding,
-                                          dilation, ceil_mode, return_indices)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.nn.quantized.functional.max_pool2d', 'max_pool2d(input, kernel_size, stride=None, padding=0, dilation=1, ceil_mode=False, return_indices=False)', {'torch': torch, '_List': _List, 'input': input, 'kernel_size': kernel_size, 'stride': stride, 'padding': padding, 'dilation': dilation, 'ceil_mode': ceil_mode, 'return_indices': return_indices}, 1)
 
 def relu(input, inplace=False):
-    # type: (Tensor, bool) -> Tensor
-    r"""relu(input, inplace=False) -> Tensor
+    """relu(input, inplace=False) -> Tensor
 
     Applies the rectified linear unit function element-wise.
     See :class:`~torch.nn.quantized.ReLU` for more details.
@@ -316,22 +254,16 @@ def relu(input, inplace=False):
         input: quantized input
         inplace: perform the computation inplace
     """
-    if not input.is_quantized:
-        raise ValueError("Input to 'quantized.relu' must be quantized!")
-    if inplace:
-        return torch.relu_(input)
-    else:
-        return torch.relu(input)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.nn.quantized.functional.relu', 'relu(input, inplace=False)', {'torch': torch, 'input': input, 'inplace': inplace}, 1)
 
-def leaky_relu(input, negative_slope=0.01, inplace=False,
-               scale=None, zero_point=None):
-    # type: (Tensor, float, bool, float, int) -> Tensor
-    r"""
+def leaky_relu(input, negative_slope=0.01, inplace=False, scale=None, zero_point=None):
+    """
     Quantized version of the.
     leaky_relu(input, negative_slope=0.01, inplace=False, scale, zero_point) -> Tensor
 
     Applies element-wise,
-    :math:`\text{LeakyReLU}(x) = \max(0, x) + \text{negative\_slope} * \min(0, x)`
+    :math:`	ext{LeakyReLU}(x) = \max(0, x) + 	ext{negative\_slope} * \min(0, x)`
 
     Args:
         input: Quaintized input
@@ -341,65 +273,38 @@ def leaky_relu(input, negative_slope=0.01, inplace=False,
 
     See :class:`~torch.nn.LeakyReLU` for more details.
     """
-    if scale is not None and zero_point is not None:
-        assert not inplace, "Cannot rescale with `inplace`"
-        output = torch.quantize_per_tensor(torch.zeros(input.shape),
-                                           scale, int(zero_point), input.dtype)
-        torch._C._nn.leaky_relu(input, negative_slope, out=output)
-        return output
-    if inplace:
-        result = torch._C._nn.leaky_relu_(input, negative_slope)
-    else:
-        result = torch._C._nn.leaky_relu(input, negative_slope)
-    return result
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.nn.quantized.functional.leaky_relu', 'leaky_relu(input, negative_slope=0.01, inplace=False, scale=None, zero_point=None)', {'torch': torch, 'input': input, 'negative_slope': negative_slope, 'inplace': inplace, 'scale': scale, 'zero_point': zero_point}, 1)
 
-def hardtanh(input, min_val=-1., max_val=1., inplace=False):
-    # type: (Tensor, float, float, bool) -> Tensor
-    r"""
+def hardtanh(input, min_val=-1.0, max_val=1.0, inplace=False):
+    """
     hardtanh(input, min_val=-1., max_val=1., inplace=False) -> Tensor
 
     Applies the quantized HardTanh function element-wise, with scale and
     zero-point carried over from the input tensor. See :class:`~torch.nn.Hardtanh`
     for more details.
     """
-    if not input.is_quantized:
-        raise ValueError("Input to 'quantized.hardtanh' must be quantized!")
-    if inplace:
-        return torch._C._nn.hardtanh_(input, min_val, max_val)
-    return torch._C._nn.hardtanh(input, min_val, max_val)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.nn.quantized.functional.hardtanh', 'hardtanh(input, min_val=-1.0, max_val=1.0, inplace=False)', {'torch': torch, 'input': input, 'min_val': min_val, 'max_val': max_val, 'inplace': inplace}, 1)
 
-def elu(input, alpha=1., inplace=False, scale=None, zero_point=None):
-    r"""
+def elu(input, alpha=1.0, inplace=False, scale=None, zero_point=None):
+    """
     Applies the quantized ELU function element-wise:
 
     .. math::
-        \text{ELU}(x) = \max(0,x) + \min(0, \alpha * (\exp(x) - 1))
+        	ext{ELU}(x) = \max(0,x) + \min(0, lpha * (\exp(x) - 1))
 
     Args:
         input: quantized input
-        alpha: the :math:`\alpha` value for the ELU formulation. Default: 1.0
+        alpha: the :math:`lpha` value for the ELU formulation. Default: 1.0
         inplace: Inplace modification of the input tensor
         scale, zero_point: Scale and zero point of the output tensor.
     """
-    if not input.is_quantized:
-        raise ValueError("Input to 'quantized.elu' must be quantized!")
-    if (scale is not None) != (zero_point is not None):
-        raise ValueError("Either both or none of (scale, zero_point) must be specified!")
-
-    if scale is not None and zero_point is not None:
-        assert not inplace, "Cannot rescale with `inplace`"
-        output = torch.quantize_per_tensor(torch.zeros(input.shape),
-                                           scale, int(zero_point), input.dtype)
-        torch._C._nn.elu(input, alpha, out=output)
-        return output
-    elif inplace:
-        return torch._C._nn.elu_(input, alpha)
-    else:
-        return torch._C._nn.elu(input, alpha)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.nn.quantized.functional.elu', 'elu(input, alpha=1.0, inplace=False, scale=None, zero_point=None)', {'torch': torch, 'input': input, 'alpha': alpha, 'inplace': inplace, 'scale': scale, 'zero_point': zero_point}, 1)
 
 def clamp(input, min_, max_):
-    # type: (Tensor, float, float) -> Tensor
-    r"""float(input, min_, max_) -> Tensor
+    """float(input, min_, max_) -> Tensor
 
     Applies the clamp function element-wise.
     See :class:`~torch.nn.quantized.clamp` for more details.
@@ -409,12 +314,11 @@ def clamp(input, min_, max_):
         min_: minimum value for clamping
         max_: maximum value for clamping
     """
-    if not input.is_quantized:
-        raise ValueError("Input to 'quantized.clamp' must be quantized!")
-    return torch.clamp(input, min_, max_)
+    import custom_funtemplate
+    return custom_funtemplate.rewrite_template('torch.nn.quantized.functional.clamp', 'clamp(input, min_, max_)', {'torch': torch, 'input': input, 'min_': min_, 'max_': max_}, 1)
 
 def upsample(input, size=None, scale_factor=None, mode='nearest', align_corners=None):
-    r"""Upsamples the input to either the given :attr:`size` or the given
+    """Upsamples the input to either the given :attr:`size` or the given
     :attr:`scale_factor`
 
     .. warning::
@@ -463,11 +367,11 @@ def upsample(input, size=None, scale_factor=None, mode='nearest', align_corners=
         See :class:`~torch.nn.Upsample` for concrete examples on how this
         affects the outputs.
     """
-    warnings.warn("nn.quantized.functional.upsample is deprecated. Use nn.quantized.functional.interpolate instead.")
+    warnings.warn('nn.quantized.functional.upsample is deprecated. Use nn.quantized.functional.interpolate instead.')
     return interpolate(input, size, scale_factor, mode, align_corners)
 
 def upsample_bilinear(input, size=None, scale_factor=None):
-    r"""Upsamples the input, using bilinear upsampling.
+    """Upsamples the input, using bilinear upsampling.
 
     .. warning::
         This function is deprecated in favor of
@@ -484,12 +388,11 @@ def upsample_bilinear(input, size=None, scale_factor=None):
         size (int or Tuple[int, int]): output spatial size.
         scale_factor (int or Tuple[int, int]): multiplier for spatial size
     """
-    # DeprecationWarning is ignored by default
-    warnings.warn("nn.quantized.functional.upsample_bilinear is deprecated. Use nn.quantized.functional.interpolate instead.")
+    warnings.warn('nn.quantized.functional.upsample_bilinear is deprecated. Use nn.quantized.functional.interpolate instead.')
     return interpolate(input, size, scale_factor, mode='bilinear', align_corners=True)
 
 def upsample_nearest(input, size=None, scale_factor=None):
-    r"""Upsamples the input, using nearest neighbours' pixel values.
+    """Upsamples the input, using nearest neighbours' pixel values.
 
     .. warning::
         This function is deprecated in favor of
@@ -506,6 +409,6 @@ def upsample_nearest(input, size=None, scale_factor=None):
             size.
         scale_factor (int): multiplier for spatial size. Has to be an integer.
     """
-    # DeprecationWarning is ignored by default
-    warnings.warn("nn.quantized.functional.upsample_nearest is deprecated. Use nn.quantized.functional.interpolate instead.")
+    warnings.warn('nn.quantized.functional.upsample_nearest is deprecated. Use nn.quantized.functional.interpolate instead.')
     return interpolate(input, size, scale_factor, mode='nearest')
+

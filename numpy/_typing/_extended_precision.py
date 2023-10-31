@@ -6,15 +6,8 @@ that they can be imported conditionally via the numpy's mypy plugin.
 """
 
 from typing import TYPE_CHECKING
-
 import numpy as np
-from . import (
-    _80Bit,
-    _96Bit,
-    _128Bit,
-    _256Bit,
-)
-
+from . import _80Bit, _96Bit, _128Bit, _256Bit
 if TYPE_CHECKING:
     uint128 = np.unsignedinteger[_128Bit]
     uint256 = np.unsignedinteger[_256Bit]
@@ -24,10 +17,10 @@ if TYPE_CHECKING:
     float96 = np.floating[_96Bit]
     float128 = np.floating[_128Bit]
     float256 = np.floating[_256Bit]
-    complex160 = np.complexfloating[_80Bit, _80Bit]
-    complex192 = np.complexfloating[_96Bit, _96Bit]
-    complex256 = np.complexfloating[_128Bit, _128Bit]
-    complex512 = np.complexfloating[_256Bit, _256Bit]
+    complex160 = np.complexfloating[(_80Bit, _80Bit)]
+    complex192 = np.complexfloating[(_96Bit, _96Bit)]
+    complex256 = np.complexfloating[(_128Bit, _128Bit)]
+    complex512 = np.complexfloating[(_256Bit, _256Bit)]
 else:
     uint128 = Any
     uint256 = Any
@@ -41,3 +34,4 @@ else:
     complex192 = Any
     complex256 = Any
     complex512 = Any
+

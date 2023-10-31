@@ -3,16 +3,16 @@ from torch.distributions.distribution import Distribution
 
 
 class ExponentialFamily(Distribution):
-    r"""
+    """
     ExponentialFamily is the abstract base class for probability distributions belonging to an
     exponential family, whose probability mass/density function has the form is defined below
 
     .. math::
 
-        p_{F}(x; \theta) = \exp(\langle t(x), \theta\rangle - F(\theta) + k(x))
+        p_{F}(x; 	heta) = \exp(\langle t(x), 	hetaangle - F(	heta) + k(x))
 
-    where :math:`\theta` denotes the natural parameters, :math:`t(x)` denotes the sufficient statistic,
-    :math:`F(\theta)` is the log normalizer function for a given family and :math:`k(x)` is the carrier
+    where :math:`	heta` denotes the natural parameters, :math:`t(x)` denotes the sufficient statistic,
+    :math:`F(	heta)` is the log normalizer function for a given family and :math:`k(x)` is the carrier
     measure.
 
     Note:
@@ -22,7 +22,7 @@ class ExponentialFamily(Distribution):
         framework and Bregman divergences (courtesy of: Frank Nielsen and Richard Nock, Entropies and
         Cross-entropies of Exponential Families).
     """
-
+    
     @property
     def _natural_params(self):
         """
@@ -30,14 +30,14 @@ class ExponentialFamily(Distribution):
         on the distribution
         """
         raise NotImplementedError
-
+    
     def _log_normalizer(self, *natural_params):
         """
         Abstract method for log normalizer function. Returns a log normalizer based on
         the distribution and input
         """
         raise NotImplementedError
-
+    
     @property
     def _mean_carrier_measure(self):
         """
@@ -45,7 +45,7 @@ class ExponentialFamily(Distribution):
         entropy.
         """
         raise NotImplementedError
-
+    
     def entropy(self):
         """
         Method to compute the entropy using Bregman divergence of the log normalizer.
@@ -55,6 +55,8 @@ class ExponentialFamily(Distribution):
         lg_normal = self._log_normalizer(*nparams)
         gradients = torch.autograd.grad(lg_normal.sum(), nparams, create_graph=True)
         result += lg_normal
-        for np, g in zip(nparams, gradients):
+        for (np, g) in zip(nparams, gradients):
             result -= np * g
         return result
+
+
