@@ -6,3 +6,5 @@ __pycache__
 .pytest_cache
 serverless.yaml
 get_model.py
+.git
+faaslight/.git
